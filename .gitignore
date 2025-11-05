@@ -1,0 +1,6 @@
+.idea
+.env
+.DS_Store
+videos
+node_modules
+result
