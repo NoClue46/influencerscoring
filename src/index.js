@@ -77,10 +77,10 @@ app.post("/", async (c) => {
         console.info("reels urls: ", reelsUrls);
 
         // step 3: download and save reels
-        // for (let i = 0; i < reelsUrls.length; i++) {
-        //     console.info(`Downloading ${i} video`);
-        //     await downloadVideo(reelsUrls[i], path.join(dir, `${i}.mp4`));
-        // }
+        for (let i = 0; i < reelsUrls.length; i++) {
+            console.info(`Downloading ${i} video`);
+            await downloadVideo(reelsUrls[i], path.join(dir, `${i}.mp4`));
+        }
 
         let files = await readdir(dir);
 
