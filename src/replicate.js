@@ -29,37 +29,62 @@ async function downloadFrame(url, outputPath) {
     });
 }
 
-export async function videoToFrames(inputFilePath) {
-    const output = await replicate.run(
-        "fofr/video-to-frames:ad9374d1b385c86948506b3ad287af9fca23e796685221782d9baa2bc43f14a9",
-        {
-            input: {
-                fps: 4,
-                video: fs.readFileSync(inputFilePath),
-                extract_all_frames: false
+export async function videoToFrames(url) {
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            console.info(`Framing video (attempt ${attempt + 1}/${maxRetries}): ${url}`);
+
+            const output = await replicate.run(
+                "fofr/video-to-frames:ad9374d1b385c86948506b3ad287af9fca23e796685221782d9baa2bc43f14a9",
+                {
+                    input: {
+                        fps: 1,
+                        video: url,
+                        extract_all_frames: false
+                    }
+                }
+            );
+
+            return output.map(o => o.url());
+        } catch (error) {
+            console.error(`Attempt ${attempt + 1} failed for ${url}:`, error.message);
+
+            if (attempt < maxRetries - 1) {
+                // Exponential backoff: 1s, 2s, 4s
+                const delay = baseDelay * Math.pow(2, attempt);
+                console.info(`Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            } else {
+                console.error(`All ${maxRetries} attempts failed for ${url}. Skipping video.`);
+                return null;
             }
         }
-    );
+    }
+}
 
-    // Ensure result folder exists
-    // const resultDir = "./result";
-    // if (!fs.existsSync(resultDir)) {
-    //     fs.mkdirSync(resultDir, {recursive: true});
-    // }
+export async function processVideosToFrames(reelsUrls) {
+    const frameUrls = [];
+    const allPromises = [];
 
-    // // Download all frames
-    // for (let i = 0; i < output.length; i++) {
-    //     const frameUrl = output[i];
-    //     const frameNumber = String(i + 1).padStart(3, '0');
-    //     const outputPath = path.join(resultDir, `frame_${frameNumber}.png`);
-    //
-    //     try {
-    //         await downloadFrame(frameUrl, outputPath);
-    //         console.info(`Downloaded frame ${i + 1}/${output.length}: ${outputPath}`);
-    //     } catch (error) {
-    //         console.error(`Failed to download frame ${i + 1}: ${error.message}`);
-    //     }
-    // }
+    for (let i = 0; i < reelsUrls.length; i++) {
+        console.info(`Framing ${i} video`);
+        allPromises.push(videoToFrames(reelsUrls[i]));
+        if (i < reelsUrls.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+    }
 
-    return output.map(o => o.url());
+    const results = await Promise.all(allPromises);
+
+    // Skip null results (failed videos after retries)
+    results.forEach(result => {
+        if (result !== null) {
+            frameUrls.push(result);
+        }
+    });
+
+    return frameUrls;
 }

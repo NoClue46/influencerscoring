@@ -2,13 +2,9 @@ import 'dotenv/config';
 import {Hono} from 'hono';
 import {serve} from '@hono/node-server';
 import {html} from "hono/html";
-import {fetchAllReels, fetchReelsUrl} from "./scrape-creators.js";
-import {mkdir, readdir} from 'node:fs/promises';
-import {statSync, writeFileSync} from "node:fs";
-import {downloadVideo} from "./files.js";
-import {videoToFrames} from "./replicate.js";
-import {askOpenai} from "./ask-openai.js";
-import path from "node:path";
+import {fetchReelsWithUrls} from "./scrape-creators.js";
+import {processVideosToFrames} from "./replicate.js";
+import {processFramesWithOpenAI} from "./ask-openai.js";
 
 const app = new Hono();
 
@@ -43,74 +39,30 @@ const layout = (children) => html`
 
 app.post("/", async (c) => {
     try {
+        console.log('Step 1: Parsing request body');
         const body = await c.req.parseBody()
 
+        console.log('Step 2: Processing username');
         let username = body.username;
         if (username.startsWith('@')) {
             username = username.substring(1);
         }
+        console.log(`Username: ${username}`);
 
-        const dir = path.join("./videos", username);
+        // steps 1-2: fetch reels with urls
+        console.log('Step 3: Fetching reels with urls');
+        const reelsUrls = await fetchReelsWithUrls(username);
+        console.log(`Found ${reelsUrls.length} reels`);
 
-        await mkdir(dir, {recursive: true});
+        // step 3: frame videos
+        console.log('Step 4: Processing videos to frames');
+        const frameUrls = await processVideosToFrames(reelsUrls);
+        console.log(`Generated ${frameUrls.length} frame sets`);
 
-        // step 1: fetch reels info
-        let reelsList = await fetchAllReels(username);
-
-        // todo: remove
-        reelsList = reelsList.slice(0, 2);
-
-        console.info(`Found reels: ${reelsList}`);
-
-        // step 2: fetch reels urls
-        const reelsUrls = [];
-        for (let i = 0; i < reelsList.length;) {
-            const currentPromises = [];
-            for (let j = 0; j < 3 && i + j < reelsList.length; j++, i++) {
-                currentPromises.push(fetchReelsUrl(reelsList[i]));
-            }
-            const currentUrls = await Promise.all(currentPromises);
-            reelsUrls.push(...currentUrls.filter(url => !!url));
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
-        console.info("reels urls: ", reelsUrls);
-
-        // step 3: download and save reels
-        for (let i = 0; i < reelsUrls.length; i++) {
-            console.info(`Downloading ${i} video`);
-            await downloadVideo(reelsUrls[i], path.join(dir, `${i}.mp4`));
-        }
-
-        let files = await readdir(dir);
-
-        // todo: remove
-        files = files.slice(0,2);
-
-        const result = [];
-
-        for (const file of files) {
-            try {
-                console.info("Analyzing file: ", file);
-
-                const filepath = path.join(dir, file);
-
-                if (statSync(filepath).size >= 100 * 1024 * 1024) {
-                    continue;
-                }
-
-                const currentResult = await videoToFrames(filepath)
-                    .then(links => askOpenai(links.slice(0, 200)));
-
-                result.push(currentResult);
-
-                await new Promise(resolve => setTimeout(resolve, 500));
-            } catch (error) {
-                console.error("Failed to analyze file: ", error);
-            }
-        }
-
-        writeFileSync(`${dir}/result.json`, JSON.stringify(result));
+        // step 4: analyze frames with OpenAI
+        console.log('Step 5: Analyzing frames with OpenAI');
+        const result = await processFramesWithOpenAI(frameUrls);
+        console.log(`Analysis complete for ${result.length} videos`);
 
         // Форматирование результатов для HTML
         const resultsHtml = result.map((r, i) => {

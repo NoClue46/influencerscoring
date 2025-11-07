@@ -52,3 +52,27 @@ export async function fetchReelsUrl(reelsUrl) {
 
     return null;
 }
+
+export async function fetchReelsWithUrls(username) {
+    // step 1: fetch reels info
+    let reelsList = await fetchAllReels(username);
+
+    // todo: remove
+    reelsList = reelsList.slice(0, 10);
+
+    // step 2: fetch reels urls
+    const allPromises = reelsList.map((reel, index) => {
+        return new Promise(resolve => {
+            setTimeout(async () => {
+                const url = await fetchReelsUrl(reel);
+                resolve(url);
+            }, index * 2000);
+        });
+    });
+
+    const reelsUrls = (await Promise.all(allPromises)).filter(url => !!url);
+
+    console.info("reels urls: ", reelsUrls);
+
+    return reelsUrls;
+}
