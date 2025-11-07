@@ -3,8 +3,9 @@ import {Hono} from 'hono';
 import {serve} from '@hono/node-server';
 import {html} from "hono/html";
 import {fetchReelsWithUrls} from "./scrape-creators.js";
-import {processVideosToFrames} from "./replicate.js";
+import {downloadAllVideos, processVideosToFrames} from "./replicate.js";
 import {processFramesWithOpenAI} from "./ask-openai.js";
+import {downloadFramesToDisk} from "./download-frames.js";
 
 const app = new Hono();
 
@@ -54,14 +55,25 @@ app.post("/", async (c) => {
         const reelsUrls = await fetchReelsWithUrls(username);
         console.log(`Found ${reelsUrls.length} reels`);
 
-        // step 3: frame videos
+        // step 3.5: download videos to local disk
+        console.log('Step 3.5: Downloading videos to local disk');
+        const videoFilePaths = await downloadAllVideos(reelsUrls, username);
+        console.log(`Downloaded ${videoFilePaths.length} videos`);
+
+        // step 4: frame videos
         console.log('Step 4: Processing videos to frames');
-        const frameUrls = await processVideosToFrames(reelsUrls);
+        const frameUrls = await processVideosToFrames(videoFilePaths);
         console.log(`Generated ${frameUrls.length} frame sets`);
 
-        // step 4: analyze frames with OpenAI
+        // step 4.5: download frames to local disk
+        console.log('Step 4.5: Downloading frames to local disk');
+        const limitedFrameUrls = frameUrls.map((urls) => urls.slice(0, 200));
+        const localFramePaths = await downloadFramesToDisk(limitedFrameUrls, username);
+        console.log(`Downloaded ${localFramePaths.length} frame sets to disk`);
+
+        // step 5: analyze frames with OpenAI
         console.log('Step 5: Analyzing frames with OpenAI');
-        const result = await processFramesWithOpenAI(frameUrls);
+        const result = await processFramesWithOpenAI(localFramePaths);
         console.log(`Analysis complete for ${result.length} videos`);
 
         // Форматирование результатов для HTML

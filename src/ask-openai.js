@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import fs from 'fs';
 
 const client = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -6,7 +7,21 @@ const client = new OpenAI({
     maxRetries: 3,
 });
 
-export async function askOpenai(links) {
+/**
+ * Encodes a local image file to base64 data URI
+ * @param {string} imagePath - Path to the image file
+ * @returns {string} Base64 encoded data URI
+ */
+function encodeImageToBase64(imagePath) {
+    const imageBuffer = fs.readFileSync(imagePath);
+    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    return `data:image/jpeg;base64,${base64Image}`;
+}
+
+export async function askOpenai(localFilePaths) {
+    // Convert local file paths to base64 data URIs
+    const base64Images = localFilePaths.map(filePath => encodeImageToBase64(filePath));
+
     const response = await client.chat.completions.create({
         model: "gpt-5-mini",
         messages: [
@@ -29,9 +44,9 @@ Return two numbers for each parameter:
 1. Parameter score on a 100-point scale
 2. Confidence in the accuracy of this parameter's score on a 100-point scale`
                     },
-                    ...links.map(l => ({
+                    ...base64Images.map(dataUri => ({
                         type: "image_url",
-                        image_url: { url: l }
+                        image_url: { url: dataUri }
                     }))
                 ]
             },
