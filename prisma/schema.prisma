@@ -44,26 +44,13 @@ model Reels {
 
   attempts Int @default(0)
 
-  // pending -> downloading_video -> completed/failed
+  // pending -> downloading_video -> extracting_frames -> analysing -> completed/failed
   status String @default("pending")
   reason String? @map("skip_reason")
 
   job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  frames Frame[]
 
   @@map("reels_urls")
-}
-
-model Frame {
-  id String @id @default(cuid())
-  reelId String @map("reel_url_id")
-  filepath String
-  frameNumber Int @map("frame_number")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  reel Reels @relation(fields: [reelId], references: [id], onDelete: Cascade)
-
-  @@map("frames")
 }
 
 model AnalysisResult {

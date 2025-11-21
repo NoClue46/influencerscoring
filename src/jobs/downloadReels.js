@@ -44,36 +44,24 @@ export const downloadReelsJob = new CronJob('*/5 * * * * *', async () => {
     });
 
     try {
-        const destPath = path.join(process.env.DATA_PATH, reel.job.username, `${reel.id}.mp4`);
+        const destPath = path.join(process.env.DATA_PATH, reel.job.username, reel.jobId, reel.id, 'input.mp4');
         const result = await downloadVideo(reel.videoUrl, destPath);
 
         if (result.skipped) {
             console.log(`[downloadReelsJob] Skipped reel ${reel.id}: ${result.reason}`);
             await prisma.reels.update({
                 where: { id: reel.id },
-                data: { status: 'completed', reason: result.reason }
+                data: { status: 'extracting_frames', reason: result.reason, attempts: 0 }
             });
         } else {
             console.log(`[downloadReelsJob] Completed for reel ${reel.id}`);
             await prisma.reels.update({
                 where: { id: reel.id },
                 data: {
-                    status: 'completed',
-                    filepath: path.join(reel.job.username, `${reel.id}.mp4`)
+                    status: 'extracting_frames',
+                    filepath: path.join(reel.job.username, reel.jobId, reel.id, 'input.mp4'),
+                    attempts: 0
                 }
-            });
-        }
-
-        // Check if all reels completed
-        const pendingCount = await prisma.reels.count({
-            where: { jobId: reel.jobId, status: { not: 'completed' } }
-        });
-
-        if (pendingCount === 0) {
-            console.log(`[downloadReelsJob] All reels completed for job ${reel.jobId}`);
-            await prisma.job.update({
-                where: { id: reel.jobId },
-                data: { status: 'extracting_frames' }
             });
         }
     } catch (error) {

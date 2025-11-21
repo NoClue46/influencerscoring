@@ -151,7 +151,7 @@ app.get("/jobs/:id", async (c) => {
         <tr>
             <td><a href="${reel.url}" target="_blank">${reel.url}</a></td>
             <td>${reel.status}</td>
-            <td>${reel.skipReason || '-'}</td>
+            <td>${reel.reason || '-'}</td>
         </tr>
     `).join('') : html`<tr><td colspan="3" style="text-align: center;">No reels yet</td></tr>`;
 
@@ -210,10 +210,10 @@ app.get("/jobs/:id", async (c) => {
                                 ` : ''}
                             </tbody>
                         </table>
-                        <details>
-                            <summary><strong>Prompt</strong></summary>
-                            <pre style="white-space: pre-wrap; word-wrap: break-word;">${job.prompt}</pre>
-                        </details>
+                        <div>
+                            <strong>Prompt</strong>
+                            <p>${job.prompt}</p>
+                        </div>
                     </article>
 
                     <h2 style="margin-top: 2rem;">Reels (${job.reels.length})</h2>
