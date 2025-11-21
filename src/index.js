@@ -62,18 +62,12 @@ app.get("/", async (c) => {
     });
 
     const jobsHtml = jobs.length > 0 ? jobs.map(job => {
-        const createdDate = new Date(job.createdAt).toLocaleString('en-US');
-        const progress = `${job.processedVideos}/${job.totalVideos}`;
-
         return html`
             <tr>
                 <td><a href="/jobs/${job.id}">${job.username}</a></td>
-                <td>${job.status}</td>
-                <td>${progress}</td>
-                <td>${createdDate}</td>
             </tr>
         `;
-    }).join('') : html`<tr><td colspan="4" style="text-align: center;">No Jobs</td></tr>`;
+    }).join('') : html`<tr><td colspan="3" style="text-align: center;">No Jobs</td></tr>`;
 
     return c.html(
         layout(
@@ -96,9 +90,6 @@ app.get("/", async (c) => {
                             <thead>
                                 <tr>
                                     <th>Username</th>
-                                    <th>Status</th>
-                                    <th>Progress</th>
-                                    <th>Created</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -132,16 +123,6 @@ app.get("/jobs/:id", async (c) => {
         `), 404);
     }
 
-    const statusColor = {
-        'pending': '#6c757d',
-        'fetching_reels': '#0dcaf0',
-        'downloading_videos': '#0d6efd',
-        'extracting_frames': '#6f42c1',
-        'analyzing': '#fd7e14',
-        'completed': '#198754',
-        'failed': '#dc3545'
-    }[job.status] || '#6c757d';
-
     const reelsHtml = job.reels.length > 0 ? job.reels.map(reel => html`
         <tr>
             <td><a href="${reel.url}" target="_blank">${reel.url}</a></td>
@@ -161,42 +142,17 @@ app.get("/jobs/:id", async (c) => {
         layout(
             html`
                 <div style="width: 90%; max-width: 1200px; margin: 2rem auto;">
-                    <a href="/" role="button" style="width: auto; display: inline-block; margin-bottom: 1rem;">← Back</a>
+                    <a href="/" role="button" style="width: auto; display: inline-block; margin-bottom: 1rem; padding: 0.5rem 0.5rem;">← Back</a>
 
                     <h1>Job: @${job.username}</h1>
 
                     <article>
-                        <header><strong>Job Details</strong></header>
+                        <header><strong>Prompt</strong></header>
+                        <div>
+                            <p>${job.prompt}</p>
+                        </div>
                         <table>
                             <tbody>
-                                <tr>
-                                    <td><strong>Status</strong></td>
-                                    <td><span style="color: ${statusColor}; font-weight: bold;">${job.status}</span></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Progress</strong></td>
-                                    <td>${job.processedVideos}/${job.totalVideos} videos</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>All Videos</strong></td>
-                                    <td>${job.allVideos ? 'Yes' : 'No'}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Created</strong></td>
-                                    <td>${new Date(job.createdAt).toLocaleString('en-US')}</td>
-                                </tr>
-                                ${job.startedAt ? html`
-                                <tr>
-                                    <td><strong>Started</strong></td>
-                                    <td>${new Date(job.startedAt).toLocaleString('en-US')}</td>
-                                </tr>
-                                ` : ''}
-                                ${job.completedAt ? html`
-                                <tr>
-                                    <td><strong>Completed</strong></td>
-                                    <td>${new Date(job.completedAt).toLocaleString('en-US')}</td>
-                                </tr>
-                                ` : ''}
                                 ${job.reason ? html`
                                 <tr>
                                     <td><strong>Reason</strong></td>
@@ -205,10 +161,6 @@ app.get("/jobs/:id", async (c) => {
                                 ` : ''}
                             </tbody>
                         </table>
-                        <div>
-                            <strong>Prompt</strong>
-                            <p>${job.prompt}</p>
-                        </div>
                     </article>
 
                     <h2 style="margin-top: 2rem;">Reels (${job.reels.length})</h2>
