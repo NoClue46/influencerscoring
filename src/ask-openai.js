@@ -45,20 +45,3 @@ export async function askOpenai(localFilePaths, prompt) {
         text: response.choices[0].message.content
     };
 }
-
-export async function processFramesWithOpenAI(frameUrls) {
-    const promises = frameUrls.map((frameUrl, index) => {
-        return new Promise((resolve, reject) => {
-            setTimeout(async () => {
-                try {
-                    const res = await askOpenai(frameUrl);
-                    resolve(res);
-                } catch (error) {
-                    reject(error);
-                }
-            }, index * 2000);
-        });
-    });
-
-    return Promise.all(promises);
-}

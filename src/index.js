@@ -45,6 +45,7 @@ app.post("/", async (c) => {
                 username: username,
                 prompt: body.prompt,
                 allVideos: body.allVideos === 'on',
+                postNumber: parseInt(body.postNumber) || 10,
                 status: 'pending'
             }
         });
@@ -78,7 +79,15 @@ app.get("/", async (c) => {
                         <input type="text" name="username" placeholder="cristiano" required />
                         <label>
                             <input type="checkbox" name="allVideos" />
-                            All videos
+                            Analyze entire profile
+                        </label>
+                        <label>
+                            Posts count
+                            <select name="postNumber">
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                            </select>
                         </label>
                         <textarea name="prompt" required placeholder="Enter prompt..." rows="4"></textarea>
                         <button type="submit" @click="$el.setAttribute('aria-busy', 'true')">Create Job</button>

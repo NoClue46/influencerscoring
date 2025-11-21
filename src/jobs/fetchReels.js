@@ -21,30 +21,38 @@ export const fetchReelsJob = new CronJob('*/5 * * * * *', async () => {
     });
 
     try {
-        const reelUrls = await fetchAllReels(job.username);
+        const reelUrls = await fetchAllReels(job.username, job.postNumber || 10);
 
         for (const reelUrl of reelUrls) {
             let videoUrl = null;
             try {
                 videoUrl = await fetchReelsUrl(reelUrl);
+                await prisma.reels.create({
+                    data: {
+                        url: reelUrl,
+                        videoUrl: videoUrl,
+                        jobId: job.id,
+                        status: 'pending'
+                    }
+                });
             } catch (e) {
                 console.error(`Failed to fetch video URL for ${reelUrl}:`, e.message);
+                await prisma.reels.create({
+                    data: {
+                        url: reelUrl,
+                        videoUrl: null,
+                        jobId: job.id,
+                        status: 'failed',
+                        reason: e.message || "Failed to fetch reels url"
+                    }
+                });
             }
 
-            await prisma.reels.create({
-                data: {
-                    url: reelUrl,
-                    videoUrl: videoUrl,
-                    jobId: job.id,
-                    status: 'pending'
-                }
-            });
         }
 
         await prisma.job.update({
             where: { id: job.id },
             data: {
-                totalVideos: reelUrls.length,
                 status: 'downloading_videos'
             }
         });

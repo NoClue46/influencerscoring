@@ -17,6 +17,8 @@ model Job {
   status String @default("pending")
   reason String? // error reason
 
+  postNumber Int @default(10) @map("post_number")
+
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at")
   startedAt DateTime? @map("started_at")
