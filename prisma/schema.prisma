@@ -30,7 +30,6 @@ model Job {
 
   // Relations
   reels Reels[]
-  analysisResults AnalysisResult[]
 
   @@map("jobs")
 }
@@ -44,24 +43,13 @@ model Reels {
 
   attempts Int @default(0)
 
-  // pending -> downloading_video -> extracting_frames -> analysing -> completed/failed
+  // pending -> downloading_video -> extracting_frames -> analyzing -> completed/failed
   status String @default("pending")
   reason String? @map("skip_reason")
 
   job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
+  analyzeRawText String? @map("analuze_raw_text")
+
   @@map("reels_urls")
-}
-
-model AnalysisResult {
-  id String @id @default(cuid())
-  jobId String @map("job_id")
-
-  rawText String @map("raw_text")
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
-
-  @@map("analysis_results")
 }

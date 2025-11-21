@@ -2,10 +2,6 @@ import 'dotenv/config';
 import {Hono} from 'hono';
 import {serve} from '@hono/node-server';
 import {html} from "hono/html";
-import {fetchReelsWithUrls} from "./scrape-creators.js";
-import {downloadAllVideos, processVideosToFrames} from "./replicate.js";
-import {processFramesWithOpenAI} from "./ask-openai.js";
-import {downloadFramesToDisk} from "./download-frames.js";
 import {prisma} from "./prisma.js";
 import {startCronJobs, stopCronJobs} from "./jobs/index.js";
 
@@ -123,7 +119,6 @@ app.get("/jobs/:id", async (c) => {
         where: { id },
         include: {
             reels: { orderBy: { id: 'asc' } },
-            analysisResults: { orderBy: { createdAt: 'desc' } }
         }
     });
 
@@ -152,15 +147,15 @@ app.get("/jobs/:id", async (c) => {
             <td><a href="${reel.url}" target="_blank">${reel.url}</a></td>
             <td>${reel.status}</td>
             <td>${reel.reason || '-'}</td>
+            <td>${reel.analyzeRawText ? html`
+                <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="document.getElementById('modal-${reel.id}').showModal()">Show</button>
+                <dialog id="modal-${reel.id}" style="max-width: 600px; padding: 1.5rem; border-radius: 8px;">
+                    <pre style="white-space: pre-wrap; margin: 0 0 1rem;">${reel.analyzeRawText}</pre>
+                    <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="this.closest('dialog').close()">Close</button>
+                </dialog>
+            ` : '-'}</td>
         </tr>
-    `).join('') : html`<tr><td colspan="3" style="text-align: center;">No reels yet</td></tr>`;
-
-    const analysisHtml = job.analysisResults.length > 0 ? job.analysisResults.map(result => html`
-        <article style="margin-bottom: 1rem;">
-            <header><strong>Analysis - ${new Date(result.createdAt).toLocaleString('en-US')}</strong></header>
-            <pre style="white-space: pre-wrap; word-wrap: break-word;">${result.rawText}</pre>
-        </article>
-    `).join('') : html`<p><em>No analysis results yet</em></p>`;
+    `).join('') : html`<tr><td colspan="4" style="text-align: center;">No reels yet</td></tr>`;
 
     return c.html(
         layout(
@@ -224,6 +219,7 @@ app.get("/jobs/:id", async (c) => {
                                     <th>URL</th>
                                     <th>Status</th>
                                     <th>Skip Reason</th>
+                                    <th>Analysis</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -231,9 +227,6 @@ app.get("/jobs/:id", async (c) => {
                             </tbody>
                         </table>
                     </figure>
-
-                    <h2 style="margin-top: 2rem;">Analysis Results</h2>
-                    ${html([analysisHtml])}
                 </div>
             `
         )

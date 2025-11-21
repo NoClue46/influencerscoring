@@ -18,7 +18,7 @@ function encodeImageToBase64(imagePath) {
     return `data:image/jpeg;base64,${base64Image}`;
 }
 
-export async function askOpenai(localFilePaths) {
+export async function askOpenai(localFilePaths, prompt) {
     // Convert local file paths to base64 data URIs
     const base64Images = localFilePaths.map(filePath => encodeImageToBase64(filePath));
 
@@ -30,19 +30,7 @@ export async function askOpenai(localFilePaths) {
                 content: [
                     {
                         type: "text",
-                        text: `Based on video frames, score the data by next parameters
-
-1. Blogger's income level
-2. Whether the blogger is over 30 years old
-3. Depth of knowledge / usefulness
-4. Blogger's intelligence
-5. What is being advertised and how often
-6. Whether it is a talking-head video or not
-
-Return two numbers for each parameter:
-
-1. Parameter score on a 100-point scale
-2. Confidence in the accuracy of this parameter's score on a 100-point scale`
+                        text: prompt
                     },
                     ...base64Images.map(dataUri => ({
                         type: "image_url",
@@ -51,7 +39,6 @@ Return two numbers for each parameter:
                 ]
             },
         ],
-        max_tokens: 4096,
     });
 
     return {
