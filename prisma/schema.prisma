@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Job {
+  id String @id @default(cuid())
+  username String
+  prompt String
+  allVideos Boolean @map("all_videos")
+
+  // pending -> fetching_reels -> downloading_videos -> extracting_frames -> analyzing -> completed/failed
+  status String @default("pending")
+  reason String? // error reason
+
+  // Счетчики прогресса
+  processedVideos Int @default(0) @map("processed_videos")
+  totalVideos Int @default(0) @map("total_videos")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  startedAt DateTime? @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  attempts Int @default(0)
+
+  // Relations
+  reels Reels[]
+  analysisResults AnalysisResult[]
+
+  @@map("jobs")
+}
+
+model Reels {
+  id String @id @default(cuid())
+  url String
+  filepath String? @map("file_path")
+  videoUrl String? @map("video_url")
+  jobId String @map("job_id")
+
+  attempts Int @default(0)
+
+  // pending -> downloading_video -> completed/failed
+  status String @default("pending")
+  reason String? @map("skip_reason")
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  frames Frame[]
+
+  @@map("reels_urls")
+}
+
+model Frame {
+  id String @id @default(cuid())
+  reelId String @map("reel_url_id")
+  filepath String
+  frameNumber Int @map("frame_number")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  reel Reels @relation(fields: [reelId], references: [id], onDelete: Cascade)
+
+  @@map("frames")
+}
+
+model AnalysisResult {
+  id String @id @default(cuid())
+  jobId String @map("job_id")
+
+  rawText String @map("raw_text")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("analysis_results")
+}

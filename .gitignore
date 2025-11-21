@@ -4,3 +4,6 @@
 videos
 node_modules
 result
+/src/generated/prisma
+prisma/dev.db
+data
