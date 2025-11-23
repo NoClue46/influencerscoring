@@ -4,6 +4,35 @@ import { MAX_ATTEMPTS } from '../constants.js';
 import fs from 'fs';
 import path from 'path';
 
+const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
+
+interface DownloadResult {
+    skipped: boolean;
+    reason?: string;
+}
+
+async function downloadVideo(url: string, destPath: string): Promise<DownloadResult> {
+    const headResponse = await fetch(url, { method: 'HEAD' });
+    const contentLength = parseInt(headResponse.headers.get('content-length') ?? '0');
+
+    if (contentLength > MAX_FILE_SIZE) {
+        return { skipped: true, reason: `File size ${Math.round(contentLength / 1024 / 1024)}MB exceeds 200MB limit` };
+    }
+
+    const dir = path.dirname(destPath);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const buffer = Buffer.from(await response.arrayBuffer());
+    fs.writeFileSync(destPath, buffer);
+
+    return { skipped: false };
+}
+
 export const downloadReelsJob = new CronJob('*/5 * * * * *', async () => {
 
     const job = await prisma.job.findFirst({
@@ -28,8 +57,9 @@ export const downloadReelsJob = new CronJob('*/5 * * * * *', async () => {
             data: { status: 'downloading_video' }
         });
 
-        const destPath = path.join(process.env.DATA_PATH, job.username, reels.jobId, reels.id, 'input.mp4');
-        const result = await downloadVideo(reels.videoUrl, destPath);
+        const dataPath = process.env.DATA_PATH ?? './data';
+        const destPath = path.join(dataPath, job.username, reels.jobId, reels.id, 'input.mp4');
+        const result = await downloadVideo(reels.videoUrl ?? '', destPath);
 
         console.info(`[downloadReelsJob] Download result for ${reels.id}: `, JSON.stringify(result))
 
@@ -50,13 +80,14 @@ export const downloadReelsJob = new CronJob('*/5 * * * * *', async () => {
             });
         }
     } catch (error) {
-        console.error(`[downloadReelsJob] Failed for reel ${reels.id}:`, error);
-        if (reels.attempts >= MAX_ATTEMPTS) {
+        const err = error as Error;
+        console.error(`[downloadReelsJob] Failed for reel ${reels?.id}:`, err);
+        if (reels && reels.attempts >= MAX_ATTEMPTS) {
             await prisma.reels.update({
                 where: { id: reels.id },
-                data: { status: 'failed', reason: error.message }
+                data: { status: 'failed', reason: err.message }
             });
-        } else {
+        } else if (reels) {
             await prisma.reels.update({
                 where: { id: reels.id },
                 data: { status: 'pending', attempts: { increment: 1 } }
@@ -80,27 +111,3 @@ export const downloadReelsJob = new CronJob('*/5 * * * * *', async () => {
         console.log(`[downloadReelsJob] Job ${job.id} -> extracting_frames`);
     }
 });
-
-const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
-
-async function downloadVideo(url, destPath) {
-    const headResponse = await fetch(url, { method: 'HEAD' });
-    const contentLength = parseInt(headResponse.headers.get('content-length') || '0');
-
-    if (contentLength > MAX_FILE_SIZE) {
-        return { skipped: true, reason: `File size ${Math.round(contentLength / 1024 / 1024)}MB exceeds 200MB limit` };
-    }
-
-    const dir = path.dirname(destPath);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    fs.writeFileSync(destPath, buffer);
-
-    return { skipped: false };
-}

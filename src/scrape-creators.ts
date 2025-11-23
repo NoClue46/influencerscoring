@@ -1,9 +1,32 @@
-
 const BASE_URL = "https://api.scrapecreators.com/s";
 
-export async function fetchAllReels(handle, count = 12) {
-    let allItems = [];
-    let cursor = null;
+interface ReelItem {
+    media: {
+        code: string;
+    };
+}
+
+interface PagingInfo {
+    max_id?: string;
+    more_available?: boolean;
+}
+
+interface ReelsResponse {
+    items?: ReelItem[];
+    paging_info?: PagingInfo;
+}
+
+interface PostResponse {
+    data?: {
+        xdt_shortcode_media?: {
+            video_url?: string;
+        };
+    };
+}
+
+export async function fetchAllReels(handle: string, count: number = 12): Promise<string[]> {
+    let allItems: ReelItem[] = [];
+    let cursor: string | null = null;
 
     while (allItems.length < count) {
         const url = new URL(BASE_URL);
@@ -16,7 +39,7 @@ export async function fetchAllReels(handle, count = 12) {
         const response = await fetch(url, {
             method: "GET",
             headers: {
-                "x-api-key": process.env.SCRAPE_CREATORS,
+                "x-api-key": process.env.SCRAPE_CREATORS ?? "",
             }
         });
 
@@ -24,14 +47,14 @@ export async function fetchAllReels(handle, count = 12) {
             throw new Error(`Failed to fetch reels ${response.statusText}`);
         }
 
-        const json = await response.json();
+        const json = await response.json() as ReelsResponse;
 
         if (!json.items || !Array.isArray(json.items)) {
             break;
         }
 
         allItems.push(...json.items);
-        cursor = json.paging_info?.max_id;
+        cursor = json.paging_info?.max_id ?? null;
 
         if (!cursor || !json.paging_info?.more_available) break;
     }
@@ -39,7 +62,7 @@ export async function fetchAllReels(handle, count = 12) {
     return allItems.slice(0, count).map((item) => (`https://www.instagram.com/reel/${item.media.code}`));
 }
 
-export async function fetchReelsUrl(reelsUrl) {
+export async function fetchReelsUrl(reelsUrl: string): Promise<string | null> {
     const url = new URL(BASE_URL);
     url.pathname = `/v1/instagram/post`;
     url.search = `?url=${encodeURIComponent(reelsUrl)}`;
@@ -49,7 +72,7 @@ export async function fetchReelsUrl(reelsUrl) {
     const response = await fetch(url, {
         method: "GET",
         headers: {
-            "x-api-key": process.env.SCRAPE_CREATORS,
+            "x-api-key": process.env.SCRAPE_CREATORS ?? "",
         }
     })
 
@@ -58,7 +81,7 @@ export async function fetchReelsUrl(reelsUrl) {
         throw new Error(`Failed to fetch reels ${response.statusText}`);
     }
 
-    const json = await response.json();
+    const json = await response.json() as PostResponse;
 
     if (json.data?.xdt_shortcode_media?.video_url) {
         return json.data.xdt_shortcode_media.video_url;

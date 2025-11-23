@@ -5,6 +5,17 @@ import { askOpenai } from '../ask-openai.js';
 import fs from 'fs';
 import path from 'path';
 
+function selectFrames(frames: string[], count: number = 10): string[] {
+    if (frames.length <= count) return frames;
+
+    const step = frames.length / count;
+    const selected: string[] = [];
+    for (let i = 0; i < count; i++) {
+        selected.push(frames[Math.floor(i * step)]);
+    }
+    return selected;
+}
+
 export const analyzeReelsJob = new CronJob('*/5 * * * * *', async () => {
 
     const job = await prisma.job.findFirst({
@@ -22,7 +33,8 @@ export const analyzeReelsJob = new CronJob('*/5 * * * * *', async () => {
     console.log(`[analyzeReelsJob] Started for reels: ${JSON.stringify(reels)}`);
 
     try {
-        const videoPath = path.join(process.env.DATA_PATH, reels.filepath);
+        const dataPath = process.env.DATA_PATH ?? './data';
+        const videoPath = path.join(dataPath, reels.filepath ?? '');
         const framesDir = path.join(path.dirname(videoPath), 'frames');
 
         const allFrames = fs.readdirSync(framesDir)
@@ -32,7 +44,7 @@ export const analyzeReelsJob = new CronJob('*/5 * * * * *', async () => {
 
         const selectedFrames = selectFrames(allFrames, 10);
 
-        const result = await askOpenai(selectedFrames, job.postPrompt);
+        const result = await askOpenai(selectedFrames, job.postPrompt ?? '');
 
         console.log(`[analyzeReelsJob] Completed for reel ${reels.id}`);
         await prisma.reels.update({
@@ -40,11 +52,12 @@ export const analyzeReelsJob = new CronJob('*/5 * * * * *', async () => {
             data: { status: 'completed', attempts: 0, analyzeRawText: result.text }
         });
     } catch (error) {
-        console.error(`[analyzeReelsJob] Failed for reel ${reels.id}:`, error.message);
+        const err = error as Error;
+        console.error(`[analyzeReelsJob] Failed for reel ${reels.id}:`, err.message);
         if (reels.attempts >= MAX_ATTEMPTS) {
             await prisma.reels.update({
                 where: { id: reels.id },
-                data: { status: 'failed', reason: error.message }
+                data: { status: 'failed', reason: err.message }
             });
         } else {
             await prisma.reels.update({
@@ -77,15 +90,3 @@ export const analyzeReelsJob = new CronJob('*/5 * * * * *', async () => {
         }
     }
 });
-
-
-function selectFrames(frames, count = 10) {
-    if (frames.length <= count) return frames;
-
-    const step = frames.length / count;
-    const selected = [];
-    for (let i = 0; i < count; i++) {
-        selected.push(frames[Math.floor(i * step)]);
-    }
-    return selected;
-}

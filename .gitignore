@@ -7,3 +7,4 @@ result
 /src/generated/prisma
 prisma/dev.db
 data
+dist

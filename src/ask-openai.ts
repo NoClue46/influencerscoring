@@ -9,16 +9,23 @@ const client = new OpenAI({
 
 /**
  * Encodes a local image file to base64 data URI
- * @param {string} imagePath - Path to the image file
- * @returns {string} Base64 encoded data URI
+ * @param imagePath - Path to the image file
+ * @returns Base64 encoded data URI
  */
-function encodeImageToBase64(imagePath) {
+function encodeImageToBase64(imagePath: string): string {
     const imageBuffer = fs.readFileSync(imagePath);
     const base64Image = Buffer.from(imageBuffer).toString('base64');
     return `data:image/jpeg;base64,${base64Image}`;
 }
 
-export async function askOpenai(localFilePaths, prompt) {
+interface AskOpenaiResponse {
+    text: string | null;
+}
+
+export async function askOpenai(
+    localFilePaths: string[],
+    prompt: string
+): Promise<AskOpenaiResponse> {
     // Convert local file paths to base64 data URIs
     const base64Images = localFilePaths.map(filePath => encodeImageToBase64(filePath));
 
@@ -33,7 +40,7 @@ export async function askOpenai(localFilePaths, prompt) {
                         text: prompt
                     },
                     ...base64Images.map(dataUri => ({
-                        type: "image_url",
+                        type: "image_url" as const,
                         image_url: { url: dataUri }
                     }))
                 ]
@@ -42,6 +49,6 @@ export async function askOpenai(localFilePaths, prompt) {
     });
 
     return {
-        text: response.choices[0].message.content
+        text: response.choices[0]?.message?.content ?? null
     };
 }

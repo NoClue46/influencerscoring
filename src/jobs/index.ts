@@ -4,7 +4,7 @@ import { extractFramesJob } from './extractFrames.js';
 import { analyzeReelsJob } from './analyzeReels.js';
 import { processFullAnalyzeJob } from './processFullAnalyze.js';
 
-export function startCronJobs() {
+export function startCronJobs(): void {
     fetchReelsJob.start();
     downloadReelsJob.start();
     extractFramesJob.start();
@@ -13,7 +13,7 @@ export function startCronJobs() {
     console.log('Cron jobs started');
 }
 
-export function stopCronJobs() {
+export function stopCronJobs(): void {
     fetchReelsJob.stop();
     downloadReelsJob.stop();
     extractFramesJob.stop();

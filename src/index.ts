@@ -1,13 +1,14 @@
 import 'dotenv/config';
-import {Hono} from 'hono';
-import {serve} from '@hono/node-server';
-import {html} from "hono/html";
-import {prisma} from "./prisma.js";
-import {startCronJobs, stopCronJobs} from "./jobs/index.js";
+import { Hono } from 'hono';
+import { serve } from '@hono/node-server';
+import { html } from "hono/html";
+import { prisma } from "./prisma.js";
+import { startCronJobs, stopCronJobs } from "./jobs/index.js";
+import type { Context } from 'hono';
 
 const app = new Hono();
 
-const layout = (children) => html`
+const layout = (children: ReturnType<typeof html>) => html`
     <html lang="en">
     <head>
         <meta charset="utf-8" />
@@ -31,11 +32,11 @@ const layout = (children) => html`
     </html>
 `;
 
-app.post("/", async (c) => {
+app.post("/", async (c: Context) => {
     try {
         const body = await c.req.parseBody();
 
-        let username = body.username;
+        let username = body.username as string;
         if (username.startsWith('@')) {
             username = username.substring(1);
         }
@@ -43,9 +44,9 @@ app.post("/", async (c) => {
         await prisma.job.create({
             data: {
                 username: username,
-                prompt: body.prompt,
+                postPrompt: body.prompt as string,
                 allVideos: body.allVideos === 'on',
-                postNumber: parseInt(body.postNumber) || 10,
+                postNumber: parseInt(body.postNumber as string) || 10,
                 status: 'pending'
             }
         });
@@ -57,7 +58,7 @@ app.post("/", async (c) => {
     }
 })
 
-app.get("/", async (c) => {
+app.get("/", async (c: Context) => {
     const jobs = await prisma.job.findMany({
         orderBy: { createdAt: 'desc' }
     });
@@ -68,7 +69,7 @@ app.get("/", async (c) => {
                 <td><a href="/jobs/${job.id}">${job.username}</a></td>
             </tr>
         `;
-    }).join('') : html`<tr><td colspan="3" style="text-align: center;">No Jobs</td></tr>`;
+    }) : html`<tr><td colspan="3" style="text-align: center;">No Jobs</td></tr>`;
 
     return c.html(
         layout(
@@ -102,7 +103,7 @@ app.get("/", async (c) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${html([jobsHtml])}
+                                ${jobsHtml}
                             </tbody>
                         </table>
                     </figure>
@@ -112,7 +113,7 @@ app.get("/", async (c) => {
     )
 })
 
-app.get("/jobs/:id", async (c) => {
+app.get("/jobs/:id", async (c: Context) => {
     const id = c.req.param('id');
 
     const job = await prisma.job.findUnique({
@@ -136,7 +137,7 @@ app.get("/jobs/:id", async (c) => {
         <tr>
             <td><a href="${reel.url}" target="_blank">${reel.url}</a></td>
             <td>${reel.status}</td>
-            <td>${reel.reason || '-'}</td>
+            <td>${reel.reason ?? '-'}</td>
             <td>${reel.analyzeRawText ? html`
                 <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="document.getElementById('modal-${reel.id}').showModal()">Show</button>
                 <dialog id="modal-${reel.id}" style="max-width: 600px; padding: 1.5rem; border-radius: 8px;">
@@ -145,7 +146,7 @@ app.get("/jobs/:id", async (c) => {
                 </dialog>
             ` : '-'}</td>
         </tr>
-    `).join('') : html`<tr><td colspan="4" style="text-align: center;">No reels yet</td></tr>`;
+    `) : html`<tr><td colspan="4" style="text-align: center;">No reels yet</td></tr>`;
 
     return c.html(
         layout(
@@ -184,7 +185,7 @@ app.get("/jobs/:id", async (c) => {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${html([reelsHtml])}
+                                ${reelsHtml}
                             </tbody>
                         </table>
                     </figure>
@@ -205,7 +206,7 @@ process.on('SIGINT', () => {
 })
 process.on('SIGTERM', () => {
     stopCronJobs();
-    server.close((err) => {
+    server.close((err?: Error) => {
         if (err) {
             console.error(err)
             process.exit(1)

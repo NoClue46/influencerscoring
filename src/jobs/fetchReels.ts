@@ -21,11 +21,11 @@ export const fetchReelsJob = new CronJob('*/5 * * * * *', async () => {
                 startedAt: new Date()
             }
         });
-        
-        const reelUrls = await fetchAllReels(job.username, job.postNumber || 10);
+
+        const reelUrls = await fetchAllReels(job.username, job.postNumber ?? 10);
 
         for (const reelUrl of reelUrls) {
-            let videoUrl = null;
+            let videoUrl: string | null = null;
             try {
                 videoUrl = await fetchReelsUrl(reelUrl);
                 await prisma.reels.create({
@@ -37,14 +37,15 @@ export const fetchReelsJob = new CronJob('*/5 * * * * *', async () => {
                     }
                 });
             } catch (e) {
-                console.error(`Failed to fetch video URL for ${reelUrl}:`, e.message);
+                const error = e as Error;
+                console.error(`Failed to fetch video URL for ${reelUrl}:`, error.message);
                 await prisma.reels.create({
                     data: {
                         url: reelUrl,
                         videoUrl: null,
                         jobId: job.id,
                         status: 'failed',
-                        reason: e.message || "Failed to fetch reels url"
+                        reason: error.message || "Failed to fetch reels url"
                     }
                 });
             }
@@ -61,16 +62,17 @@ export const fetchReelsJob = new CronJob('*/5 * * * * *', async () => {
         console.log(`[fetchReelsJob] Completed for job ${job.id}, found ${reelUrls.length} reels`);
 
     } catch (error) {
-        console.error(`[fetchReelsJob] Failed for job ${job.id}:`, error.message);
+        const err = error as Error;
+        console.error(`[fetchReelsJob] Failed for job ${job.id}:`, err.message);
         if (job.attempts >= MAX_ATTEMPTS) {
             await prisma.job.update({
                 where: { id: job.id },
-                data: { status: 'failed', reason: error.message }
+                data: { status: 'failed', reason: err.message }
             });
         } else {
             await prisma.job.update({
                 where: { id: job.id },
-                data: { status: 'pending', reason: error.message, attempts: { increment: 1 } }
+                data: { status: 'pending', reason: err.message, attempts: { increment: 1 } }
             });
         }
     }
