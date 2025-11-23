@@ -4,6 +4,83 @@ import { MAX_ATTEMPTS } from '../constants.js';
 import fs from 'fs';
 import path from 'path';
 
+export const downloadReelsJob = new CronJob('*/5 * * * * *', async () => {
+
+    const job = await prisma.job.findFirst({
+        where: { status: "downloading_videos" }
+    })
+
+    if (!job) return;
+
+    const reels = await prisma.reels.findFirst({
+        where: { status: 'pending', jobId: job.id },
+    });
+
+    try {
+        if (!reels) {
+            return;
+        }
+
+        console.log(`[downloadReelsJob] Started for reels ${JSON.stringify(reels)}`);
+
+        await prisma.reels.update({
+            where: { id: reels.id },
+            data: { status: 'downloading_video' }
+        });
+
+        const destPath = path.join(process.env.DATA_PATH, job.username, reels.jobId, reels.id, 'input.mp4');
+        const result = await downloadVideo(reels.videoUrl, destPath);
+
+        console.info(`[downloadReelsJob] Download result for ${reels.id}: `, JSON.stringify(result))
+
+        if (result.skipped) {
+            console.log(`[downloadReelsJob] Skipped reel ${reels.id}: ${result.reason}`);
+            await prisma.reels.update({
+                where: { id: reels.id },
+                data: { status: 'completed', reason: result.reason }
+            });
+        } else {
+            await prisma.reels.update({
+                where: { id: reels.id },
+                data: {
+                    status: 'extracting_frames',
+                    filepath: path.join(job.username, job.id, reels.id, 'input.mp4'),
+                    attempts: 0
+                }
+            });
+        }
+    } catch (error) {
+        console.error(`[downloadReelsJob] Failed for reel ${reels.id}:`, error);
+        if (reels.attempts >= MAX_ATTEMPTS) {
+            await prisma.reels.update({
+                where: { id: reels.id },
+                data: { status: 'failed', reason: error.message }
+            });
+        } else {
+            await prisma.reels.update({
+                where: { id: reels.id },
+                data: { status: 'pending', attempts: { increment: 1 } }
+            });
+        }
+    }
+
+    // Проверить все ли reels обработаны
+    const remainingPending = await prisma.reels.count({
+        where: {
+            jobId: job.id,
+            status: 'pending'
+        }
+    });
+
+    if (remainingPending === 0) {
+        await prisma.job.update({
+            where: { id: job.id },
+            data: { status: 'extracting_frames' }
+        });
+        console.log(`[downloadReelsJob] Job ${job.id} -> extracting_frames`);
+    }
+});
+
 const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
 
 async function downloadVideo(url, destPath) {
@@ -27,55 +104,3 @@ async function downloadVideo(url, destPath) {
 
     return { skipped: false };
 }
-
-export const downloadReelsJob = new CronJob('*/5 * * * * *', async () => {
-    const reel = await prisma.reels.findFirst({
-        where: { status: 'pending', videoUrl: { not: null } },
-        include: { job: true }
-    });
-
-    if (!reel) return;
-
-    console.log(`[downloadReelsJob] Started for reel ${reel.id}`);
-
-    await prisma.reels.update({
-        where: { id: reel.id },
-        data: { status: 'downloading_video' }
-    });
-
-    try {
-        const destPath = path.join(process.env.DATA_PATH, reel.job.username, reel.jobId, reel.id, 'input.mp4');
-        const result = await downloadVideo(reel.videoUrl, destPath);
-
-        if (result.skipped) {
-            console.log(`[downloadReelsJob] Skipped reel ${reel.id}: ${result.reason}`);
-            await prisma.reels.update({
-                where: { id: reel.id },
-                data: { status: 'extracting_frames', reason: result.reason, attempts: 0 }
-            });
-        } else {
-            console.log(`[downloadReelsJob] Completed for reel ${reel.id}`);
-            await prisma.reels.update({
-                where: { id: reel.id },
-                data: {
-                    status: 'extracting_frames',
-                    filepath: path.join(reel.job.username, reel.jobId, reel.id, 'input.mp4'),
-                    attempts: 0
-                }
-            });
-        }
-    } catch (error) {
-        console.error(`[downloadReelsJob] Failed for reel ${reel.id}:`, error.message);
-        if (reel.attempts >= MAX_ATTEMPTS) {
-            await prisma.reels.update({
-                where: { id: reel.id },
-                data: { status: 'failed', reason: error.message }
-            });
-        } else {
-            await prisma.reels.update({
-                where: { id: reel.id },
-                data: { status: 'pending', attempts: { increment: 1 } }
-            });
-        }
-    }
-});

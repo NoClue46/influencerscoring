@@ -10,10 +10,11 @@ datasource db {
 model Job {
   id String @id @default(cuid())
   username String
-  prompt String
+  postPrompt String @map("post_prompt")
+  bloggerPrompt String? @map("blogger_prompt")
   allVideos Boolean @map("all_videos")
 
-  // pending -> fetching_reels -> downloading_videos -> extracting_frames -> analyzing -> completed/failed
+  // pending -> fetching_reels -> downloading_videos -> extracting_frames -> analyzing -> full-analyze(if allVideos) -> completed/failed
   status String @default("pending")
   reason String? // error reason
 

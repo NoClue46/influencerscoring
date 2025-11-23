@@ -156,9 +156,9 @@ app.get("/jobs/:id", async (c) => {
                     <h1>Job: @${job.username}</h1>
 
                     <article>
-                        <header><strong>Prompt</strong></header>
+                        <header><strong>Post Prompt</strong></header>
                         <div>
-                            <p>${job.prompt}</p>
+                            <p>${job.postPrompt}</p>
                         </div>
                         <table>
                             <tbody>

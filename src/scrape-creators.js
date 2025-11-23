@@ -31,9 +31,9 @@ export async function fetchAllReels(handle, count = 12) {
         }
 
         allItems.push(...json.items);
-        cursor = json.paging_info?.end_cursor;
+        cursor = json.paging_info?.max_id;
 
-        if (!cursor) break;
+        if (!cursor || !json.paging_info?.more_available) break;
     }
 
     return allItems.slice(0, count).map((item) => (`https://www.instagram.com/reel/${item.media.code}`));

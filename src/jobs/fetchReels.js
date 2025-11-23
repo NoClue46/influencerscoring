@@ -10,17 +10,18 @@ export const fetchReelsJob = new CronJob('*/5 * * * * *', async () => {
 
     if (!job) return;
 
-    console.log(`[fetchReelsJob] Started for job ${job.id}, user: ${job.username}`);
-
-    await prisma.job.update({
-        where: { id: job.id },
-        data: {
-            status: 'fetching_reels',
-            startedAt: new Date()
-        }
-    });
+    console.log(`[fetchReelsJob] Started for job ${JSON.stringify(job)}`);
 
     try {
+
+        await prisma.job.update({
+            where: { id: job.id },
+            data: {
+                status: 'fetching_reels',
+                startedAt: new Date()
+            }
+        });
+        
         const reelUrls = await fetchAllReels(job.username, job.postNumber || 10);
 
         for (const reelUrl of reelUrls) {
