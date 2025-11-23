@@ -45,6 +45,7 @@ app.post("/", async (c: Context) => {
             data: {
                 username: username,
                 postPrompt: body.prompt as string,
+                bloggerPrompt: body.bloggerPrompt as string | undefined,
                 allVideos: body.allVideos === 'on',
                 postNumber: parseInt(body.postNumber as string) || 10,
                 status: 'pending'
@@ -90,7 +91,14 @@ app.get("/", async (c: Context) => {
                                 <option value="20">20</option>
                             </select>
                         </label>
-                        <textarea name="prompt" required placeholder="Enter prompt..." rows="4"></textarea>
+                        <label>
+                            Post Prompt
+                            <textarea name="prompt" required placeholder="Enter post prompt..." rows="4"></textarea>
+                        </label>
+                        <label>
+                            Blogger Prompt
+                            <textarea name="bloggerPrompt" placeholder="Enter blogger prompt..." rows="4"></textarea>
+                        </label>
                         <button type="submit" @click="$el.setAttribute('aria-busy', 'true')">Create Job</button>
                     </form>
 
@@ -172,6 +180,24 @@ app.get("/jobs/:id", async (c: Context) => {
                             </tbody>
                         </table>
                     </article>
+
+                    ${job.bloggerPrompt ? html`
+                    <article>
+                        <header><strong>Blogger Prompt</strong></header>
+                        <p>${job.bloggerPrompt}</p>
+                    </article>
+                    ` : ''}
+
+                    ${job.analyzeRawText ? html`
+                    <article>
+                        <header><strong>Analyze Result</strong></header>
+                        <button onclick="document.getElementById('modal-job-analyze').showModal()">Show</button>
+                        <dialog id="modal-job-analyze">
+                            <pre>${job.analyzeRawText}</pre>
+                            <button onclick="this.closest('dialog').close()">Close</button>
+                        </dialog>
+                    </article>
+                    ` : ''}
 
                     <h2 style="margin-top: 2rem;">Reels (${job.reels.length})</h2>
                     <figure>

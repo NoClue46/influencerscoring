@@ -27,6 +27,8 @@ model Job {
 
   attempts Int @default(0)
 
+  analyzeRawText String? @map("analuze_raw_text")
+
   // Relations
   reels Reels[]
 

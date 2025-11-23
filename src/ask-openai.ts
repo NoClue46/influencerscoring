@@ -52,3 +52,26 @@ export async function askOpenai(
         text: response.choices[0]?.message?.content ?? null
     };
 }
+
+/**
+ * Sends text-only request to OpenAI
+ * @param prompt - Text prompt
+ * @returns Response text
+ */
+export async function askOpenaiText(
+    prompt: string
+): Promise<AskOpenaiResponse> {
+    const response = await client.chat.completions.create({
+        model: "gpt-5-mini",
+        messages: [
+            {
+                role: "user",
+                content: prompt
+            },
+        ],
+    });
+
+    return {
+        text: response.choices[0]?.message?.content ?? null
+    };
+}
