@@ -60,9 +60,7 @@ app.post("/", async (c: Context) => {
 })
 
 app.get("/", async (c: Context) => {
-    const jobs = await prisma.job.findMany({
-        orderBy: { createdAt: 'desc' }
-    });
+    const jobs = await prisma.job.findMany({});
 
     const jobsHtml = jobs.length > 0 ? jobs.map(job => {
         return html`
@@ -128,6 +126,7 @@ app.get("/jobs/:id", async (c: Context) => {
         where: { id },
         include: {
             reels: { orderBy: { id: 'asc' } },
+            posts: { orderBy: { id: 'asc' } },
         }
     });
 
@@ -143,8 +142,7 @@ app.get("/jobs/:id", async (c: Context) => {
 
     const reelsHtml = job.reels.length > 0 ? job.reels.map(reel => html`
         <tr>
-            <td><a href="${reel.url}" target="_blank">${reel.url}</a></td>
-            <td>${reel.status}</td>
+            <td><a href="${reel.reelsUrl}" target="_blank">${reel.reelsUrl}</a></td>
             <td>${reel.reason ?? '-'}</td>
             <td>${reel.analyzeRawText ? html`
                 <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="document.getElementById('modal-${reel.id}').showModal()">Show</button>
@@ -155,6 +153,20 @@ app.get("/jobs/:id", async (c: Context) => {
             ` : '-'}</td>
         </tr>
     `) : html`<tr><td colspan="4" style="text-align: center;">No reels yet</td></tr>`;
+
+    const postsHtml = job.posts.length > 0 ? job.posts.map(post => html`
+        <tr>
+            <td><a href="${post.postUrl}" target="_blank">${post.postUrl}</a></td>
+            <td>${post.reason ?? '-'}</td>
+            <td>${post.analyzeRawText ? html`
+                <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="document.getElementById('modal-post-${post.id}').showModal()">Show</button>
+                <dialog id="modal-post-${post.id}" style="max-width: 600px; padding: 1.5rem; border-radius: 8px;">
+                    <pre style="white-space: pre-wrap; margin: 0 0 1rem;">${post.analyzeRawText}</pre>
+                    <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="this.closest('dialog').close()">Close</button>
+                </dialog>
+            ` : '-'}</td>
+        </tr>
+    `) : html`<tr><td colspan="4" style="text-align: center;">No posts yet</td></tr>`;
 
     return c.html(
         layout(
@@ -205,13 +217,28 @@ app.get("/jobs/:id", async (c: Context) => {
                             <thead>
                                 <tr>
                                     <th>URL</th>
-                                    <th>Status</th>
                                     <th>Skip Reason</th>
                                     <th>Analysis</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${reelsHtml}
+                            </tbody>
+                        </table>
+                    </figure>
+
+                    <h2 style="margin-top: 2rem;">Posts (${job.posts.length})</h2>
+                    <figure>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>URL</th>
+                                    <th>Skip Reason</th>
+                                    <th>Analysis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${postsHtml}
                             </tbody>
                         </table>
                     </figure>

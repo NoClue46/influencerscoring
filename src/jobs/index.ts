@@ -1,22 +1,20 @@
-import { fetchReelsJob } from './fetchReels.js';
-import { downloadReelsJob } from './downloadReels.js';
-import { extractFramesJob } from './extractFrames.js';
-import { analyzeReelsJob } from './analyzeReels.js';
-import { processFullAnalyzeJob } from './processFullAnalyze.js';
+import { fetchJob } from './fetch.js';
+import { downloadJob } from './download.js';
+import { framingJob } from './framing.js';
+import { analyzeJob } from './analyze.js';
 
 export function startCronJobs(): void {
-    fetchReelsJob.start();
-    downloadReelsJob.start();
-    extractFramesJob.start();
-    analyzeReelsJob.start();
-    processFullAnalyzeJob.start();
     console.log('Cron jobs started');
+
+    fetchJob.start()
+    downloadJob.start()
+    framingJob.start()
+    analyzeJob.start()
 }
 
 export function stopCronJobs(): void {
-    fetchReelsJob.stop();
-    downloadReelsJob.stop();
-    extractFramesJob.stop();
-    analyzeReelsJob.stop();
-    processFullAnalyzeJob.stop();
+    fetchJob.stop()
+    downloadJob.stop()
+    framingJob.stop()
+    analyzeJob.stop()
 }

@@ -14,16 +14,12 @@ model Job {
   bloggerPrompt String? @map("blogger_prompt")
   allVideos Boolean @map("all_videos")
 
-  // pending -> fetching_reels -> downloading_videos -> extracting_frames -> analyzing -> full-analyze(if allVideos) -> completed/failed
+  // pending -> fetching_started, fetching_finished -> downloading_started, downloading_finished,
+  // framing_started, framing_finished -> analyzing_started, analyzing_finished -> completed, failed
   status String @default("pending")
   reason String? // error reason
 
   postNumber Int @default(10) @map("post_number")
-
-  // Timestamps
-  createdAt DateTime @default(now()) @map("created_at")
-  startedAt DateTime? @map("started_at")
-  completedAt DateTime? @map("completed_at")
 
   attempts Int @default(0)
 
@@ -31,23 +27,41 @@ model Job {
 
   // Relations
   reels Reels[]
+  posts Post[]
 
   @@map("jobs")
 }
 
+model Post {
+  id String @id @default(cuid())
+
+  postUrl String @map("post_url")
+  filepath String? @map("file_path")
+  downloadUrl String
+
+  isVideo Boolean @default(false) @map("is_video")
+
+  reason String? @map("reason")
+
+  jobId String @map("job_id")
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  analyzeRawText String? @map("analuze_raw_text")
+
+  @@map("posts")
+}
+
 model Reels {
   id String @id @default(cuid())
-  url String
+
+  reelsUrl String @map("reels_url")
+  downloadUrl String? @map("video_url")
+
   filepath String? @map("file_path")
-  videoUrl String? @map("video_url")
+
+  reason String? @map("reason")
+
   jobId String @map("job_id")
-
-  attempts Int @default(0)
-
-  // pending -> downloading_video -> extracting_frames -> analyzing -> completed/failed
-  status String @default("pending")
-  reason String? @map("skip_reason")
-
   job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
   analyzeRawText String? @map("analuze_raw_text")
