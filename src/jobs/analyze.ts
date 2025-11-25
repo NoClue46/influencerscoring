@@ -2,7 +2,7 @@ import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS } from '../constants.js';
 import { askOpenai, askOpenaiText } from '../ask-openai.js';
-import { selectFrames } from '../utils/selectFrames.js';
+import { selectFrames } from '../utils/select-frames.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -21,9 +21,10 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
             data: { status: 'analyzing_started' }
         });
 
-        const [reels, posts] = await Promise.all([
+        const [reels, posts, stories] = await Promise.all([
             prisma.reels.findMany({ where: { jobId: job.id } }),
-            prisma.post.findMany({ where: { jobId: job.id } })
+            prisma.post.findMany({ where: { jobId: job.id } }),
+            prisma.story.findMany({ where: { jobId: job.id } })
         ])
 
         const errors: string[] = [];
@@ -77,6 +78,57 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
             }
         }
 
+        // Analyze video stories
+        const videoStories = stories.filter(s => s.isVideo);
+        for (const story of videoStories) {
+            try {
+                console.log(`[analyze] Processing video story ${story.id}`);
+
+                const framesDir = path.join(process.env.DATA_PATH!, job.username, story.id, 'frames');
+
+                const allFrames = fs.readdirSync(framesDir)
+                    .filter(f => f.endsWith('.jpg'))
+                    .sort()
+                    .map(f => path.join(framesDir, f));
+
+                const selectedFrames = selectFrames(allFrames, 10);
+                const result = await askOpenai(selectedFrames, job.postPrompt);
+
+                await prisma.story.update({
+                    where: { id: story.id },
+                    data: { analyzeRawText: result.text }
+                });
+
+                console.log(`[analyze] Completed video story ${story.id}`);
+            } catch (error) {
+                const err = error as Error;
+                console.error(`[analyze] Failed for video story ${story.id}:`, err.message);
+                errors.push(`Video story ${story.id}: ${err.message}`);
+            }
+        }
+
+        // Analyze image stories
+        const imageStories = stories.filter(s => !s.isVideo);
+        for (const story of imageStories) {
+            try {
+                console.log(`[analyze] Processing image story ${story.id}`);
+
+                const imagePath = path.join(process.env.DATA_PATH!, job.username, story.id, 'story.jpg');
+                const result = await askOpenai([imagePath], job.postPrompt);
+
+                await prisma.story.update({
+                    where: { id: story.id },
+                    data: { analyzeRawText: result.text }
+                });
+
+                console.log(`[analyze] Completed image story ${story.id}`);
+            } catch (error) {
+                const err = error as Error;
+                console.error(`[analyze] Failed for image story ${story.id}:`, err.message);
+                errors.push(`Image story ${story.id}: ${err.message}`);
+            }
+        }
+
         if (errors.length > 0) {
             throw new Error(`Analysis completed with errors: ${errors.join('; ')}`);
         }
@@ -94,7 +146,7 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
         // Perform full analysis aggregation
         console.log(`[analyze] Starting full analysis aggregation for job ${job.id}`);
 
-        const [analyzedReels, analyzedPosts] = await Promise.all([
+        const [analyzedReels, analyzedPosts, analyzedStories] = await Promise.all([
             prisma.reels.findMany({
                 where: {
                     jobId: job.id,
@@ -108,11 +160,18 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
                     analyzeRawText: { not: null }
                 },
                 orderBy: { id: 'asc' }
+            }),
+            prisma.story.findMany({
+                where: {
+                    jobId: job.id,
+                    analyzeRawText: { not: null }
+                },
+                orderBy: { id: 'asc' }
             })
         ]);
 
-        const allAnalyzed = [...analyzedReels, ...analyzedPosts];
-        console.log(`[analyze] Found ${allAnalyzed.length} analyzed items (${analyzedReels.length} reels, ${analyzedPosts.length} posts)`);
+        const allAnalyzed = [...analyzedReels, ...analyzedPosts, ...analyzedStories];
+        console.log(`[analyze] Found ${allAnalyzed.length} analyzed items (${analyzedReels.length} reels, ${analyzedPosts.length} posts, ${analyzedStories.length} stories)`);
 
         // Build aggregated prompt
         const itemsSection = allAnalyzed

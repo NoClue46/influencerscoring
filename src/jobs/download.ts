@@ -19,9 +19,10 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
             data: { status: 'downloading_started' }
         });
 
-        const [reels, posts] = await Promise.all([
+        const [reels, posts, stories] = await Promise.all([
             prisma.reels.findMany({ where: { jobId: job.id } }),
-            prisma.post.findMany({ where: { jobId: job.id } })
+            prisma.post.findMany({ where: { jobId: job.id } }),
+            prisma.story.findMany({ where: { jobId: job.id } })
         ])
 
 
@@ -78,6 +79,37 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
                     if (it === 4) {
                         await prisma.post.update({
                             where: { id: post.id },
+                            data: { reason: "Failed to download" }
+                        })
+                    }
+                }
+            }
+        }
+
+        for (const story of stories) {
+            if (!story.downloadUrl) {
+                console.warn(`[download] Download url not found for story: ${story.id}`)
+                continue;
+            }
+
+            const extension = story.isVideo ? "mp4" : "jpg"
+            const dest = path.join(process.env.DATA_PATH!, job.username, story.id, `story.${extension}`)
+
+            for (let it = 0; it < 5; it++) {
+                try {
+                    const downloadResult = await download(story.downloadUrl, dest);
+
+                    await prisma.story.update({
+                        where: { id: story.id },
+                        data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
+                    })
+
+                    break;
+                } catch (error) {
+                    console.error(`[download] Failed to download story ${story.id}: `, error);
+                    if (it === 4) {
+                        await prisma.story.update({
+                            where: { id: story.id },
                             data: { reason: "Failed to download" }
                         })
                     }

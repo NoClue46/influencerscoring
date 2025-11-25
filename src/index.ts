@@ -127,6 +127,7 @@ app.get("/jobs/:id", async (c: Context) => {
         include: {
             reels: { orderBy: { id: 'asc' } },
             posts: { orderBy: { id: 'asc' } },
+            stories: { orderBy: { id: 'asc' } },
         }
     });
 
@@ -167,6 +168,20 @@ app.get("/jobs/:id", async (c: Context) => {
             ` : '-'}</td>
         </tr>
     `) : html`<tr><td colspan="4" style="text-align: center;">No posts yet</td></tr>`;
+
+    const storiesHtml = job.stories.length > 0 ? job.stories.map(story => html`
+        <tr>
+            <td><a href="${story.downloadUrl}" target="_blank">${story.storyId}</a></td>
+            <td>${story.reason ?? '-'}</td>
+            <td>${story.analyzeRawText ? html`
+                <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="document.getElementById('modal-story-${story.id}').showModal()">Show</button>
+                <dialog id="modal-story-${story.id}" style="max-width: 600px; padding: 1.5rem; border-radius: 8px;">
+                    <pre style="white-space: pre-wrap; margin: 0 0 1rem;">${story.analyzeRawText}</pre>
+                    <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="this.closest('dialog').close()">Close</button>
+                </dialog>
+            ` : '-'}</td>
+        </tr>
+    `) : html`<tr><td colspan="4" style="text-align: center;">No stories yet</td></tr>`;
 
     return c.html(
         layout(
@@ -239,6 +254,22 @@ app.get("/jobs/:id", async (c: Context) => {
                             </thead>
                             <tbody>
                                 ${postsHtml}
+                            </tbody>
+                        </table>
+                    </figure>
+
+                    <h2 style="margin-top: 2rem;">Stories (${job.stories.length})</h2>
+                    <figure>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>URL</th>
+                                    <th>Skip Reason</th>
+                                    <th>Analysis</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${storiesHtml}
                             </tbody>
                         </table>
                     </figure>

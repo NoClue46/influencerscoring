@@ -20,17 +20,38 @@ export const framingJob = new CronJob('*/5 * * * * *', async () => {
             data: { status: 'framing_started' }
         });
 
-        const reels = await prisma.reels.findMany({
-            where: {
-                jobId: job.id,
-                filepath: { not: null }
-            }
-        })
+        const [reels, stories] = await Promise.all([
+            prisma.reels.findMany({
+                where: {
+                    jobId: job.id,
+                    filepath: { not: null }
+                }
+            }),
+            prisma.story.findMany({
+                where: {
+                    jobId: job.id,
+                    isVideo: true,
+                    filepath: { not: null }
+                }
+            })
+        ])
 
-        for (const reel of reels) {
-            const videoPath = path.join(process.env.DATA_PATH!, job.username, reel.id, "reels.mp4");
-            const framesDir = path.join(path.dirname(videoPath), 'frames');
-            await extractFrames(videoPath, framesDir);
+        if (reels.length > 0) {
+            for (const reel of reels) {
+                const videoPath = path.join(process.env.DATA_PATH!, job.username, reel.id, "reels.mp4");
+                const framesDir = path.join(path.dirname(videoPath), 'frames');
+                await extractFrames(videoPath, framesDir);
+            }
+            console.log(`[framing] Extracted frames for ${reels.length} reels`);
+        }
+
+        if (stories.length > 0) {
+            for (const story of stories) {
+                const videoPath = path.join(process.env.DATA_PATH!, job.username, story.id, "story.mp4");
+                const framesDir = path.join(path.dirname(videoPath), 'frames');
+                await extractFrames(videoPath, framesDir);
+            }
+            console.log(`[framing] Extracted frames for ${stories.length} video stories`);
         }
 
         await prisma.job.update({

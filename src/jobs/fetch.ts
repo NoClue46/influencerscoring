@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS } from '../constants.js';
-import { fetchPosts, fetchReels } from '../scrape-creators.js';
+import { fetchPosts, fetchReels, fetchStories } from '../scrape-creators.js';
 
 export const fetchJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
@@ -18,9 +18,10 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
             data: { status: 'fetching_started' }
         });
 
-        const [reels, posts] = await Promise.all([
+        const [reels, posts, stories] = await Promise.all([
             fetchReels(job.username, job.postNumber),
-            fetchPosts(job.username, job.postNumber)
+            fetchPosts(job.username, job.postNumber),
+            fetchStories(job.username, job.postNumber)
         ])
 
         await Promise.all([
@@ -40,6 +41,16 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
                         jobId: job.id,
                         reelsUrl: r.url,
                         downloadUrl: r.downloadUrl
+                    }))
+                ]
+            }),
+            prisma.story.createMany({
+                data: [
+                    ...stories.map((s) => ({
+                        jobId: job.id,
+                        storyId: s.id,
+                        downloadUrl: s.downloadUrl,
+                        isVideo: s.isVideo
                     }))
                 ]
             })

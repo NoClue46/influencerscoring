@@ -28,6 +28,7 @@ model Job {
   // Relations
   reels Reels[]
   posts Post[]
+  stories Story[]
 
   @@map("jobs")
 }
@@ -67,4 +68,22 @@ model Reels {
   analyzeRawText String? @map("analuze_raw_text")
 
   @@map("reels_urls")
+}
+
+model Story {
+  id String @id @default(cuid())
+
+  storyId String @map("story_id")
+  downloadUrl String @map("download_url")
+  filepath String?
+  reason String?
+
+  isVideo Boolean @default(false) @map("is_video")
+
+  jobId String @map("job_id")
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  analyzeRawText String? @map("analuze_raw_text")
+
+  @@map("stories")
 }
