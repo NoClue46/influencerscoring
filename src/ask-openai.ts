@@ -75,3 +75,16 @@ export async function askOpenaiText(
         text: response.choices[0]?.message?.content ?? null
     };
 }
+
+/**
+ * Transcribes audio file using OpenAI Whisper
+ * @param audioPath - Path to audio file (mp3, mp4, etc)
+ * @returns Transcribed text
+ */
+export async function transcribeAudio(audioPath: string): Promise<string> {
+    const transcription = await client.audio.transcriptions.create({
+        file: fs.createReadStream(audioPath),
+        model: "whisper-1",
+    });
+    return transcription.text;
+}

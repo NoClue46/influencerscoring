@@ -8,7 +8,7 @@ import path from 'path';
 
 export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
-        where: { status: 'framing_finished' }
+        where: { status: 'speech_to_text_finished' }
     });
 
     if (!job) return;
@@ -211,7 +211,7 @@ ${job.bloggerPrompt || 'Analyze posts above'}`;
         } else {
             await prisma.job.update({
                 where: { id: job.id },
-                data: { status: 'framing_finished', reason: err.message, attempts: { increment: 1 } }
+                data: { status: 'speech_to_text_finished', reason: err.message, attempts: { increment: 1 } }
             });
         }
     }

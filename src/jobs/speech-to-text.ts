@@ -1,0 +1,98 @@
+import { CronJob } from 'cron';
+import { prisma } from '../prisma.js';
+import { MAX_ATTEMPTS } from '../constants.js';
+import { promisify } from 'util';
+import { exec } from 'child_process';
+import path from 'path';
+import { transcribeAudio } from '../ask-openai.js';
+
+export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
+    const job = await prisma.job.findFirst({
+        where: { status: 'framing_finished' }
+    });
+    if (!job) return;
+
+    console.log(`[speechToText] Started for job ${JSON.stringify(job)}`);
+
+    try {
+        await prisma.job.update({
+            where: { id: job.id },
+            data: { status: 'speech_to_text_started' }
+        });
+
+        const [reels, stories] = await Promise.all([
+            prisma.reels.findMany({ where: { jobId: job.id } }),
+            prisma.story.findMany({ where: { jobId: job.id, isVideo: true } })
+        ]);
+
+        for (const reel of reels) {
+            const videoPath = path.join(process.env.DATA_PATH!, job.username, reel.id, "reels.mp4");
+            const audioPath = path.join(process.env.DATA_PATH!, job.username, reel.id, "audio.mp3");
+            await extractAudio(videoPath, audioPath);
+
+            const transcription = await withRetry(() => transcribeAudio(audioPath));
+            await prisma.reels.update({
+                where: { id: reel.id },
+                data: { transcription }
+            });
+        }
+        console.log(`[speechToText] Transcribed ${reels.length} reels`);
+
+        for (const story of stories) {
+            const videoPath = path.join(process.env.DATA_PATH!, job.username, story.id, "story.mp4");
+            const audioPath = path.join(process.env.DATA_PATH!, job.username, story.id, "audio.mp3");
+            await extractAudio(videoPath, audioPath);
+
+            const transcription = await withRetry(() => transcribeAudio(audioPath));
+            await prisma.story.update({
+                where: { id: story.id },
+                data: { transcription }
+            });
+        }
+        console.log(`[speechToText] Transcribed ${stories.length} stories`);
+
+        await prisma.job.update({
+            where: { id: job.id },
+            data: { status: 'speech_to_text_finished' }
+        });
+
+        console.log(`[speechToText] Completed for job ${job.id}`);
+    } catch (error) {
+        const err = error as Error;
+        console.error(`[speechToText] Failed for job ${job.id}:`, err.message);
+        if (job.attempts >= MAX_ATTEMPTS) {
+            await prisma.job.update({
+                where: { id: job.id },
+                data: { status: 'failed', reason: err.message }
+            });
+        } else {
+            await prisma.job.update({
+                where: { id: job.id },
+                data: { status: 'framing_finished', reason: err.message, attempts: { increment: 1 } }
+            });
+        }
+    }
+});
+
+const execAsync = promisify(exec);
+
+async function extractAudio(videoPath: string, audioPath: string): Promise<void> {
+    await execAsync(`ffmpeg -i "${videoPath}" -vn -acodec mp3 "${audioPath}"`);
+}
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+    let lastError: Error;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error as Error;
+            console.log(`[speechToText] Attempt ${attempt}/${maxRetries} failed: ${lastError.message}`);
+            if (attempt === maxRetries) throw lastError;
+            await sleep(1000);
+        }
+    }
+    throw lastError!;
+}

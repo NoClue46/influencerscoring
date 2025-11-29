@@ -15,7 +15,8 @@ model Job {
   allVideos Boolean @map("all_videos")
 
   // pending -> fetching_started, fetching_finished -> downloading_started, downloading_finished,
-  // framing_started, framing_finished -> analyzing_started, analyzing_finished -> completed, failed
+  // framing_started, framing_finished -> speech_to_text_started, speech_to_text_finished ->
+  // analyzing_started, analyzing_finished -> completed, failed
   status String @default("pending")
   reason String? // error reason
 
@@ -62,6 +63,8 @@ model Reels {
 
   reason String? @map("reason")
 
+  transcription String?
+
   jobId String @map("job_id")
   job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
 
@@ -77,6 +80,8 @@ model Story {
   downloadUrl String @map("download_url")
   filepath String?
   reason String?
+
+  transcription String?
 
   isVideo Boolean @default(false) @map("is_video")
 
