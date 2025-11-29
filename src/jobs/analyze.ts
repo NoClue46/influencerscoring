@@ -42,7 +42,10 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
                     .map(f => path.join(framesDir, f));
 
                 const selectedFrames = selectFrames(allFrames, 10);
-                const result = await askOpenai(selectedFrames, job.postPrompt);
+                const promptWithTranscription = reel.transcription
+                    ? `${job.postPrompt}\n\nTranscription:\n${reel.transcription}`
+                    : job.postPrompt;
+                const result = await askOpenai(selectedFrames, promptWithTranscription);
 
                 await prisma.reels.update({
                     where: { id: reel.id },
@@ -92,7 +95,10 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
                     .map(f => path.join(framesDir, f));
 
                 const selectedFrames = selectFrames(allFrames, 10);
-                const result = await askOpenai(selectedFrames, job.postPrompt);
+                const promptWithTranscription = story.transcription
+                    ? `${job.postPrompt}\n\nTranscription:\n${story.transcription}`
+                    : job.postPrompt;
+                const result = await askOpenai(selectedFrames, promptWithTranscription);
 
                 await prisma.story.update({
                     where: { id: story.id },
