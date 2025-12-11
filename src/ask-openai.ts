@@ -88,3 +88,17 @@ export async function transcribeAudio(audioPath: string): Promise<string> {
     });
     return transcription.text;
 }
+
+export async function askOpenaiWithWebSearch(
+    prompt: string
+): Promise<AskOpenaiResponse> {
+    const response = await client.responses.create({
+        model: "gpt-5",
+        tools: [
+            { type: "web_search" }
+        ],
+        input: prompt,
+    });
+
+    return { text: response.output_text ?? null };
+}

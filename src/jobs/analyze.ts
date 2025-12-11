@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS } from '../constants.js';
-import { askOpenai, askOpenaiText } from '../ask-openai.js';
+import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT } from '../constants.js';
+import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.js';
 import { selectFrames } from '../utils/select-frames.js';
 import fs from 'fs';
 import path from 'path';
@@ -197,10 +197,16 @@ ${job.bloggerPrompt || 'Analyze posts above'}`;
             throw new Error('Empty response from OpenAI in full analysis');
         }
 
+        // Nickname analysis via web search
+        console.log(`[analyze] Starting nickname analysis for job ${job.id}`);
+        const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(job.username);
+        const nicknameResult = await askOpenaiWithWebSearch(nicknamePrompt);
+
         await prisma.job.update({
             where: { id: job.id },
             data: {
                 analyzeRawText: response.text,
+                nicknameAnalyseRawText: nicknameResult.text,
                 status: 'completed'
             }
         });
