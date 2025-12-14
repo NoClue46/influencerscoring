@@ -125,8 +125,8 @@ app.get("/jobs/:id", async (c: Context) => {
     const job = await prisma.job.findUnique({
         where: { id },
         include: {
-            reels: { orderBy: { id: 'asc' } },
-            posts: { orderBy: { id: 'asc' } },
+            reels: { orderBy: { id: 'asc' }, include: { comments: true } },
+            posts: { orderBy: { id: 'asc' }, include: { comments: true } },
             stories: { orderBy: { id: 'asc' } },
         }
     });
@@ -143,31 +143,55 @@ app.get("/jobs/:id", async (c: Context) => {
 
     const reelsHtml = job.reels.length > 0 ? job.reels.map(reel => html`
         <tr>
-            <td><a href="${reel.reelsUrl}" target="_blank">${reel.reelsUrl}</a></td>
-            <td>${reel.reason ?? '-'}</td>
-            <td>${reel.analyzeRawText ? html`
-                <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="document.getElementById('modal-${reel.id}').showModal()">Show</button>
-                <dialog id="modal-${reel.id}" style="max-width: 600px; padding: 1.5rem; border-radius: 8px;">
-                    <pre style="white-space: pre-wrap; margin: 0 0 1rem;">${reel.analyzeRawText}</pre>
-                    <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="this.closest('dialog').close()">Close</button>
-                </dialog>
-            ` : '-'}</td>
+            <td colspan="3">
+                <details>
+                    <summary style="cursor: pointer; display: flex; gap: 1rem; padding: 0.5rem 0;">
+                        <span style="flex: 2;"><a href="${reel.reelsUrl}" target="_blank" onclick="event.stopPropagation();">${reel.reelsUrl}</a></span>
+                        <span style="flex: 1;">${reel.reason ?? '-'}</span>
+                    </summary>
+                    <div style="padding: 1rem; background: var(--pico-card-background-color); margin-top: 0.5rem; border-radius: 4px;">
+                        ${reel.analyzeRawText ? html`
+                            <h4 style="margin-top: 0;">Analysis</h4>
+                            <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${reel.analyzeRawText}</pre>
+                        ` : ''}
+                        <h4>Comments (${reel.comments.length})</h4>
+                        ${reel.comments.length > 0 ? reel.comments.map(c => html`
+                            <article style="margin-bottom: 0.5rem; padding: 0.5rem; border-left: 2px solid var(--pico-primary);">
+                                <p style="margin: 0;"><b>Text:</b> ${c.text}</p>
+                                ${c.analyseRawText ? html`<p style="margin: 0.25rem 0 0;"><b>Analysis:</b> ${c.analyseRawText}</p>` : ''}
+                            </article>
+                        `) : html`<p>No comments</p>`}
+                    </div>
+                </details>
+            </td>
         </tr>
-    `) : html`<tr><td colspan="4" style="text-align: center;">No reels yet</td></tr>`;
+    `) : html`<tr><td colspan="3" style="text-align: center;">No reels yet</td></tr>`;
 
     const postsHtml = job.posts.length > 0 ? job.posts.map(post => html`
         <tr>
-            <td><a href="${post.postUrl}" target="_blank">${post.postUrl}</a></td>
-            <td>${post.reason ?? '-'}</td>
-            <td>${post.analyzeRawText ? html`
-                <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="document.getElementById('modal-post-${post.id}').showModal()">Show</button>
-                <dialog id="modal-post-${post.id}" style="max-width: 600px; padding: 1.5rem; border-radius: 8px;">
-                    <pre style="white-space: pre-wrap; margin: 0 0 1rem;">${post.analyzeRawText}</pre>
-                    <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="this.closest('dialog').close()">Close</button>
-                </dialog>
-            ` : '-'}</td>
+            <td colspan="3">
+                <details>
+                    <summary style="cursor: pointer; display: flex; gap: 1rem; padding: 0.5rem 0;">
+                        <span style="flex: 2;"><a href="${post.postUrl}" target="_blank" onclick="event.stopPropagation();">${post.postUrl}</a></span>
+                        <span style="flex: 1;">${post.reason ?? '-'}</span>
+                    </summary>
+                    <div style="padding: 1rem; background: var(--pico-card-background-color); margin-top: 0.5rem; border-radius: 4px;">
+                        ${post.analyzeRawText ? html`
+                            <h4 style="margin-top: 0;">Analysis</h4>
+                            <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${post.analyzeRawText}</pre>
+                        ` : ''}
+                        <h4>Comments (${post.comments.length})</h4>
+                        ${post.comments.length > 0 ? post.comments.map(c => html`
+                            <article style="margin-bottom: 0.5rem; padding: 0.5rem; border-left: 2px solid var(--pico-primary);">
+                                <p style="margin: 0;"><b>Text:</b> ${c.text}</p>
+                                ${c.analyseRawText ? html`<p style="margin: 0.25rem 0 0;"><b>Analysis:</b> ${c.analyseRawText}</p>` : ''}
+                            </article>
+                        `) : html`<p>No comments</p>`}
+                    </div>
+                </details>
+            </td>
         </tr>
-    `) : html`<tr><td colspan="4" style="text-align: center;">No posts yet</td></tr>`;
+    `) : html`<tr><td colspan="3" style="text-align: center;">No posts yet</td></tr>`;
 
     const storiesHtml = job.stories.length > 0 ? job.stories.map(story => html`
         <tr>

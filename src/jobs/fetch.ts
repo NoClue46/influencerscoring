@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS } from '../constants.js';
-import { fetchPosts, fetchReels, fetchStories } from '../scrape-creators.js';
+import { fetchPosts, fetchReels, fetchStories, fetchComments } from '../scrape-creators.js';
 
 export const fetchJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
@@ -31,7 +31,9 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
                         jobId: job.id,
                         postUrl: p.url,
                         downloadUrl: p.downloadUrl,
-                        isVideo: p.isVideo
+                        isVideo: p.isVideo,
+                        commentCount: p.commentCount,
+                        commentRate: p.isVideo && p.viewCount > 0 ? p.commentCount / p.viewCount : 0
                     }))
                 ]
             }),
@@ -40,7 +42,9 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
                     ...reels.map((r) => ({
                         jobId: job.id,
                         reelsUrl: r.url,
-                        downloadUrl: r.downloadUrl
+                        downloadUrl: r.downloadUrl,
+                        commentCount: r.commentCount,
+                        commentRate: r.viewCount > 0 ? r.commentCount / r.viewCount : 0
                     }))
                 ]
             }),
@@ -55,6 +59,38 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
                 ]
             })
         ])
+
+        // Fetch and save comments for posts and reels
+        const [createdPosts, createdReels] = await Promise.all([
+            prisma.post.findMany({ where: { jobId: job.id } }),
+            prisma.reels.findMany({ where: { jobId: job.id } })
+        ]);
+
+        for (const post of createdPosts) {
+            const comments = await fetchComments(post.postUrl);
+            console.log(`[fetch] Post ${post.postUrl}: fetched ${comments.length} comments`);
+            if (comments.length > 0) {
+                await prisma.comment.createMany({
+                    data: comments.map(c => ({
+                        postId: post.id,
+                        text: c.text
+                    }))
+                });
+            }
+        }
+
+        for (const reel of createdReels) {
+            const comments = await fetchComments(reel.reelsUrl);
+            console.log(`[fetch] Reel ${reel.reelsUrl}: fetched ${comments.length} comments`);
+            if (comments.length > 0) {
+                await prisma.comment.createMany({
+                    data: comments.map(c => ({
+                        reelsId: reel.id,
+                        text: c.text
+                    }))
+                });
+            }
+        }
 
         await prisma.job.update({
             where: { id: job.id },

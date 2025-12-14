@@ -20,8 +20,36 @@ interface PostResponse {
     data?: {
         xdt_shortcode_media?: {
             video_url?: string;
+            display_url?: string;
+            is_video?: boolean;
+            video_view_count?: number;
+            edge_media_to_parent_comment?: {
+                count: number;
+            };
         };
     };
+}
+
+interface CommentUser {
+    is_verified: boolean;
+    id: string;
+    pk: string;
+    username: string;
+    profile_pic_url: string;
+}
+
+export interface Comment {
+    id: string;
+    text: string;
+    created_at: string;
+    user: CommentUser;
+}
+
+interface CommentsResponse {
+    success: boolean;
+    num_comments_grabbed: number;
+    credit_cost: number;
+    comments: Comment[];
 }
 
 export async function fetchReels(handle: string, count: number = 12) {
@@ -66,6 +94,8 @@ export async function fetchReels(handle: string, count: number = 12) {
         let result: {
             url: string;
             downloadUrl: string;
+            commentCount: number;
+            viewCount: number;
         }[] = [];
 
         // 2. Fetch every reel detailed info
@@ -92,6 +122,8 @@ export async function fetchReels(handle: string, count: number = 12) {
                 result.push({
                     url: reelUrl,
                     downloadUrl: json.data.xdt_shortcode_media.video_url,
+                    commentCount: json.data.xdt_shortcode_media.edge_media_to_parent_comment?.count ?? 0,
+                    viewCount: json.data.xdt_shortcode_media.video_view_count ?? 0,
                 });
             }
         }
@@ -145,10 +177,12 @@ export async function fetchPosts(handle: string, count: number = 12) {
 
         urls = urls.slice(0, count)
 
-        let result: { 
-            url: string; 
-            downloadUrl: string; 
+        let result: {
+            url: string;
+            downloadUrl: string;
             isVideo: boolean;
+            commentCount: number;
+            viewCount: number;
         }[] = [];
 
         // 2. Fetch every post detailed info
@@ -169,25 +203,22 @@ export async function fetchPosts(handle: string, count: number = 12) {
                 throw new Error(`Failed to fetch reels ${response.statusText}`);
             }
 
-            const json = await response.json() as {
-                data: {
-                    xdt_shortcode_media: {
-                        display_url: string;
-                        is_video: boolean;
-                    }
-                }
-            }
+            const json = await response.json() as PostResponse;
 
             // todo: возможно в будущем нужно убрать
-            if (json.data.xdt_shortcode_media.is_video) {
+            if (json.data?.xdt_shortcode_media?.is_video) {
                 continue;
             }
 
-            result.push({
-                url: currentUrl,
-                downloadUrl: json.data.xdt_shortcode_media.display_url,
-                isVideo: json.data.xdt_shortcode_media.is_video
-            });
+            if (json.data?.xdt_shortcode_media?.display_url) {
+                result.push({
+                    url: currentUrl,
+                    downloadUrl: json.data.xdt_shortcode_media.display_url,
+                    isVideo: json.data.xdt_shortcode_media.is_video ?? false,
+                    commentCount: json.data.xdt_shortcode_media.edge_media_to_parent_comment?.count ?? 0,
+                    viewCount: json.data.xdt_shortcode_media.video_view_count ?? 0,
+                });
+            }
         }
 
         return result;
@@ -374,4 +405,38 @@ async function fetchHighlightDetail(id: string): Promise<{
     }
 
     return result;
+}
+
+export async function fetchComments(postUrl: string, amount: number = 15): Promise<Comment[]> {
+    try {
+        const url = new URL(BASE_URL);
+        url.pathname = `/v1/instagram/post/comments`;
+        url.searchParams.set('url', postUrl);
+        if (amount !== 15) {
+            url.searchParams.set('amount', amount.toString());
+        }
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "x-api-key": process.env.SCRAPE_CREATORS ?? "",
+            }
+        });
+
+        if (!response.ok) {
+            console.error("Response body: ", await response.json());
+            throw new Error(`Failed to fetch comments ${response.statusText}`);
+        }
+
+        const json = await response.json() as CommentsResponse;
+
+        if (!json.success || !json.comments) {
+            return [];
+        }
+
+        return json.comments;
+    } catch (error) {
+        console.error(`failed to fetch comments for ${postUrl}: `, error);
+        return [];
+    }
 }

@@ -38,18 +38,16 @@ export const framingJob = new CronJob('*/5 * * * * *', async () => {
 
         if (reels.length > 0) {
             for (const reel of reels) {
-                const videoPath = path.join(process.env.DATA_PATH!, job.username, reel.id, "reels.mp4");
-                const framesDir = path.join(path.dirname(videoPath), 'frames');
-                await extractFrames(videoPath, framesDir);
+                const framesDir = path.join(path.dirname(reel.filepath!), 'frames');
+                await extractFrames(reel.filepath!, framesDir);
             }
             console.log(`[framing] Extracted frames for ${reels.length} reels`);
         }
 
         if (stories.length > 0) {
             for (const story of stories) {
-                const videoPath = path.join(process.env.DATA_PATH!, job.username, story.id, "story.mp4");
-                const framesDir = path.join(path.dirname(videoPath), 'frames');
-                await extractFrames(videoPath, framesDir);
+                const framesDir = path.join(path.dirname(story.filepath!), 'frames');
+                await extractFrames(story.filepath!, framesDir);
             }
             console.log(`[framing] Extracted frames for ${stories.length} video stories`);
         }

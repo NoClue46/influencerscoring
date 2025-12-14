@@ -1,6 +1,6 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT } from '../constants.js';
+import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, COMMENT_ANALYSIS_PROMPT } from '../constants.js';
 import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.js';
 import { selectFrames } from '../utils/select-frames.js';
 import fs from 'fs';
@@ -22,8 +22,8 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
         });
 
         const [reels, posts, stories] = await Promise.all([
-            prisma.reels.findMany({ where: { jobId: job.id } }),
-            prisma.post.findMany({ where: { jobId: job.id } }),
+            prisma.reels.findMany({ where: { jobId: job.id }, include: { comments: true } }),
+            prisma.post.findMany({ where: { jobId: job.id }, include: { comments: true } }),
             prisma.story.findMany({ where: { jobId: job.id } })
         ])
 
@@ -31,10 +31,15 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
 
         // Analyze reels
         for (const reel of reels) {
+            if (!reel.filepath) {
+                console.log(`[analyze] Skipping reel ${reel.id} - not downloaded`);
+                continue;
+            }
+
             try {
                 console.log(`[analyze] Processing reel ${reel.id}`);
 
-                const framesDir = path.join(process.env.DATA_PATH!, job.username, reel.id, 'frames');
+                const framesDir = path.join(path.dirname(reel.filepath), 'frames');
 
                 const allFrames = fs.readdirSync(framesDir)
                     .filter(f => f.endsWith('.jpg'))
@@ -52,6 +57,23 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
                     data: { analyzeRawText: result.text }
                 });
 
+                // Analyze reel comments
+                for (const comment of reel.comments) {
+                    try {
+                        console.log(`[analyze] Processing comment ${comment.id} for reel ${reel.id}`);
+                        const commentPrompt = `${COMMENT_ANALYSIS_PROMPT}\n\nКомментарий:\n${comment.text}`;
+                        const commentResult = await askOpenaiText(commentPrompt);
+                        await prisma.comment.update({
+                            where: { id: comment.id },
+                            data: { analyseRawText: commentResult.text }
+                        });
+                    } catch (error) {
+                        const err = error as Error;
+                        console.error(`[analyze] Failed for comment ${comment.id}:`, err.message);
+                        errors.push(`Comment ${comment.id}: ${err.message}`);
+                    }
+                }
+
                 console.log(`[analyze] Completed reel ${reel.id}`);
             } catch (error) {
                 const err = error as Error;
@@ -62,16 +84,37 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
 
         // Analyze posts
         for (const post of posts) {
+            if (!post.filepath) {
+                console.log(`[analyze] Skipping post ${post.id} - not downloaded`);
+                continue;
+            }
+
             try {
                 console.log(`[analyze] Processing post ${post.id}`);
 
-                const imagePath = path.join(process.env.DATA_PATH!, job.username, post.id, "post.jpg");
-                const result = await askOpenai([imagePath], job.postPrompt);
+                const result = await askOpenai([post.filepath], job.postPrompt);
 
                 await prisma.post.update({
                     where: { id: post.id },
                     data: { analyzeRawText: result.text }
                 });
+
+                // Analyze post comments
+                for (const comment of post.comments) {
+                    try {
+                        console.log(`[analyze] Processing comment ${comment.id} for post ${post.id}`);
+                        const commentPrompt = `${COMMENT_ANALYSIS_PROMPT}\n\nКомментарий:\n${comment.text}`;
+                        const commentResult = await askOpenaiText(commentPrompt);
+                        await prisma.comment.update({
+                            where: { id: comment.id },
+                            data: { analyseRawText: commentResult.text }
+                        });
+                    } catch (error) {
+                        const err = error as Error;
+                        console.error(`[analyze] Failed for comment ${comment.id}:`, err.message);
+                        errors.push(`Comment ${comment.id}: ${err.message}`);
+                    }
+                }
 
                 console.log(`[analyze] Completed post ${post.id}`);
             } catch (error) {
@@ -84,10 +127,15 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
         // Analyze video stories
         const videoStories = stories.filter(s => s.isVideo);
         for (const story of videoStories) {
+            if (!story.filepath) {
+                console.log(`[analyze] Skipping video story ${story.id} - not downloaded`);
+                continue;
+            }
+
             try {
                 console.log(`[analyze] Processing video story ${story.id}`);
 
-                const framesDir = path.join(process.env.DATA_PATH!, job.username, story.id, 'frames');
+                const framesDir = path.join(path.dirname(story.filepath), 'frames');
 
                 const allFrames = fs.readdirSync(framesDir)
                     .filter(f => f.endsWith('.jpg'))
@@ -116,11 +164,15 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
         // Analyze image stories
         const imageStories = stories.filter(s => !s.isVideo);
         for (const story of imageStories) {
+            if (!story.filepath) {
+                console.log(`[analyze] Skipping image story ${story.id} - not downloaded`);
+                continue;
+            }
+
             try {
                 console.log(`[analyze] Processing image story ${story.id}`);
 
-                const imagePath = path.join(process.env.DATA_PATH!, job.username, story.id, 'story.jpg');
-                const result = await askOpenai([imagePath], job.postPrompt);
+                const result = await askOpenai([story.filepath], job.postPrompt);
 
                 await prisma.story.update({
                     where: { id: story.id },

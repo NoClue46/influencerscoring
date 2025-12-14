@@ -26,9 +26,18 @@ export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
         ]);
 
         for (const reel of reels) {
-            const videoPath = path.join(process.env.DATA_PATH!, job.username, reel.id, "reels.mp4");
-            const audioPath = path.join(process.env.DATA_PATH!, job.username, reel.id, "audio.mp3");
-            await extractAudio(videoPath, audioPath);
+            if (!reel.filepath) {
+                console.log(`[speechToText] Skipping reel ${reel.id} - not downloaded (${reel.reason || 'no reason'})`);
+                await prisma.reels.update({
+                    where: { id: reel.id },
+                    data: { transcription: '[NOT_DOWNLOADED]' }
+                });
+                continue;
+            }
+
+            console.log(`[speechToText] Processing reel ${reel.id}`);
+            const audioPath = path.join(path.dirname(reel.filepath), "audio.mp3");
+            await extractAudio(reel.filepath, audioPath);
 
             const transcription = await withRetry(() => transcribeAudio(audioPath));
             await prisma.reels.update({
@@ -39,9 +48,18 @@ export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
         console.log(`[speechToText] Transcribed ${reels.length} reels`);
 
         for (const story of stories) {
-            const videoPath = path.join(process.env.DATA_PATH!, job.username, story.id, "story.mp4");
-            const audioPath = path.join(process.env.DATA_PATH!, job.username, story.id, "audio.mp3");
-            await extractAudio(videoPath, audioPath);
+            if (!story.filepath) {
+                console.log(`[speechToText] Skipping story ${story.id} - not downloaded (${story.reason || 'no reason'})`);
+                await prisma.story.update({
+                    where: { id: story.id },
+                    data: { transcription: '[NOT_DOWNLOADED]' }
+                });
+                continue;
+            }
+
+            console.log(`[speechToText] Processing story ${story.id}`);
+            const audioPath = path.join(path.dirname(story.filepath), "audio.mp3");
+            await extractAudio(story.filepath, audioPath);
 
             const transcription = await withRetry(() => transcribeAudio(audioPath));
             await prisma.story.update({
@@ -77,7 +95,15 @@ export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
 const execAsync = promisify(exec);
 
 async function extractAudio(videoPath: string, audioPath: string): Promise<void> {
-    await execAsync(`ffmpeg -i "${videoPath}" -vn -acodec mp3 "${audioPath}"`);
+    console.log(`[extractAudio] Starting: ${videoPath} -> ${audioPath}`);
+    try {
+        await execAsync(`ffmpeg -y -i "${videoPath}" -vn -acodec mp3 "${audioPath}"`);
+        console.log(`[extractAudio] Success: ${audioPath}`);
+    } catch (error) {
+        const err = error as Error;
+        console.error(`[extractAudio] Failed: ${err.message}`);
+        throw error;
+    }
 }
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

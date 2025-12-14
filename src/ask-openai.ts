@@ -82,11 +82,19 @@ export async function askOpenaiText(
  * @returns Transcribed text
  */
 export async function transcribeAudio(audioPath: string): Promise<string> {
-    const transcription = await client.audio.transcriptions.create({
-        file: fs.createReadStream(audioPath),
-        model: "whisper-1",
-    });
-    return transcription.text;
+    console.log(`[transcribeAudio] Starting: ${audioPath}`);
+    try {
+        const transcription = await client.audio.transcriptions.create({
+            file: fs.createReadStream(audioPath),
+            model: "whisper-1",
+        });
+        console.log(`[transcribeAudio] Success: ${transcription.text.length} chars`);
+        return transcription.text;
+    } catch (error) {
+        const err = error as Error;
+        console.error(`[transcribeAudio] Failed: ${err.message}`);
+        throw error;
+    }
 }
 
 export async function askOpenaiWithWebSearch(
