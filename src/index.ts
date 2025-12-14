@@ -63,9 +63,35 @@ app.get("/", async (c: Context) => {
     const jobs = await prisma.job.findMany({});
 
     const jobsHtml = jobs.length > 0 ? jobs.map(job => {
+        const statusColor = job.status === 'failed'
+            ? '#dc3545'
+            : job.status === 'completed'
+                ? '#198754'
+                : 'var(--pico-primary)';
+
+        const statusBackground = job.status === 'failed'
+            ? 'rgba(220, 53, 69, 0.12)'
+            : job.status === 'completed'
+                ? 'rgba(25, 135, 84, 0.12)'
+                : 'rgba(0, 123, 255, 0.12)';
+
         return html`
             <tr>
                 <td><a href="/jobs/${job.id}">${job.username}</a></td>
+                <td>${job.postNumber}</td>
+                <td>
+                    <span style="
+                        display: inline-flex;
+                        align-items: center;
+                        padding: 0.15rem 0.65rem;
+                        border-radius: 999px;
+                        font-weight: 600;
+                        color: ${statusColor};
+                        background: ${statusBackground};
+                        text-transform: capitalize;
+                        letter-spacing: 0.01em;
+                    ">${job.status.replace(/_/g, ' ')}</span>
+                </td>
             </tr>
         `;
     }) : html`<tr><td colspan="3" style="text-align: center;">No Jobs</td></tr>`;
@@ -106,6 +132,8 @@ app.get("/", async (c: Context) => {
                             <thead>
                                 <tr>
                                     <th>Username</th>
+                                    <th>Posts count</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -141,6 +169,18 @@ app.get("/jobs/:id", async (c: Context) => {
         `), 404);
     }
 
+    const statusColor = job.status === 'failed'
+        ? '#dc3545'
+        : job.status === 'completed'
+            ? '#198754'
+            : 'var(--pico-primary)';
+
+    const statusBackground = job.status === 'failed'
+        ? 'rgba(220, 53, 69, 0.12)'
+        : job.status === 'completed'
+            ? 'rgba(25, 135, 84, 0.12)'
+            : 'rgba(0, 123, 255, 0.12)';
+
     const reelsHtml = job.reels.length > 0 ? job.reels.map(reel => html`
         <tr>
             <td colspan="3">
@@ -150,6 +190,9 @@ app.get("/jobs/:id", async (c: Context) => {
                         <span style="flex: 1;">${reel.reason ?? '-'}</span>
                     </summary>
                     <div style="padding: 1rem; background: var(--pico-card-background-color); margin-top: 0.5rem; border-radius: 4px;">
+                        ${reel.commentRate !== null && reel.commentRate !== undefined && !Number.isNaN(reel.commentRate) ? html`
+                            <p style="margin: 0 0 0.75rem;"><b>Comment rate:</b> ${(reel.commentRate * 100).toFixed(2)}%</p>
+                        ` : ''}
                         ${reel.analyzeRawText ? html`
                             <h4 style="margin-top: 0;">Analysis</h4>
                             <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${reel.analyzeRawText}</pre>
@@ -176,6 +219,9 @@ app.get("/jobs/:id", async (c: Context) => {
                         <span style="flex: 1;">${post.reason ?? '-'}</span>
                     </summary>
                     <div style="padding: 1rem; background: var(--pico-card-background-color); margin-top: 0.5rem; border-radius: 4px;">
+                        ${post.commentRate !== null && post.commentRate !== undefined && !Number.isNaN(post.commentRate) ? html`
+                            <p style="margin: 0 0 0.75rem;"><b>Comment rate:</b> ${(post.commentRate * 100).toFixed(2)}%</p>
+                        ` : ''}
                         ${post.analyzeRawText ? html`
                             <h4 style="margin-top: 0;">Analysis</h4>
                             <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${post.analyzeRawText}</pre>
@@ -213,7 +259,20 @@ app.get("/jobs/:id", async (c: Context) => {
                 <div style="width: 90%; max-width: 1200px; margin: 2rem auto;">
                     <a href="/" role="button" style="width: auto; display: inline-block; margin-bottom: 1rem; padding: 0.5rem 0.5rem;">← Back</a>
 
-                    <h1>Job: @${job.username}</h1>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                        <h1 style="margin: 0;">Job: @${job.username}</h1>
+                        <span style="
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 999px;
+                            font-weight: 600;
+                            color: ${statusColor};
+                            background: ${statusBackground};
+                            text-transform: capitalize;
+                            letter-spacing: 0.01em;
+                        ">${job.status.replace(/_/g, ' ')}</span>
+                    </div>
 
                     <article>
                         <header><strong>Post Prompt</strong></header>
@@ -242,11 +301,7 @@ app.get("/jobs/:id", async (c: Context) => {
                     ${job.analyzeRawText ? html`
                     <article>
                         <header><strong>Analyze Result</strong></header>
-                        <button onclick="document.getElementById('modal-job-analyze').showModal()">Show</button>
-                        <dialog id="modal-job-analyze">
-                            <pre>${job.analyzeRawText}</pre>
-                            <button onclick="this.closest('dialog').close()">Close</button>
-                        </dialog>
+                        <pre style="white-space: pre-wrap; margin: 0;">${job.analyzeRawText}</pre>
                     </article>
                     ` : ''}
 
