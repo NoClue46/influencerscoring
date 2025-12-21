@@ -10,6 +10,7 @@ datasource db {
 model Job {
   id String @id @default(cuid())
   username String
+  followers Int @default(0)
   postPrompt String @map("post_prompt")
   bloggerPrompt String? @map("blogger_prompt")
   allVideos Boolean @map("all_videos")

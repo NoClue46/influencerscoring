@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS } from '../constants.js';
-import { fetchPosts, fetchReels, fetchStories, fetchComments } from '../scrape-creators.js';
+import { fetchPosts, fetchReels, fetchStories, fetchComments, fetchProfile } from '../scrape-creators.js';
 
 export const fetchJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
@@ -18,10 +18,11 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
             data: { status: 'fetching_started' }
         });
 
-        const [reels, posts, stories] = await Promise.all([
+        const [reels, posts, stories, profile] = await Promise.all([
             fetchReels(job.username, job.postNumber),
             fetchPosts(job.username, job.postNumber),
-            fetchStories(job.username, job.postNumber)
+            fetchStories(job.username, job.postNumber),
+            fetchProfile(job.username, true)
         ])
 
         await Promise.all([
@@ -94,7 +95,10 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
 
         await prisma.job.update({
             where: { id: job.id },
-            data: { status: 'fetching_finished' }
+            data: {
+                status: 'fetching_finished',
+                followers: profile?.edge_followed_by?.count ?? 0
+            }
         });
 
         console.log(`[fetch] Completed successfully for job ${job.id}`);

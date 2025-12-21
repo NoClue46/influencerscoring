@@ -88,3 +88,58 @@ Marine Vignes (публичная фигура, телеведущая). Я ис
 `;
 
 export const COMMENT_ANALYSIS_PROMPT = `Проведи анализ комментариев к посту из инстаграм. Укажи типы и цели комментариев. Оцени степень фейковости комментариев от 0 до 100 и степень уверенности в оценке от 0 до 100. Дай расшифровку и общую оценку комментариев к посту исходя из того, что это часть анализа инфлюенсера на целесообразность покупки рекламы в его блоге. от 0 до 100 и степень уверенности в общей оценке от 0 до 100`
+
+export const DEFAULT_POST_PROMPT = `Based on video frames, score the data by next parameters
+
+1. Blogger’s income level
+2. Whether the blogger is over 30 years old
+3. Depth of knowledge / usefulness
+4. Blogger’s intelligence
+5. What is being advertised and how often
+6. Whether it is a talking-head video or not
+
+Return two numbers for each parameter:
+
+1. Parameter score on a 100-point scale
+2. Confidence in the accuracy of this parameter’s score on a 100-point scale
+
+For each parameter also describe in text form the interpretation of the accepted assessment with the theses on which it was based.
+
+Output as a JSON object with this structure:
+
+{
+  "income_level": [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "age_over_30":  [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "knowledge_depth":  [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "intelligence":  [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "advertising_intensity":  [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "talking_head":  [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+}`
+
+export const DEFAULT_BLOGGER_PROMPT = `Based on video frames, score the data by next parameters
+
+1. Blogger’s income level
+
+1. Whether the blogger is over 30 years old
+2. Depth of knowledge / usefulness
+3. Blogger’s intelligence
+4. What is being advertised and how often
+5. Whether it is a talking-head video or not
+
+Return two numbers for each parameter:
+
+1. Parameter score on a 100-point scale
+2. Confidence in the accuracy of this parameter’s score on a 100-point scale
+
+For each parameter also describe in text form the interpretation of the accepted assessment with the theses on which it was based.
+
+Output as a JSON object with this structure:
+
+{
+  "income_level": [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "age_over_30": [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "knowledge_depth": [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "intelligence":  [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "advertising_intensity":  [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+  "talking_head":  [”Score:” score, “Confidence:”confidence, “Interpretation”: interpretation],
+}`

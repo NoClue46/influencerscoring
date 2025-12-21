@@ -52,6 +52,55 @@ interface CommentsResponse {
     comments: Comment[];
 }
 
+interface BioLink {
+    title: string;
+    url: string;
+    link_type: string;
+}
+
+export interface ProfileUser {
+    biography: string;
+    bio_links: BioLink[];
+    full_name: string;
+    username: string;
+    id: string;
+    profile_pic_url: string;
+    profile_pic_url_hd: string;
+    external_url: string | null;
+    is_verified: boolean;
+    is_private: boolean;
+    is_business_account: boolean;
+    is_professional_account: boolean;
+    category_name: string | null;
+    edge_followed_by: { count: number };
+    edge_follow: { count: number };
+    edge_owner_to_timeline_media: {
+        count: number;
+        page_info: {
+            has_next_page: boolean;
+            end_cursor: string | null;
+        };
+        edges: Array<{
+            node: {
+                id: string;
+                shortcode: string;
+                display_url: string;
+                is_video: boolean;
+                edge_liked_by: { count: number };
+                edge_media_to_comment: { count: number };
+            };
+        }>;
+    };
+}
+
+interface ProfileResponse {
+    success: boolean;
+    data: {
+        user: ProfileUser;
+    };
+    status: string;
+}
+
 export async function fetchReels(handle: string, count: number = 12) {
     try {
         // 1. Fetch reel URLs
@@ -434,9 +483,42 @@ export async function fetchComments(postUrl: string, amount: number = 15): Promi
             return [];
         }
 
-        return json.comments;
+        return json.comments.slice(amount);
     } catch (error) {
         console.error(`failed to fetch comments for ${postUrl}: `, error);
         return [];
+    }
+}
+
+export async function fetchProfile(handle: string, trim?: boolean): Promise<ProfileUser | null> {
+    try {
+        const url = new URL("https://api.scrapecreators.com/v1/instagram/profile");
+        url.searchParams.set('handle', handle);
+        if (trim) {
+            url.searchParams.set('trim', 'true');
+        }
+
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "x-api-key": process.env.SCRAPE_CREATORS ?? "",
+            }
+        });
+
+        if (!response.ok) {
+            console.error("Response body: ", await response.json());
+            throw new Error(`Failed to fetch profile: ${response.statusText}`);
+        }
+
+        const json = await response.json() as ProfileResponse;
+
+        if (!json.success || !json.data?.user) {
+            return null;
+        }
+
+        return json.data.user;
+    } catch (error) {
+        console.error(`failed to fetch profile for ${handle}: `, error);
+        return null;
     }
 }

@@ -4,6 +4,7 @@ import { serve } from '@hono/node-server';
 import { html } from "hono/html";
 import { prisma } from "./prisma.js";
 import { startCronJobs, stopCronJobs } from "./jobs/index.js";
+import { DEFAULT_POST_PROMPT, DEFAULT_BLOGGER_PROMPT } from "./constants.js";
 import type { Context } from 'hono';
 
 const app = new Hono();
@@ -46,7 +47,7 @@ app.post("/", async (c: Context) => {
                 username: username,
                 postPrompt: body.prompt as string,
                 bloggerPrompt: body.bloggerPrompt as string | undefined,
-                allVideos: body.allVideos === 'on',
+                allVideos: !!(body.bloggerPrompt as string)?.trim(),
                 postNumber: parseInt(body.postNumber as string) || 10,
                 status: 'pending'
             }
@@ -104,24 +105,22 @@ app.get("/", async (c: Context) => {
                         <h2>Create Job</h2>
                         <input type="text" name="username" placeholder="cristiano" required />
                         <label>
-                            <input type="checkbox" name="allVideos" />
-                            Analyze entire profile
-                        </label>
-                        <label>
                             Posts count
-                            <select name="postNumber">
-                                <option value="10">10</option>
-                                <option value="15">15</option>
-                                <option value="20">20</option>
-                            </select>
+                            <input type="number" name="postNumber" value="10" min="1" max="50">
                         </label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                            <span>Post Prompt</span>
+                            <button type="button" class="secondary outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" @click="$refs.postPrompt.value = \`${DEFAULT_POST_PROMPT}\`">Default</button>
+                        </div>
                         <label>
-                            Post Prompt
-                            <textarea name="prompt" required placeholder="Enter post prompt..." rows="4"></textarea>
+                            <textarea x-ref="postPrompt" name="prompt" required placeholder="Enter post prompt..." rows="4"></textarea>
                         </label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                            <span>Blogger Prompt</span>
+                            <button type="button" class="secondary outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" @click="$refs.bloggerPrompt.value = \`${DEFAULT_BLOGGER_PROMPT}\`">Default</button>
+                        </div>
                         <label>
-                            Blogger Prompt
-                            <textarea name="bloggerPrompt" placeholder="Enter blogger prompt..." rows="4"></textarea>
+                            <textarea x-ref="bloggerPrompt" name="bloggerPrompt" placeholder="Enter blogger prompt..." rows="4"></textarea>
                         </label>
                         <button type="submit" @click="$el.setAttribute('aria-busy', 'true')">Create Job</button>
                     </form>
@@ -261,6 +260,7 @@ app.get("/jobs/:id", async (c: Context) => {
 
                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                         <h1 style="margin: 0;">Job: @${job.username}</h1>
+                        <span style="font-size: 1rem; color: var(--pico-muted-color);">${job.followers.toLocaleString()} followers</span>
                         <span style="
                             display: inline-flex;
                             align-items: center;
@@ -302,6 +302,13 @@ app.get("/jobs/:id", async (c: Context) => {
                     <article>
                         <header><strong>Analyze Result</strong></header>
                         <pre style="white-space: pre-wrap; margin: 0;">${job.analyzeRawText}</pre>
+                    </article>
+                    ` : ''}
+
+                    ${job.nicknameAnalyseRawText ? html`
+                    <article>
+                        <header><strong>Nickname Analysis</strong></header>
+                        <pre style="white-space: pre-wrap; margin: 0;">${job.nicknameAnalyseRawText}</pre>
                     </article>
                     ` : ''}
 
@@ -358,7 +365,7 @@ app.get("/jobs/:id", async (c: Context) => {
     );
 })
 
-const server = serve(app)
+const server = serve({ fetch: app.fetch, port: 8080 })
 
 startCronJobs();
 
