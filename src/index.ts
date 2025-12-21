@@ -365,7 +365,7 @@ app.get("/jobs/:id", async (c: Context) => {
     );
 })
 
-const server = serve({ fetch: app.fetch, port: 8080 })
+const server = serve(app)
 
 startCronJobs();
 
