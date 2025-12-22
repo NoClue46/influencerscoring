@@ -35,15 +35,19 @@ export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
                 continue;
             }
 
-            console.log(`[speechToText] Processing reel ${reel.id}`);
-            const audioPath = path.join(path.dirname(reel.filepath), "audio.mp3");
-            await extractAudio(reel.filepath, audioPath);
+            try {
+                console.log(`[speechToText] Processing reel ${reel.id}`);
+                const audioPath = path.join(path.dirname(reel.filepath), "audio.mp3");
+                await extractAudio(reel.filepath, audioPath);
 
-            const transcription = await withRetry(() => transcribeAudio(audioPath));
-            await prisma.reels.update({
-                where: { id: reel.id },
-                data: { transcription }
-            });
+                const transcription = await withRetry(() => transcribeAudio(audioPath));
+                await prisma.reels.update({
+                    where: { id: reel.id },
+                    data: { transcription }
+                });
+            } catch (e) {
+                console.error("[speechToText] failed to transcribe audio: ", e);
+            }
         }
         console.log(`[speechToText] Transcribed ${reels.length} reels`);
 
@@ -57,15 +61,19 @@ export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
                 continue;
             }
 
-            console.log(`[speechToText] Processing story ${story.id}`);
-            const audioPath = path.join(path.dirname(story.filepath), "audio.mp3");
-            await extractAudio(story.filepath, audioPath);
+            try {
+                console.log(`[speechToText] Processing story ${story.id}`);
+                const audioPath = path.join(path.dirname(story.filepath), "audio.mp3");
+                await extractAudio(story.filepath, audioPath);
 
-            const transcription = await withRetry(() => transcribeAudio(audioPath));
-            await prisma.story.update({
-                where: { id: story.id },
-                data: { transcription }
-            });
+                const transcription = await withRetry(() => transcribeAudio(audioPath));
+                await prisma.story.update({
+                    where: { id: story.id },
+                    data: { transcription }
+                });
+            } catch (e) {
+                console.error("[speechToText] failed to transcribe audio: ", e);
+            }
         }
         console.log(`[speechToText] Transcribed ${stories.length} stories`);
 
