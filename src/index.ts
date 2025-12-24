@@ -45,10 +45,10 @@ app.post("/", async (c: Context) => {
         await prisma.job.create({
             data: {
                 username: username,
-                postPrompt: body.prompt as string,
-                bloggerPrompt: body.bloggerPrompt as string | undefined,
-                allVideos: !!(body.bloggerPrompt as string)?.trim(),
-                postNumber: parseInt(body.postNumber as string) || 10,
+                postPrompt: DEFAULT_POST_PROMPT,
+                bloggerPrompt: DEFAULT_BLOGGER_PROMPT,
+                allVideos: true,
+                postNumber: 20,
                 status: 'pending'
             }
         });
@@ -104,24 +104,6 @@ app.get("/", async (c: Context) => {
                     <form action="/" method="post" x-data style="width: 100%; height: auto; margin: 0;">
                         <h2>Create Job</h2>
                         <input type="text" name="username" placeholder="cristiano" required />
-                        <label>
-                            Posts count
-                            <input type="number" name="postNumber" value="10" min="1" max="50">
-                        </label>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                            <span>Post Prompt</span>
-                            <button type="button" class="secondary outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" @click="$refs.postPrompt.value = \`${DEFAULT_POST_PROMPT}\`">Default</button>
-                        </div>
-                        <label>
-                            <textarea x-ref="postPrompt" name="prompt" required placeholder="Enter post prompt..." rows="4"></textarea>
-                        </label>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                            <span>Blogger Prompt</span>
-                            <button type="button" class="secondary outline" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" @click="$refs.bloggerPrompt.value = \`${DEFAULT_BLOGGER_PROMPT}\`">Default</button>
-                        </div>
-                        <label>
-                            <textarea x-ref="bloggerPrompt" name="bloggerPrompt" placeholder="Enter blogger prompt..." rows="4"></textarea>
-                        </label>
                         <button type="submit" @click="$el.setAttribute('aria-busy', 'true')">Create Job</button>
                     </form>
 
