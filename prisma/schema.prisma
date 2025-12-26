@@ -27,6 +27,7 @@ model Job {
 
   analyzeRawText String? @map("analyse_raw_text")
   nicknameAnalyseRawText String? @map("nickname_analyse_raw_text")
+  score Float?
 
   // Relations
   reels Reels[]

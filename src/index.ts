@@ -79,7 +79,6 @@ app.get("/", async (c: Context) => {
         return html`
             <tr>
                 <td><a href="/jobs/${job.id}">${job.username}</a></td>
-                <td>${job.postNumber}</td>
                 <td>
                     <span style="
                         display: inline-flex;
@@ -93,6 +92,7 @@ app.get("/", async (c: Context) => {
                         letter-spacing: 0.01em;
                     ">${job.status.replace(/_/g, ' ')}</span>
                 </td>
+                <td>${job.score ?? '-'}</td>
             </tr>
         `;
     }) : html`<tr><td colspan="3" style="text-align: center;">No Jobs</td></tr>`;
@@ -113,8 +113,8 @@ app.get("/", async (c: Context) => {
                             <thead>
                                 <tr>
                                     <th>Username</th>
-                                    <th>Posts count</th>
                                     <th>Status</th>
+                                    <th>Score</th>
                                 </tr>
                             </thead>
                             <tbody>

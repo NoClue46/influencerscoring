@@ -6,6 +6,28 @@ import { selectFrames } from '../utils/select-frames.js';
 import fs from 'fs';
 import path from 'path';
 
+const SCORING_WEIGHTS: Record<string, number> = {
+    structured_thinking: 10,
+    knowledge_depth: 10,
+    intelligence: 10,
+    personal_values: 30,
+    enthusiasm: 10,
+    charisma: 30
+};
+
+function calculateScore(analysisJson: string): number | null {
+    try {
+        const data = JSON.parse(analysisJson);
+        let sum = 0;
+        for (const [key, weight] of Object.entries(SCORING_WEIGHTS)) {
+            sum += (data[key]?.Score || 0) * weight;
+        }
+        return sum / 100;
+    } catch {
+        return null;
+    }
+}
+
 export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
         where: { status: 'speech_to_text_finished' }
@@ -254,11 +276,16 @@ ${job.bloggerPrompt || 'Analyze posts above'}`;
         const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(job.username);
         const nicknameResult = await askOpenaiWithWebSearch(nicknamePrompt);
 
+        // Calculate score from analysis
+        const score = calculateScore(response.text);
+        console.log(`[analyze] Calculated score for job ${job.id}: ${score}`);
+
         await prisma.job.update({
             where: { id: job.id },
             data: {
                 analyzeRawText: response.text,
                 nicknameAnalyseRawText: nicknameResult.text,
+                score,
                 status: 'completed'
             }
         });
