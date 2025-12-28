@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
+import { logger } from 'hono/logger';
 import { html } from "hono/html";
 import { prisma } from "./prisma.js";
 import { startCronJobs, stopCronJobs } from "./jobs/index.js";
@@ -8,6 +9,8 @@ import { DEFAULT_POST_PROMPT, DEFAULT_BLOGGER_PROMPT } from "./constants.js";
 import type { Context } from 'hono';
 
 const app = new Hono();
+
+app.use(logger());
 
 const layout = (children: ReturnType<typeof html>) => html`
     <html lang="en">
