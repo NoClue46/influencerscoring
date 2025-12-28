@@ -185,6 +185,7 @@ export async function fetchReels(handle: string, count: number = 12) {
 }
 
 export async function fetchPosts(handle: string, count: number = 12) {
+    console.log(`[fetchPosts] starting for @${handle}, limit: ${count}`);
     try {
         let result: {
             url: string;
@@ -195,9 +196,11 @@ export async function fetchPosts(handle: string, count: number = 12) {
         }[] = [];
         let cursor: string | null = null;
         const processedUrls = new Set<string>();
+        let pageNum = 0;
 
         // Keep fetching until we have enough photo posts
         while (result.length < count) {
+            pageNum++;
             const url = new URL(BASE_URL);
             url.pathname = `/v1/instagram/user/posts`;
             url.searchParams.set('handle', handle);
@@ -226,6 +229,7 @@ export async function fetchPosts(handle: string, count: number = 12) {
             };
 
             if (!json.posts || json.posts.length === 0) break;
+            console.log(`[fetchPosts] page ${pageNum}: fetched ${json.posts.length} items`);
 
             // Process each post in current batch
             for (const post of json.posts) {
@@ -274,6 +278,7 @@ export async function fetchPosts(handle: string, count: number = 12) {
             if (!cursor) break; // No more posts available
         }
 
+        console.log(`[fetchPosts] completed: ${result.length} photos for @${handle}`);
         return result;
     } catch (error) {
         console.error(`failed to fetch ${handle} posts: `, error);
