@@ -2,92 +2,112 @@ export const MAX_ATTEMPTS: number = 4;
 export const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200MB
 
 export const NICKNAME_ANALYSIS_PROMPT = (username: string) => `
-Никнейм: ${username}
-Инстаграм: https://www.instagram.com/${username}/
+Username: ${username}
+Instagram: https://www.instagram.com/${username}/
 
-Для этого никнейма и имени проведи глубокое исследование репутации в онлайне с указанием источников. Укажи имеющиеся негативные высказывания, участия в скандалах, которое просачивались в СМИ, наличие спорных высказываний
+Conduct a deep online reputation research for this username with source citations. Identify any negative statements, scandal involvement that leaked to media, and controversial statements.
 
-Дай оценку репутации блогера от 0 до 100, степень уверенности в оценке от 0 до 100 и полную расшифровку
+Provide a blogger reputation score from 0 to 100, confidence level from 0 to 100, and full explanation.
 
-Пример ответа:
+Example response:
 "
-Ниже — краткое, практическое исследование онлайн-репутации по никнейму marinevignes /
-Marine Vignes (публичная фигура, телеведущая). Я искал (а) официальные профили,
-энциклопедические записи, новостные статьи и публикации таблоидов — источники указаны после
-каждого ключевого вывода.
+Below is a brief, practical online reputation research for the username marinevignes /
+Marine Vignes (public figure, TV host). I searched official profiles,
+encyclopedic entries, news articles, and tabloid publications — sources are cited after
+each key finding.
 
-Оценка репутации: 85
-Степень уверенности: 83
+Reputation score: 85
+Confidence level: 83
 
-Краткое резюме
+Brief Summary
 
-*   Marine Vignes — французская телеведущая и медиаперсона (ведущая программ о погоде и
-    lifestyle), публично представлена в СМИ и на собственных аккаунтах в соцсетях (Instagram,
-    Threads).
-*   В основном профиль и упоминания в СМИ — нейтрально-позитивные (интервью, участие в
-    теле-проектах, рекламные/брендовые сотрудничества).
-*   Никаких доказанных серьёзных правовых обвинений, уголовных дел или крупных
-    этических скандалов (в духе коррупции/насилия/мошенничества) по публичным
-    источникам не обнаружено. Основные «скандалы» — это скорее таблоидные заголовки и
-    обсуждения в жёлтой прессе.
+*   Marine Vignes is a French TV host and media personality (weather and lifestyle programs),
+    publicly represented in media and on her own social media accounts (Instagram, Threads).
+*   Overall profile and media mentions are neutral-positive (interviews, TV project participation,
+    advertising/brand collaborations).
+*   No proven serious legal accusations, criminal cases, or major ethical scandals
+    (corruption/violence/fraud type) found in public sources. Main "scandals" are rather
+    tabloid headlines and discussions in yellow press.
 
-Что найдено из негативного / спорного
+Negative / Controversial Findings
 
-1.  Публикации о пластической / эстетической хирургии и внешности.
+1.  Publications about plastic / aesthetic surgery and appearance.
 
-    — Ряд таблоидных статей и интервью освещают, что она проходила мини-лифтинг/процедуры
-    эстетической медицины; это подаётся в некоторых изданий как «скандал» или повод для
-    обсуждений о пластике у публичных женщин. Такие материалы чаще встречаются в Voici,
-    Programme-TV, Purepeople и т.п. (жёлтая пресса).
-2.  Темы диет / «контроверзные» советы по похудению.
+    — Several tabloid articles and interviews cover that she underwent mini-facelift/aesthetic
+    medicine procedures; this is presented in some publications as a "scandal" or topic for
+    discussion about plastic surgery among public women. Such materials are more common in Voici,
+    Programme-TV, Purepeople, etc. (yellow press).
+2.  Diet topics / "controversial" weight loss advice.
 
-    — В таблоидах появляются заголовки про «контроверзные» диеты / советы по снижению веса,
-    иногда с эмоциональными оценивающими формулировками. Эти публикации — не
-    расследования, а репортажи/интервью и заголовки, рассчитанные на реакцию.
-3.  Публичное внимание к личной жизни (бывшие отношения, дети, опека).
+    — Tabloids feature headlines about "controversial" diets / weight loss tips,
+    sometimes with emotional evaluative language. These publications are not
+    investigations, but reports/interviews and headlines designed for reaction.
+3.  Public attention to personal life (past relationships, children, custody).
 
-    — Как бывшая партнёрша известного телеведущего (Nagui), её семейная жизнь, вопросы опеки
-    и воспоминания о прошлых отношениях периодически обсуждаются в СМИ — иногда в
-    формате «драмы/раздела имущества/опеки» в таблойдах. Но фактов судебных споров или
-    обвинений в публичных источниках не видно — это в основном интервью и человеко-
-    ориентированные материалы.
-4.  Иногда появляются фейк-заголовки/перепосты в соцсетях.
+    — As a former partner of a famous TV host (Nagui), her family life, custody issues,
+    and memories of past relationships are periodically discussed in media — sometimes in
+    "drama/property division/custody" format in tabloids. But no evidence of court disputes or
+    accusations in public sources — mostly interviews and human-interest materials.
+4.  Occasional fake headlines/reposts on social media.
 
-    — Поиск выявил несколько репостов и страниц в Facebook/сайтах низкого качества, которые
-    нагнетают «скандал» ради кликов; такие источники не заслуживают доверия без
-    подтверждения. Рекомендую не полагаться на одиночные посты в соцсетях без ссылок на
-    проверяемые СМИ.
+    — Search revealed several reposts and pages on Facebook/low-quality sites that
+    hype "scandal" for clicks; such sources should not be trusted without
+    verification. Recommend not relying on single social media posts without links to
+    verifiable media.
 
-Оценка риска для репутации
+Reputation Risk Assessment
 
-*   Низкий-средний: основные риски — имиджевые (жёлтая пресса, обсуждение внешности,
-    диет), а не юридические или уголовные. Если вам нужна оценка для деловой/HR-проверки,
-    обратите внимание, что почти все спорные упоминания приходят из таблоидов (Voici,
-    Purepeople, Programme-TV и пр.), а не из надёжных расследовательских изданий.
+*   Low-medium: main risks are image-related (yellow press, appearance discussions,
+    diets), not legal or criminal. If you need assessment for business/HR check,
+    note that almost all controversial mentions come from tabloids (Voici,
+    Purepeople, Programme-TV, etc.), not from reliable investigative publications.
 
-Конкретные источники (основные ссылки, на которые
-опирался(ась))
+Specific Sources (main references used)
 
-1.  Энциклопедия / биографические справки: французская Википедия — профиль и базовая
-    биография.
-2.  Официальный Instagram / профиль автора (посты, описание аккаунта).
-3.  Статьи / интервью (Programme-TV, Voici, Purepeople и др.) — материалы о пластике, диетах,
-    интервью про личную жизнь.
-4.  Фотографии / стоковые и event-снимки (Getty, Purepeople, BestImage).
-5.  Прочие медиа-материалы и подкасты (интервью, бренд-партнёрства).
+1.  Encyclopedia / biographical references: French Wikipedia — profile and basic biography.
+2.  Official Instagram / author profile (posts, account description).
+3.  Articles / interviews (Programme-TV, Voici, Purepeople, etc.) — materials about plastic surgery,
+    diets, personal life interviews.
+4.  Photos / stock and event shots (Getty, Purepeople, BestImage).
+5.  Other media materials and podcasts (interviews, brand partnerships).
 
-Методология (коротко)
+Methodology (brief)
 
-*   Искал(а) по полному имени и никнейму: «Marine Vignes», «marinevignes», проверил(а)
-    Instagram/Threads, энциклопедии (Wikipedia, IMDb), новостные выдачи (французские СМИ) и
-    результаты в жёлтой прессе
-    Отдельно смотрел(а) на наличие судебных/правовых записей и
-    крупных расследований — не найдено.
+*   Searched by full name and username: "Marine Vignes", "marinevignes", checked
+    Instagram/Threads, encyclopedias (Wikipedia, IMDb), news results (French media) and
+    yellow press results.
+    Separately checked for court/legal records and major investigations — not found.
 
-Проверяй себя самостоятельно, пока сама не будешь довольна результатом
+Verify yourself until you are satisfied with the result.
+
+Output Format (Strict JSON)
+
+{
+  "reputation_score": 0,
+  "confidence": 0,
+  "summary": "",
+  "negative_findings": [
+    {"issue": "", "source": "", "severity": "low|medium|high"}
+  ],
+  "sources": [""],
+  "risk_level": "low|medium|high"
+}
 `;
 
-export const COMMENT_ANALYSIS_PROMPT = `Проведи анализ комментариев к посту из инстаграм. Укажи типы и цели комментариев. Оцени степень фейковости комментариев от 0 до 100 и степень уверенности в оценке от 0 до 100. Дай расшифровку и общую оценку комментариев к посту исходя из того, что это часть анализа инфлюенсера на целесообразность покупки рекламы в его блоге. от 0 до 100 и степень уверенности в общей оценке от 0 до 100`
+export const COMMENT_ANALYSIS_PROMPT = `Analyze the comments on an Instagram post. Identify comment types and purposes. Rate the fakeness level of comments from 0 to 100 and confidence in the assessment from 0 to 100. Provide interpretation and overall assessment of the post comments, considering this is part of an influencer analysis for advertising purchase feasibility in their blog. Rate overall from 0 to 100 and confidence in the overall assessment from 0 to 100.
+
+Output Format (Strict JSON)
+
+{
+  "fakeness_score": 0,
+  "fakeness_confidence": 0,
+  "overall_score": 0,
+  "overall_confidence": 0,
+  "comment_types": [
+    {"type": "", "count": 0, "purpose": ""}
+  ],
+  "interpretation": ""
+}`
 
 export const DEFAULT_POST_PROMPT = `Task
 Analyze the provided video frames and evaluate the blogger across the parameters listed below.
@@ -671,3 +691,44 @@ Output Format (Strict JSON)
   "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
 }
 Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed`
+export const TEMPLATE_COMMENTS_PROMPT = `Analyze the following Instagram comments and determine if they contain template/bot-like patterns.
+
+Template comment indicators:
+- Single emoji or emoji-only comments (🔥, ❤️, 👏, 😍)
+- Generic short phrases: "nice!", "cool!", "love it!", "amazing!", "beautiful!", "great post!", "wow!"
+- Single word comments without substance
+- Repetitive patterns across multiple comments
+- Generic compliments without specific reference to content
+- Bot-like promotional comments with links or @mentions
+
+Analyze all comments and provide:
+1. Whether template/bot comments are present (true/false)
+2. Percentage of comments that appear templated
+3. Brief explanation
+
+Output Format (Strict JSON):
+{
+  "template_comments_present": true,
+  "template_percentage": 0,
+  "explanation": ""
+}`
+
+export const REDFLAG_PHOTO_ANALYSIS_PROMPT = `Analyze the provided photo and evaluate ONLY these two parameters:
+
+1. Blogger's Income Level (0-100)
+Score = 100 if European premium/luxury lifestyle visible
+Score = 0 if clearly low-income lifestyle
+
+Positive markers: premium skincare (Aesop, La Mer), designer items (Diptyque candles), quality interiors, premium cars (BMW, Mercedes, Tesla), upscale travel locations
+Negative markers: fast-fashion (Shein, Boohoo), cheap items, cluttered interiors, budget tourism
+
+2. Age Over 30 (0-100)
+Score = 100 if person appears over 30
+Score = 0 if person appears under 30
+Based on visual cues from the photo
+
+Output Format (Strict JSON):
+{
+  "income_level": {"Score": 0, "Confidence": 0},
+  "age_over_30": {"Score": 0, "Confidence": 0}
+}`

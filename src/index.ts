@@ -76,6 +76,22 @@ app.get("/", async (c: Context) => {
                 ? 'rgba(25, 135, 84, 0.12)'
                 : 'rgba(0, 123, 255, 0.12)';
 
+        // Recommendation logic: ✅ (good), ⚠️ (caution), ❌ (redflag)
+        let recommendation = '-';
+        let recommendationTitle = '';
+        if (job.redflag) {
+            recommendation = '❌';
+            recommendationTitle = job.redflag.replace(/_/g, ' ');
+        } else if (job.status === 'completed' && job.score !== null) {
+            if (job.score >= 60) {
+                recommendation = '✅';
+                recommendationTitle = 'Recommended';
+            } else {
+                recommendation = '⚠️';
+                recommendationTitle = 'Low score';
+            }
+        }
+
         return html`
             <tr>
                 <td><a href="/jobs/${job.id}">${job.username}</a></td>
@@ -93,9 +109,10 @@ app.get("/", async (c: Context) => {
                     ">${job.status.replace(/_/g, ' ')}</span>
                 </td>
                 <td>${job.score ?? '-'}</td>
+                <td title="${recommendationTitle}">${recommendation}</td>
             </tr>
         `;
-    }) : html`<tr><td colspan="3" style="text-align: center;">No Jobs</td></tr>`;
+    }) : html`<tr><td colspan="4" style="text-align: center;">No Jobs</td></tr>`;
 
     return c.html(
         layout(
@@ -115,6 +132,7 @@ app.get("/", async (c: Context) => {
                                     <th>Username</th>
                                     <th>Status</th>
                                     <th>Score</th>
+                                    <th>Recommendation</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -254,31 +272,16 @@ app.get("/jobs/:id", async (c: Context) => {
                             text-transform: capitalize;
                             letter-spacing: 0.01em;
                         ">${job.status.replace(/_/g, ' ')}</span>
+                        ${job.redflag ? html`<span style="
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 999px;
+                            font-weight: 600;
+                            color: #dc3545;
+                            background: rgba(220, 53, 69, 0.12);
+                        ">❌ ${job.redflag.replace(/_/g, ' ')}</span>` : ''}
                     </div>
-
-                    <article>
-                        <header><strong>Post Prompt</strong></header>
-                        <div>
-                            <p>${job.postPrompt}</p>
-                        </div>
-                        <table>
-                            <tbody>
-                                ${job.reason ? html`
-                                <tr>
-                                    <td><strong>Reason</strong></td>
-                                    <td style="color: #dc3545;">${job.reason}</td>
-                                </tr>
-                                ` : ''}
-                            </tbody>
-                        </table>
-                    </article>
-
-                    ${job.bloggerPrompt ? html`
-                    <article>
-                        <header><strong>Blogger Prompt</strong></header>
-                        <p>${job.bloggerPrompt}</p>
-                    </article>
-                    ` : ''}
 
                     ${job.analyzeRawText ? html`
                     <article>
@@ -341,6 +344,30 @@ app.get("/jobs/:id", async (c: Context) => {
                             </tbody>
                         </table>
                     </figure>
+
+                    <article>
+                        <header><strong>Post Prompt</strong></header>
+                        <div>
+                            <p>${job.postPrompt}</p>
+                        </div>
+                        <table>
+                            <tbody>
+                                ${job.reason ? html`
+                                <tr>
+                                    <td><strong>Reason</strong></td>
+                                    <td style="color: #dc3545;">${job.reason}</td>
+                                </tr>
+                                ` : ''}
+                            </tbody>
+                        </table>
+                    </article>
+
+                    ${job.bloggerPrompt ? html`
+                    <article>
+                        <header><strong>Blogger Prompt</strong></header>
+                        <p>${job.bloggerPrompt}</p>
+                    </article>
+                    ` : ''}
                 </div>
             `
         )

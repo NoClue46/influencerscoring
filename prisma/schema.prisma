@@ -15,11 +15,13 @@ model Job {
   bloggerPrompt String? @map("blogger_prompt")
   allVideos Boolean @map("all_videos")
 
-  // pending -> fetching_started, fetching_finished -> downloading_started, downloading_finished,
+  // pending -> redflag_checking_started -> redflag_checking_finished (or completed if redflag) ->
+  // fetching_started, fetching_finished -> downloading_started, downloading_finished,
   // framing_started, framing_finished -> speech_to_text_started, speech_to_text_finished ->
   // analyzing_started, analyzing_finished -> completed, failed
   status String @default("pending")
   reason String? // error reason
+  redflag String? @map("redflag") // red flag reason if detected
 
   postNumber Int @default(10) @map("post_number")
 
