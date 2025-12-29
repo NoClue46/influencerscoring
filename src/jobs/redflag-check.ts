@@ -11,7 +11,6 @@ const REDFLAG_POST_COUNT = 5;
 const MIN_FOLLOWERS = 10000;
 const MIN_REPUTATION_SCORE = 60;
 const MIN_INCOME_LEVEL = 60;
-const MIN_AGE_SCORE = 60;
 const MIN_ER = 0.01;
 
 export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
@@ -87,7 +86,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             return;
         }
 
-        // === CHECK 3: Photo analysis (income_level + age) ===
+        // === CHECK 3: Photo analysis (income_level) ===
         console.log(`[redflag-check] Fetching ${REDFLAG_POST_COUNT} posts for photo analysis`);
         const posts = await fetchPosts(job.username, REDFLAG_POST_COUNT);
 
@@ -108,7 +107,6 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
         // Download posts and analyze
         const createdPosts = await prisma.post.findMany({ where: { jobId: job.id } });
         let totalIncomeLevel = 0;
-        let totalAgeScore = 0;
         let analyzedPhotos = 0;
 
         for (const post of createdPosts) {
@@ -133,7 +131,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                     data: { filepath: dest }
                 });
 
-                // Analyze photo for income and age
+                // Analyze photo for income level
                 const analysisResult = await askOpenai([dest], REDFLAG_PHOTO_ANALYSIS_PROMPT);
 
                 if (analysisResult.text) {
@@ -142,7 +140,6 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                         if (jsonMatch) {
                             const parsed = JSON.parse(jsonMatch[0]);
                             totalIncomeLevel += parsed.income_level?.Score ?? 50;
-                            totalAgeScore += parsed.age_over_35?.Score ?? 50;
                             analyzedPhotos++;
                         }
                     } catch (e) {
@@ -155,25 +152,22 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
         }
 
         let avgIncomeLevel: number | null = null;
-        let avgAgeScore: number | null = null;
 
         if (analyzedPhotos > 0) {
             avgIncomeLevel = totalIncomeLevel / analyzedPhotos;
-            avgAgeScore = totalAgeScore / analyzedPhotos;
 
-            console.log(`[redflag-check] Avg income level: ${avgIncomeLevel}, Avg age score: ${avgAgeScore}`);
+            console.log(`[redflag-check] Avg income level: ${avgIncomeLevel}`);
 
-            if (avgIncomeLevel < MIN_INCOME_LEVEL && avgAgeScore < MIN_AGE_SCORE) {
-                console.log(`[redflag-check] REDFLAG: low_income_and_age`);
+            if (avgIncomeLevel < MIN_INCOME_LEVEL) {
+                console.log(`[redflag-check] REDFLAG: low_income`);
                 await prisma.job.update({
                     where: { id: job.id },
                     data: {
                         status: 'completed',
-                        redflag: 'low_income_and_age',
+                        redflag: 'low_income',
                         followers,
                         nicknameAnalyseRawText: nicknameResult.text,
-                        avgIncomeLevel,
-                        avgAgeScore
+                        avgIncomeLevel
                     }
                 });
                 return;
@@ -251,8 +245,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                     redflag: 'template_comments_low_er',
                     followers,
                     nicknameAnalyseRawText: nicknameResult.text,
-                    avgIncomeLevel,
-                    avgAgeScore
+                    avgIncomeLevel
                 }
             });
             return;
@@ -266,8 +259,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                 status: 'redflag_checking_finished',
                 followers,
                 nicknameAnalyseRawText: nicknameResult.text,
-                avgIncomeLevel,
-                avgAgeScore
+                avgIncomeLevel
             }
         });
 

@@ -300,11 +300,10 @@ app.get("/jobs/:id", async (c: Context) => {
                     </article>
                     ` : ''}
 
-                    ${job.avgIncomeLevel !== null || job.avgAgeScore !== null ? html`
+                    ${job.avgIncomeLevel !== null ? html`
                     <article>
-                        <header><strong>Photo Analysis Scores</strong></header>
+                        <header><strong>Photo Analysis</strong></header>
                         <p style="margin: 0;">Avg Income Level: <strong>${job.avgIncomeLevel?.toFixed(1) ?? 'N/A'}</strong></p>
-                        <p style="margin: 0;">Avg Age Score: <strong>${job.avgAgeScore?.toFixed(1) ?? 'N/A'}</strong></p>
                     </article>
                     ` : ''}
 

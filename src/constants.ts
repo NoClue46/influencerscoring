@@ -193,7 +193,7 @@ Uses personal language rather than scripted ad phrasing
 
 May mention small imperfections or nuances (trust signal)
 
-Presence of Advertising
+8. Presence of Advertising
 
 100 — Advertising present
 
@@ -485,10 +485,7 @@ Uses personal language rather than scripted ad phrasing
 
 May mention small imperfections or nuances (trust signal)
 
-8. Frequency of Advertising
-100 — Advertising appears in any piece of content
-
-0 — No advertising present across the analyzed content
+8. Frequency of Advertising 0 — Advertising appears in all pieces of content 100 — No advertising present across the analyzed content
 
 9. Structured Thinking & Argumentation
 Score = 100 if the blogger expresses thoughts clearly, structurally, and argumentatively, not limited to simple opinions.
@@ -713,11 +710,11 @@ Output Format (Strict JSON):
   "explanation": ""
 }`
 
-export const REDFLAG_PHOTO_ANALYSIS_PROMPT = `Analyze the provided photo and evaluate ONLY these two parameters:
+export const REDFLAG_PHOTO_ANALYSIS_PROMPT = `Analyze the provided photo and evaluate the Blogger's Income Level:
 
-1. Blogger’s Income Level
 Score = 100 if the blogger demonstrates a European premium / luxury or higher lifestyle
 Score = 0 if the lifestyle appears clearly low-income
+
 Positive visual markers (non-exhaustive):
 * Fresh flowers at home
 * Mid-to-premium skincare & cosmetics (Aesop, Augustinus Bader, Dr. Barbara Sturm, La Mer, Fresh)
@@ -732,6 +729,7 @@ Positive visual markers (non-exhaustive):
     * Japan
     * USA (NYC, California, Chicago)
     * Portugal (non-budget Algarve)
+
 Negative markers (strong downgrade signals):
 * Fast fashion: Shein, Zaful, Boohoo, PrettyLittleThing, Stradivarius, Bershka, Pimkie, Orsay, C&A
 * Cheap generic kitchenware or electronics
@@ -739,20 +737,14 @@ Negative markers (strong downgrade signals):
 * Pseudo-luxury interiors (gold decor, glossy furniture, baroque imitation, cheap LED lighting)
 * Budget mass tourism (cheap all-inclusive resorts, hostels, low-cost package tours)
 
-2. Age Over 35
-* 100 — Clearly over 35
-* 0 — Clearly under 35
-
-
 Scoring Rules
-* Each parameter must be scored on a 0–100 scale
-* Additionally, return a confidence score (0–100) reflecting how reliable the assessment is based on the available data
-* Provide a concise textual interpretation explaining why the score was assigned, referencing specific visual or behavioral signals
+* Score on a 0–100 scale
+* Return a confidence score (0–100) reflecting how reliable the assessment is
+* Provide a concise interpretation explaining why the score was assigned
 
 Output Format (Strict JSON)
 {
-  "income_level": {"Score": 0, "Confidence": 0, "Interpretation": ""},
-  "age_over_35": {"Score": 0, "Confidence": 0, "Interpretation": ""}
+  "income_level": {"Score": 0, "Confidence": 0, "Interpretation": ""}
 }
 
 Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed`
