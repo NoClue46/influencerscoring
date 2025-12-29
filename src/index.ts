@@ -192,8 +192,8 @@ app.get("/jobs/:id", async (c: Context) => {
                         <span style="flex: 1;">${reel.reason ?? '-'}</span>
                     </summary>
                     <div style="padding: 1rem; background: var(--pico-card-background-color); margin-top: 0.5rem; border-radius: 4px;">
-                        ${reel.commentRate !== null && reel.commentRate !== undefined && !Number.isNaN(reel.commentRate) ? html`
-                            <p style="margin: 0 0 0.75rem;"><b>Comment rate:</b> ${(reel.commentRate * 100).toFixed(2)}%</p>
+                        ${reel.commentEr !== null && reel.commentEr !== undefined && !Number.isNaN(reel.commentEr) ? html`
+                            <p style="margin: 0 0 0.75rem;"><b>Comment ER:</b> ${(reel.commentEr * 100).toFixed(2)}%</p>
                         ` : ''}
                         ${reel.analyzeRawText ? html`
                             <h4 style="margin-top: 0;">Analysis</h4>
@@ -221,8 +221,8 @@ app.get("/jobs/:id", async (c: Context) => {
                         <span style="flex: 1;">${post.reason ?? '-'}</span>
                     </summary>
                     <div style="padding: 1rem; background: var(--pico-card-background-color); margin-top: 0.5rem; border-radius: 4px;">
-                        ${post.commentRate !== null && post.commentRate !== undefined && !Number.isNaN(post.commentRate) ? html`
-                            <p style="margin: 0 0 0.75rem;"><b>Comment rate:</b> ${(post.commentRate * 100).toFixed(2)}%</p>
+                        ${post.commentEr !== null && post.commentEr !== undefined && !Number.isNaN(post.commentEr) ? html`
+                            <p style="margin: 0 0 0.75rem;"><b>Comment ER:</b> ${(post.commentEr * 100).toFixed(2)}%</p>
                         ` : ''}
                         ${post.analyzeRawText ? html`
                             <h4 style="margin-top: 0;">Analysis</h4>
@@ -297,6 +297,14 @@ app.get("/jobs/:id", async (c: Context) => {
                     <article>
                         <header><strong>Nickname Analysis</strong></header>
                         <pre style="white-space: pre-wrap; margin: 0;">${job.nicknameAnalyseRawText}</pre>
+                    </article>
+                    ` : ''}
+
+                    ${job.avgIncomeLevel !== null || job.avgAgeScore !== null ? html`
+                    <article>
+                        <header><strong>Photo Analysis Scores</strong></header>
+                        <p style="margin: 0;">Avg Income Level: <strong>${job.avgIncomeLevel?.toFixed(1) ?? 'N/A'}</strong></p>
+                        <p style="margin: 0;">Avg Age Score: <strong>${job.avgAgeScore?.toFixed(1) ?? 'N/A'}</strong></p>
                     </article>
                     ` : ''}
 

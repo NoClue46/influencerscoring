@@ -1,13 +1,13 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, TEMPLATE_COMMENTS_PROMPT, REDFLAG_PHOTO_ANALYSIS_PROMPT } from '../constants.js';
-import { fetchProfile, fetchPosts, fetchReels, fetchComments } from '../scrape-creators.js';
+import { fetchProfile, fetchPosts, fetchComments } from '../scrape-creators.js';
 import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.js';
+import { sleep, chunk } from '../utils/helpers.js';
 import fs from 'fs';
 import path from 'path';
 
 const REDFLAG_POST_COUNT = 5;
-const REDFLAG_REEL_COUNT = 5;
 const MIN_FOLLOWERS = 10000;
 const MIN_REPUTATION_SCORE = 60;
 const MIN_INCOME_LEVEL = 60;
@@ -100,7 +100,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                     downloadUrl: p.downloadUrl,
                     isVideo: p.isVideo,
                     commentCount: p.commentCount,
-                    commentRate: p.isVideo && p.viewCount > 0 ? p.commentCount / p.viewCount : 0
+                    commentEr: p.isVideo && p.viewCount > 0 ? p.commentCount / p.viewCount : 0
                 }))
             });
         }
@@ -154,9 +154,12 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             }
         }
 
+        let avgIncomeLevel: number | null = null;
+        let avgAgeScore: number | null = null;
+
         if (analyzedPhotos > 0) {
-            const avgIncomeLevel = totalIncomeLevel / analyzedPhotos;
-            const avgAgeScore = totalAgeScore / analyzedPhotos;
+            avgIncomeLevel = totalIncomeLevel / analyzedPhotos;
+            avgAgeScore = totalAgeScore / analyzedPhotos;
 
             console.log(`[redflag-check] Avg income level: ${avgIncomeLevel}, Avg age score: ${avgAgeScore}`);
 
@@ -168,7 +171,9 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                         status: 'completed',
                         redflag: 'low_income_and_age',
                         followers,
-                        nicknameAnalyseRawText: nicknameResult.text
+                        nicknameAnalyseRawText: nicknameResult.text,
+                        avgIncomeLevel,
+                        avgAgeScore
                     }
                 });
                 return;
@@ -176,61 +181,38 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
         }
 
         // === CHECK 4: Comments + ER analysis ===
-        console.log(`[redflag-check] Fetching ${REDFLAG_REEL_COUNT} reels for comment analysis`);
-        const reels = await fetchReels(job.username, REDFLAG_REEL_COUNT);
-
-        // Save reels to DB
-        if (reels.length > 0) {
-            await prisma.reels.createMany({
-                data: reels.map((r) => ({
-                    jobId: job.id,
-                    reelsUrl: r.url,
-                    downloadUrl: r.downloadUrl,
-                    commentCount: r.commentCount,
-                    commentRate: r.viewCount > 0 ? r.commentCount / r.viewCount : 0
-                }))
-            });
-        }
-
-        // Fetch comments for posts and reels
+        // Fetch comments for posts
         const allPosts = await prisma.post.findMany({ where: { jobId: job.id } });
-        const allReels = await prisma.reels.findMany({ where: { jobId: job.id } });
 
         const allComments: string[] = [];
         let totalER = 0;
         let erCount = 0;
 
-        for (const post of allPosts) {
-            const comments = await fetchComments(post.postUrl);
-            if (comments.length > 0) {
-                await prisma.comment.createMany({
-                    data: comments.map(c => ({
-                        postId: post.id,
-                        text: c.text
-                    }))
-                });
-                allComments.push(...comments.map(c => c.text));
-            }
-            if (post.commentRate !== null && post.commentRate !== undefined) {
-                totalER += post.commentRate;
-                erCount++;
-            }
-        }
+        const postChunks = chunk(allPosts, 3);
 
-        for (const reel of allReels) {
-            const comments = await fetchComments(reel.reelsUrl);
-            if (comments.length > 0) {
-                await prisma.comment.createMany({
-                    data: comments.map(c => ({
-                        reelsId: reel.id,
-                        text: c.text
-                    }))
-                });
-                allComments.push(...comments.map(c => c.text));
-            }
-            if (reel.commentRate !== null && reel.commentRate !== undefined) {
-                totalER += reel.commentRate;
-                erCount++;
+        for (const postBatch of postChunks) {
+            const results = await Promise.all(
+                postBatch.map(async (post, index) => {
+                    if (index > 0) await sleep(300);
+                    const comments = await fetchComments(post.postUrl);
+                    return { post, comments };
+                })
+            );
+
+            for (const { post, comments } of results) {
+                if (comments.length > 0) {
+                    await prisma.comment.createMany({
+                        data: comments.map(c => ({
+                            postId: post.id,
+                            text: c.text
+                        }))
+                    });
+                    allComments.push(...comments.map(c => c.text));
+                }
+                if (post.commentEr !== null && post.commentEr !== undefined) {
+                    totalER += post.commentEr;
+                    erCount++;
+                }
             }
         }
 
@@ -268,7 +250,9 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                     status: 'completed',
                     redflag: 'template_comments_low_er',
                     followers,
-                    nicknameAnalyseRawText: nicknameResult.text
+                    nicknameAnalyseRawText: nicknameResult.text,
+                    avgIncomeLevel,
+                    avgAgeScore
                 }
             });
             return;
@@ -281,7 +265,9 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             data: {
                 status: 'redflag_checking_finished',
                 followers,
-                nicknameAnalyseRawText: nicknameResult.text
+                nicknameAnalyseRawText: nicknameResult.text,
+                avgIncomeLevel,
+                avgAgeScore
             }
         });
 

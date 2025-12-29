@@ -30,6 +30,8 @@ model Job {
   analyzeRawText String? @map("analyse_raw_text")
   nicknameAnalyseRawText String? @map("nickname_analyse_raw_text")
   score Float?
+  avgIncomeLevel Float? @map("avg_income_level")
+  avgAgeScore Float? @map("avg_age_score")
 
   // Relations
   reels Reels[]
@@ -56,7 +58,7 @@ model Post {
   analyzeRawText String? @map("analuze_raw_text")
 
   commentCount Int? @default(0) @map("comment_count")
-  commentRate Float? @default(0) @map("comment_rate")
+  commentEr Float? @default(0) @map("comment_er")
 
   comments Comment[]
 
@@ -81,7 +83,7 @@ model Reels {
   analyzeRawText String? @map("analuze_raw_text")
 
   commentCount Int? @default(0) @map("comment_count")
-  commentRate Float? @default(0) @map("comment_rate")
+  commentEr Float? @default(0) @map("comment_er")
 
   comments Comment[]
 
