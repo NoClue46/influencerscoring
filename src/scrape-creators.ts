@@ -184,16 +184,20 @@ export async function fetchReels(handle: string, count: number = 12) {
     }
 }
 
-interface PostItem {
-    code: string;
-    url: string;
-    media_type: number; // 1=photo, 2=video, 8=carousel
+interface PostNode {
+    __typename: string;  // "GraphVideo" | "GraphImage" | "GraphSidecar"
+    id: string;
+    shortcode: string;
+    display_url: string;
+    is_video: boolean;
+    video_url?: string;
+    video_view_count?: number;
+    edge_media_to_comment?: { count: number };
 }
 
 interface PostsListResponse {
-    items: PostItem[];
-    more_available: boolean;
-    next_max_id?: string;
+    posts: { node: PostNode }[];
+    cursor?: string;
 }
 
 export async function fetchPosts(handle: string, count: number = 12) {
@@ -233,17 +237,17 @@ export async function fetchPosts(handle: string, count: number = 12) {
 
             const json = await response.json() as PostsListResponse;
 
-            if (!json.items || json.items.length === 0) break;
-            console.log(`[fetchPosts] page ${pageNum}: fetched ${json.items.length} items`);
+            if (!json.posts || json.posts.length === 0) break;
+            console.log(`[fetchPosts] page ${pageNum}: fetched ${json.posts.length} items`);
 
-            for (const item of json.items) {
+            for (const item of json.posts) {
                 if (result.length >= count) break;
-                if (processedCodes.has(item.code)) continue;
-                processedCodes.add(item.code);
+                const node = item.node;
+                if (processedCodes.has(node.shortcode)) continue;
+                processedCodes.add(node.shortcode);
 
-                // media_type: 1=photo, 2=video, 8=carousel
-                // Only photos, skip videos and carousels
-                if (item.media_type !== 1) {
+                // Skip videos and carousels (GraphSidecar), only photos
+                if (node.is_video || node.__typename === 'GraphSidecar') {
                     skippedCount++;
                     if (skippedCount >= 100) {
                         console.log(`[fetchPosts] skipped 100 posts, returning ${result.length} photos`);
@@ -252,40 +256,22 @@ export async function fetchPosts(handle: string, count: number = 12) {
                     continue;
                 }
 
-                // Fetch detailed info only for photos
-                const detailUrl = new URL(BASE_URL);
-                detailUrl.pathname = `/v1/instagram/post`;
-                detailUrl.search = `?url=${encodeURIComponent(item.url)}`;
+                const postUrl = `https://www.instagram.com/p/${node.shortcode}`;
 
-                const detailResponse = await fetch(detailUrl, {
-                    method: "GET",
-                    headers: {
-                        "x-api-key": process.env.SCRAPE_CREATORS ?? "",
-                    }
+                // Use data from list response directly (optimization)
+                result.push({
+                    url: postUrl,
+                    downloadUrl: node.display_url,
+                    isVideo: false,
+                    commentCount: node.edge_media_to_comment?.count ?? 0,
+                    viewCount: node.video_view_count ?? 0,
                 });
-
-                if (!detailResponse.ok) {
-                    console.error("Response body: ", await detailResponse.json());
-                    continue;
-                }
-
-                const detailJson = await detailResponse.json() as PostResponse;
-
-                if (detailJson.data?.xdt_shortcode_media?.display_url) {
-                    result.push({
-                        url: item.url,
-                        downloadUrl: detailJson.data.xdt_shortcode_media.display_url,
-                        isVideo: false,
-                        commentCount: detailJson.data.xdt_shortcode_media.edge_media_to_parent_comment?.count ?? 0,
-                        viewCount: detailJson.data.xdt_shortcode_media.video_view_count ?? 0,
-                    });
-                }
             }
 
             if (skippedCount >= 100) break;
 
-            cursor = json.next_max_id ?? null;
-            if (!cursor || !json.more_available) break;
+            cursor = json.cursor ?? null;
+            if (!cursor) break;
         }
 
         console.log(`[fetchPosts] completed: ${result.length} photos for @${handle} (skipped: ${skippedCount})`);
