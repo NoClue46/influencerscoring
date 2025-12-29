@@ -184,6 +184,18 @@ export async function fetchReels(handle: string, count: number = 12) {
     }
 }
 
+interface PostItem {
+    code: string;
+    url: string;
+    media_type: number; // 1=photo, 2=video, 8=carousel
+}
+
+interface PostsListResponse {
+    items: PostItem[];
+    more_available: boolean;
+    next_max_id?: string;
+}
+
 export async function fetchPosts(handle: string, count: number = 12) {
     console.log(`[fetchPosts] starting for @${handle}, limit: ${count}`);
     try {
@@ -195,10 +207,10 @@ export async function fetchPosts(handle: string, count: number = 12) {
             viewCount: number;
         }[] = [];
         let cursor: string | null = null;
-        const processedUrls = new Set<string>();
+        const processedCodes = new Set<string>();
         let pageNum = 0;
+        let skippedCount = 0;
 
-        // Keep fetching until we have enough photo posts
         while (result.length < count) {
             pageNum++;
             const url = new URL(BASE_URL);
@@ -219,30 +231,31 @@ export async function fetchPosts(handle: string, count: number = 12) {
                 throw new Error(`Failed to fetch posts ${response.statusText}`);
             }
 
-            const json = await response.json() as { 
-                posts: {
-                    node: {
-                        url: string
-                    }
-                }[];
-                cursor: string | null;
-            };
+            const json = await response.json() as PostsListResponse;
 
-            if (!json.posts || json.posts.length === 0) break;
-            console.log(`[fetchPosts] page ${pageNum}: fetched ${json.posts.length} items`);
+            if (!json.items || json.items.length === 0) break;
+            console.log(`[fetchPosts] page ${pageNum}: fetched ${json.items.length} items`);
 
-            // Process each post in current batch
-            for (const post of json.posts) {
+            for (const item of json.items) {
                 if (result.length >= count) break;
-                
-                const postUrl = post.node.url;
-                if (processedUrls.has(postUrl)) continue;
-                processedUrls.add(postUrl);
+                if (processedCodes.has(item.code)) continue;
+                processedCodes.add(item.code);
 
-                // Fetch post detail
+                // media_type: 1=photo, 2=video, 8=carousel
+                // Only photos, skip videos and carousels
+                if (item.media_type !== 1) {
+                    skippedCount++;
+                    if (skippedCount >= 100) {
+                        console.log(`[fetchPosts] skipped 100 posts, returning ${result.length} photos`);
+                        break;
+                    }
+                    continue;
+                }
+
+                // Fetch detailed info only for photos
                 const detailUrl = new URL(BASE_URL);
                 detailUrl.pathname = `/v1/instagram/post`;
-                detailUrl.search = `?url=${encodeURIComponent(postUrl)}`;
+                detailUrl.search = `?url=${encodeURIComponent(item.url)}`;
 
                 const detailResponse = await fetch(detailUrl, {
                     method: "GET",
@@ -258,14 +271,9 @@ export async function fetchPosts(handle: string, count: number = 12) {
 
                 const detailJson = await detailResponse.json() as PostResponse;
 
-                // Skip videos
-                if (detailJson.data?.xdt_shortcode_media?.is_video) {
-                    continue;
-                }
-
                 if (detailJson.data?.xdt_shortcode_media?.display_url) {
                     result.push({
-                        url: postUrl,
+                        url: item.url,
                         downloadUrl: detailJson.data.xdt_shortcode_media.display_url,
                         isVideo: false,
                         commentCount: detailJson.data.xdt_shortcode_media.edge_media_to_parent_comment?.count ?? 0,
@@ -274,11 +282,13 @@ export async function fetchPosts(handle: string, count: number = 12) {
                 }
             }
 
-            cursor = json.cursor;
-            if (!cursor) break; // No more posts available
+            if (skippedCount >= 100) break;
+
+            cursor = json.next_max_id ?? null;
+            if (!cursor || !json.more_available) break;
         }
 
-        console.log(`[fetchPosts] completed: ${result.length} photos for @${handle}`);
+        console.log(`[fetchPosts] completed: ${result.length} photos for @${handle} (skipped: ${skippedCount})`);
         return result;
     } catch (error) {
         console.error(`failed to fetch ${handle} posts: `, error);

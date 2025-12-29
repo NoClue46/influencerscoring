@@ -142,7 +142,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                         if (jsonMatch) {
                             const parsed = JSON.parse(jsonMatch[0]);
                             totalIncomeLevel += parsed.income_level?.Score ?? 50;
-                            totalAgeScore += parsed.age_over_30?.Score ?? 50;
+                            totalAgeScore += parsed.age_over_35?.Score ?? 50;
                             analyzedPhotos++;
                         }
                     } catch (e) {

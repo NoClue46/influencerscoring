@@ -266,10 +266,10 @@ Nuanced explanations or non-obvious insights
 
 Sharing "insider" practices, reasoning, or trade-offs
 
-11. Age Over 30
-100 — JSON strongly indicates blogger is over 30
+11. Age Over 35
+100 — JSON strongly indicates blogger is over 35
 
-0 — JSON strongly indicates blogger is under 30
+0 — JSON strongly indicates blogger is under 35
 
 12. Intelligence
 Score = 100 if the blogger demonstrates high cognitive and communicative intelligence.
@@ -393,7 +393,7 @@ Output Format (Strict JSON)
   "frequency_of_advertising": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "structured_thinking": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "knowledge_depth": {"Score": 0, "Confidence": 0, "Interpretation": ""},
-  "age_over_30": {"Score": 0, "Confidence": 0, "Interpretation": ""},
+  "age_over_35": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "intelligence": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "personal_values": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
@@ -557,10 +557,10 @@ Nuanced explanations or non-obvious insights
 
 Sharing "insider" practices, reasoning, or trade-offs
 
-11. Age Over 30
-100 — JSON strongly indicates blogger is over 30
+11. Age Over 35
+100 — JSON strongly indicates blogger is over 35
 
-0 — JSON strongly indicates blogger is under 30
+0 — JSON strongly indicates blogger is under 35
 
 12. Intelligence
 Score = 100 if the blogger demonstrates high cognitive and communicative intelligence.
@@ -684,7 +684,7 @@ Output Format (Strict JSON)
   "frequency_of_advertising": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "structured_thinking": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "knowledge_depth": {"Score": 0, "Confidence": 0, "Interpretation": ""},
-  "age_over_30": {"Score": 0, "Confidence": 0, "Interpretation": ""},
+  "age_over_35": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "intelligence": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "personal_values": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
@@ -715,20 +715,44 @@ Output Format (Strict JSON):
 
 export const REDFLAG_PHOTO_ANALYSIS_PROMPT = `Analyze the provided photo and evaluate ONLY these two parameters:
 
-1. Blogger's Income Level (0-100)
-Score = 100 if European premium/luxury lifestyle visible
-Score = 0 if clearly low-income lifestyle
+1. Blogger’s Income Level
+Score = 100 if the blogger demonstrates a European premium / luxury or higher lifestyle
+Score = 0 if the lifestyle appears clearly low-income
+Positive visual markers (non-exhaustive):
+* Fresh flowers at home
+* Mid-to-premium skincare & cosmetics (Aesop, Augustinus Bader, Dr. Barbara Sturm, La Mer, Fresh)
+* Candles: Diptyque, Jo Malone, Byredo
+* High-quality, restrained interior design (neutral tones, minimalism, coherence)
+* Cars: Audi, BMW, Mercedes, Volvo, Tesla, Lexus, Mini Cooper, Land Rover, Alfa Romeo, well-equipped VW (Tiguan, Touareg, Passat)
+* Travel destinations indicating non-budget lifestyle:
+    * Italy (Tuscany, Como, Amalfi)
+    * France (Paris, Provence, Nice)
+    * Spain (Mallorca, Ibiza non-budget, San Sebastián)
+    * Switzerland, Austria, Germany, UK
+    * Japan
+    * USA (NYC, California, Chicago)
+    * Portugal (non-budget Algarve)
+Negative markers (strong downgrade signals):
+* Fast fashion: Shein, Zaful, Boohoo, PrettyLittleThing, Stradivarius, Bershka, Pimkie, Orsay, C&A
+* Cheap generic kitchenware or electronics
+* Excessive logo-mania
+* Pseudo-luxury interiors (gold decor, glossy furniture, baroque imitation, cheap LED lighting)
+* Budget mass tourism (cheap all-inclusive resorts, hostels, low-cost package tours)
 
-Positive markers: premium skincare (Aesop, La Mer), designer items (Diptyque candles), quality interiors, premium cars (BMW, Mercedes, Tesla), upscale travel locations
-Negative markers: fast-fashion (Shein, Boohoo), cheap items, cluttered interiors, budget tourism
+2. Age Over 35
+* 100 — Clearly over 35
+* 0 — Clearly under 35
 
-2. Age Over 30 (0-100)
-Score = 100 if person appears over 30
-Score = 0 if person appears under 30
-Based on visual cues from the photo
 
-Output Format (Strict JSON):
+Scoring Rules
+* Each parameter must be scored on a 0–100 scale
+* Additionally, return a confidence score (0–100) reflecting how reliable the assessment is based on the available data
+* Provide a concise textual interpretation explaining why the score was assigned, referencing specific visual or behavioral signals
+
+Output Format (Strict JSON)
 {
-  "income_level": {"Score": 0, "Confidence": 0},
-  "age_over_30": {"Score": 0, "Confidence": 0}
-}`
+  "income_level": {"Score": 0, "Confidence": 0, "Interpretation": ""},
+  "age_over_35": {"Score": 0, "Confidence": 0, "Interpretation": ""}
+}
+
+Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed`
