@@ -4,6 +4,7 @@ import { downloadJob } from './download.js';
 import { framingJob } from './framing.js';
 import { speechToTextJob } from './speech-to-text.js';
 import { analyzeJob } from './analyze.js';
+import { cleanupJob } from './cleanup.js';
 
 export function startCronJobs(): void {
     console.log('Cron jobs started');
@@ -14,6 +15,7 @@ export function startCronJobs(): void {
     framingJob.start()
     speechToTextJob.start()
     analyzeJob.start()
+    cleanupJob.start()
 }
 
 export function stopCronJobs(): void {
@@ -23,4 +25,5 @@ export function stopCronJobs(): void {
     framingJob.stop()
     speechToTextJob.stop()
     analyzeJob.stop()
+    cleanupJob.stop()
 }
