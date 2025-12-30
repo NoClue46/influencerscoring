@@ -488,7 +488,7 @@ export async function fetchComments(postUrl: string, amount: number = 15): Promi
             return [];
         }
 
-        return json.comments.slice(amount);
+        return json.comments.slice(0, amount);
     } catch (error) {
         console.error(`failed to fetch comments for ${postUrl}: `, error);
         return [];
