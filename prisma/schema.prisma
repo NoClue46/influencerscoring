@@ -22,6 +22,7 @@ model Job {
   status String @default("pending")
   reason String? // error reason
   redflag String? @map("redflag") // red flag reason if detected
+  isPrivate Boolean @default(false) @map("is_private")
 
   postNumber Int @default(10) @map("post_number")
 

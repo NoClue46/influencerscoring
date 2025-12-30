@@ -36,6 +36,20 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             throw new Error('Failed to fetch profile');
         }
 
+        // === CHECK 0: Private account ===
+        const isPrivate = profile.is_private === true;
+        if (isPrivate) {
+            console.log(`[redflag-check] REDFLAG: private_account`);
+            await prisma.job.update({
+                where: { id: job.id },
+                data: {
+                    status: 'completed',
+                    isPrivate: true
+                }
+            });
+            return;
+        }
+
         const followers = profile.edge_followed_by?.count ?? 0;
         console.log(`[redflag-check] Followers: ${followers}`);
 

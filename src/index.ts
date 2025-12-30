@@ -284,6 +284,15 @@ app.get("/jobs/:id", async (c: Context) => {
                             color: #dc3545;
                             background: rgba(220, 53, 69, 0.12);
                         ">❌ ${job.redflag.replace(/_/g, ' ')}</span>` : ''}
+                        ${job.isPrivate ? html`<span style="
+                            display: inline-flex;
+                            align-items: center;
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 999px;
+                            font-weight: 600;
+                            color: #6b7280;
+                            background: rgba(107, 114, 128, 0.12);
+                        ">🔒 Private Account</span>` : ''}
                     </div>
 
                     ${job.analyzeRawText ? html`
