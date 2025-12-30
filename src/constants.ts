@@ -109,279 +109,372 @@ Output Format (Strict JSON)
   "interpretation": ""
 }`
 
-export const DEFAULT_POST_PROMPT = `Task
-Analyze the provided video frames and evaluate the blogger across the parameters listed below.
-Your goal is to score, justify, and assess confidence for each parameter based strictly on the signals available in the provided JSON analyses (derived from video frames, speech transcripts, metadata, or prior model outputs).
+export const DEFAULT_POST_PROMPT = `
+### Task
 
-Avoid assumptions not supported by the JSON evidence. If evidence is weak, indirect, or missing, lower the confidence score accordingly.
+Analyze the provided **provided video frames analyses** and evaluate the blogger across the parameters listed below.
+Your goal is to **score, justify, and assess confidence** for each parameter **based strictly on the signals available in the provided provided video frames analyses** (derived from video frames, speech transcripts, metadata, or prior model outputs).
 
-Scoring Rules
-Each parameter must be scored on a 0–100 scale
+Avoid assumptions not supported by the provided video frames evidence. If evidence is weak, indirect, or missing, lower the confidence score accordingly.
 
-Additionally, return a confidence score (0–100) reflecting how reliable the assessment is based on the available JSON evidence
+---
 
-Provide a concise textual interpretation explaining why the score was assigned, referencing specific fields, patterns, or signals from the JSON
+### Scoring Rules
 
-Parameters to Evaluate
-1. Blogger’s Income Level
-Score = 100 if the blogger demonstrates a European premium / luxury or higher lifestyle
-Score = 0 if the lifestyle appears clearly low-income
+* Each parameter must be scored on a **0–100 scale**
+* Additionally, return a **confidence score (0–100)** reflecting how reliable the assessment is based on the available provided video frames evidence
+* Provide a **concise textual interpretation** explaining *why* the score was assigned, referencing specific fields, patterns, or signals from the provided video frames
 
-Positive markers inferred from JSON (non-exhaustive):
+---
 
-Mentions or detections of premium skincare & cosmetics (Aesop, Augustinus Bader, Dr. Barbara Sturm, La Mer, Fresh)
+## Parameters to Evaluate
 
-Premium home elements (fresh flowers, designer candles: Diptyque, Jo Malone, Byredo)
+### 1. Blogger’s Income Level
 
-High-quality, restrained interior descriptors (neutral palette, minimalism, coherence)
+**Score = 100** if the blogger demonstrates a **European premium / luxury or higher lifestyle**
+**Score = 0** if the lifestyle appears clearly low-income
 
-Cars: Audi, BMW, Mercedes, Volvo, Tesla, Lexus, Mini Cooper, Land Rover, Alfa Romeo, well-equipped VW (Tiguan, Touareg, Passat)
+**Positive markers inferred from provided video frames (non-exhaustive):**
 
-Travel locations indicating non-budget lifestyle (Tuscany, Como, Amalfi, Paris, Provence, Nice, Mallorca non-budget, San Sebastián, Switzerland, UK, Japan, USA major cities, non-budget Portugal)
+* Mentions or detections of premium skincare & cosmetics (Aesop, Augustinus Bader, Dr. Barbara Sturm, La Mer, Fresh)
+* Premium home elements (fresh flowers, designer candles: Diptyque, Jo Malone, Byredo)
+* High-quality, restrained interior descriptors (neutral palette, minimalism, coherence)
+* Cars: Audi, BMW, Mercedes, Volvo, Tesla, Lexus, Mini Cooper, Land Rover, Alfa Romeo, well-equipped VW (Tiguan, Touareg, Passat)
+* Travel locations indicating non-budget lifestyle (Tuscany, Como, Amalfi, Paris, Provence, Nice, Mallorca non-budget, San Sebastián, Switzerland, UK, Japan, USA major cities, non-budget Portugal)
 
-Negative markers (strong downgrade signals):
+**Negative markers (strong downgrade signals):**
 
-Fast-fashion brands: Shein, Zaful, Boohoo, PrettyLittleThing, Stradivarius, Bershka, Pimkie, Orsay, C&A
+* Fast-fashion brands: Shein, Zaful, Boohoo, PrettyLittleThing, Stradivarius, Bershka, Pimkie, Orsay, C&A
+* Cheap or generic household items and electronics
+* Excessive logo-mania
+* Pseudo-luxury or cluttered interiors
+* Budget mass tourism indicators
 
-Cheap or generic household items and electronics
+---
 
-Excessive logo-mania
+### 2. Talking Head Presence
 
-Pseudo-luxury or cluttered interiors
+**100** — provided video frames confirms blogger appears on camera, speaks directly (not voice-over only).
+**0** — Blogger does not appear or is voice-over only / poorly represented.
 
-Budget mass tourism indicators
+---
 
-2. Talking Head Presence
-100 — JSON confirms blogger appears on camera, speaks directly (not voice-over only).
-0 — Blogger does not appear or is voice-over only / poorly represented.
+### 3. Alignment With Beauty & Self-Care Products
 
-3. Alignment With Beauty & Self-Care Products
-100 — Blogger naturally embodies beauty, wellness, or self-care themes.
+**100** — Blogger naturally embodies beauty, wellness, or self-care themes.
 
-Indicators inferred from JSON:
+Indicators inferred from provided video frames:
 
-Regular mentions of skincare routines, beauty devices, self-improvement, grooming, health
+* Regular mentions of skincare routines, beauty devices, self-improvement, grooming, health
+* References to LED masks, microcurrent therapy, gua sha, rollers, multi-step skincare, eye patches, scalp care, premium beauty devices
+* Sports-focused bloggers are acceptable if beauty/self-care is a recurring theme
 
-References to LED masks, microcurrent therapy, gua sha, rollers, multi-step skincare, eye patches, scalp care, premium beauty devices
+**0** — Beauty/self-care absent from content identity.
 
-Sports-focused bloggers are acceptable if beauty/self-care is a recurring theme
+---
 
-0 — Beauty/self-care absent from content identity.
+### 4. Absence of Low-End Retail Advertising
 
-4. Absence of Low-End Retail Advertising
-100 — No advertising for AliExpress, Shein, Temu, Aldi, Lidl, or similar low-cost retailers detected in JSON.
+**100** — No advertising for AliExpress, Shein, Temu, Aldi, Lidl, or similar low-cost retailers detected in provided video frames.
 Allowed: Costco, Target, Zara, Mango.
 
-5. Pillow Advertising Constraint
-100 — No pillow advertising detected OR only Sleep & Glow pillows are advertised.
+---
 
-6. Advertising Focus Consistency
-100 — Advertising is focused and coherent; no chaotic mix of unrelated product categories detected.
+### 5. Pillow Advertising Constraint
 
-7. Advertising Quality (Sales Authenticity)
-100 — JSON signals indicate that the blogger:
+**100** — No pillow advertising detected OR only Sleep & Glow pillows are advertised.
 
-Explains personal usage (how, when, why)
+---
 
-Integrates product naturally into lifestyle
+### 6. Advertising Focus Consistency
 
-Mentions specific, realistic benefits
+**100** — Advertising is focused and coherent; no chaotic mix of unrelated product categories detected.
 
-Avoids exaggerated or generic claims
+---
 
-Uses personal language rather than scripted ad phrasing
+### 7. Advertising Quality (Sales Authenticity)
 
-May mention small imperfections or nuances (trust signal)
+**Score = 100** if the frames and readable on-screen text/captions indicate **highly authentic, trust-based advertising**, not scripted or generic promotion.
 
-8. Presence of Advertising
+When advertising is present, the blogger:
 
-100 — Advertising present
+**Personal usage & realism**
 
-0 — No advertising
+* Clearly explains **how the product is used**
+* Explains **when** it is used (time, routine, situation)
+* Explains **why** it is used (personal motivation)
+* Describes **specific situations** in which the product is relevant
+* Demonstrates the product in a **realistic, non-idealized way** (not overly polished or staged)
 
-9. Structured Thinking & Argumentation
-Score = 100 if the blogger expresses thoughts clearly, structurally, and argumentatively, not limited to simple opinions.
+**Lifestyle integration**
 
-The blogger:
+* Shows that the integration is **not random**
+* Demonstrates that the product **supports and fits their lifestyle**, habits, or routines
+* Product appears naturally embedded into daily life shown in frames
 
-Explains why, not just likes / dislikes
+**Concrete details & specificity**
 
-Uses arguments based on:
+* Mentions **specific, tangible effects or observations**:
 
-Personal experience ("on myself", "in my routine", "I noticed")
+  * e.g. “I wake up without creases”, “my skin feels less irritated”
+* Avoids abstract praise and focuses on **observable outcomes**
 
-Observation & comparison (before/after, comparison with alternatives)
+**Contextual integration**
 
-Logic and cause–effect reasoning ("if you do X, Y usually happens")
+* Connects the integration to context or audience interaction:
 
-Concrete usage scenarios (when, how, why the product or approach is used)
+  * “you often ask what I use”
+  * “I was looking for something to fix morning creases”
+* Avoids abrupt transitions like “Now advertising” unless the format explicitly requires it
 
-Additional signals:
+**Authentic voice & tone**
 
-Connects causes and outcomes
+* Uses **their own natural manner of speech** and personal tone
+* Does not sound like reading a script or brand copy
 
-Occasionally explains why something works, not only what to do
+**Credibility & restraint**
 
-Compares approaches ("this works differently because…")
+* Avoids exaggerated or absolute claims (“the best product in the world”)
+* Focuses on **specific advantages**, not empty superlatives
 
-Avoids empty statements
+**Real need → solution link**
 
-Uses simple, clear language and explains complex terms when needed
+* Describes a **real personal problem or need**:
 
-Formats that strengthen the score:
+  * acne, sensitive skin, frequent travel, lack of sleep, irritation, etc.
+* Clearly links the product to **solving their specific problem**, not a generic one
 
-Before / after comparison
+**Trust-enhancing nuance**
 
-Comparison with alternatives
+* May mention a **small nuance, limitation, or wish**
+* Light imperfection is treated as a **positive trust signal**
 
-Explanation of differences
+If readable captions/on-screen text are missing and speech cannot be reliably inferred from frames, **reduce Confidence accordingly**, even if the visual presentation appears premium.
 
-Explanation of why one approach worked and others did not
+---
 
-10. Knowledge Depth & Usefulness
-Score = 100 if the blogger demonstrates above-average depth of knowledge and practical usefulness, even without formal expert credentials.
+### 8. Frequency of Advertising
 
-Evaluate based on the rarity, freshness, and depth of information shared.
+* **100** — Advertising appears in any piece of content
+* **0** — No advertising present across the analyzed content
 
-Use the following knowledge diffusion levels:
+---
 
-Scientific or emerging innovation (known mainly in research or niche expert circles)
+### 9. Structured Thinking & Argumentation
 
-Knowledge known to a narrow group of professionals
+**Score = 100** if the blogger demonstrates **clear, structured, and reasoned thinking**, going far beyond simple statements like “I like / I don’t like”.
 
-Advanced professional knowledge entering quality media
+The blogger **does NOT limit themselves to opinions**, but:
 
-Knowledge known to deeply interested enthusiasts
+* Explains **why** they think so
+* Provides **examples from practice**:
 
-Generic, mass, overused information
+  * personal experience ("on myself", "in my routine")
+  * experience with others (clients / followers, if visible via captions)
+* Clearly links **cause and effect**:
 
-Primary interest levels: 1–3 (level 4 acceptable).
-Level 5 should significantly lower the score.
+  * “if you do X, Y usually happens”
+* Sometimes **compares approaches**:
 
-Strong signals:
+  * “this works like this, while that works differently, because…”
 
-Information not commonly repeated by mass bloggers
+**Language & clarity requirements:**
 
-Nuanced explanations or non-obvious insights
+* Speaks in **simple, clear sentences**, without unnecessary filler
+* Explains complex terms **when they are used**
+* Avoids excessive professional jargon not common outside expert sources
+* Gives not only **“what to do”**, but also **“why it works”**
 
-Sharing "insider" practices, reasoning, or trade-offs
+**Mandatory argument types to look for:**
 
-11. Age Over 35
-100 — JSON strongly indicates blogger is over 35
+1. **Arguments based on personal experience**
 
-0 — JSON strongly indicates blogger is under 35
+   * first‑person statements
+   * visible routines or repeated personal usage
 
-12. Intelligence
-Score = 100 if the blogger demonstrates high cognitive and communicative intelligence.
+2. **Arguments based on observation and comparison**
+
+   * before / after comparisons
+   * comparison with alternatives or analogs
+   * explanation of differences
+   * explanation of why one option worked and others did not
+
+3. **Logical and cause–effect arguments**
+
+   * clear explanation of why a certain effect occurs
+   * reasoning chains (X → Y → result)
+
+4. **Arguments through concrete usage scenarios**
+
+   * shows *how*, *when*, and *in which situations* something is used
+   * usage tied to real-life context
+
+**Strong scoring formats:**
+
+* Before / after comparisons
+* Comparison with analogs
+* Explanation of distinctions
+* Explanation of why this method worked and others failed
+
+If readable captions/on‑screen text or clear speaking‑to‑camera cues are **absent**, significantly **reduce Confidence**, even if the visual style appears polished.
+
+---
+
+### 10. Knowledge Depth & Usefulness
+
+**Score = 100** if the blogger demonstrates **high relevance, freshness, and rarity of transmitted knowledge**, even without formal expert credentials.
+
+The assessment must be based on **how far the information is from mass awareness** and **at what stage of societal diffusion the knowledge currently is**.
+
+Use the following **knowledge diffusion levels**:
+
+1. **Scientific innovation** — information originates from narrow academic or scientific journals and research circles
+2. **Narrow professional knowledge** — known to a small group of professionals, circulates in specialized or semi-academic publications
+3. **Professional mainstream (priority level)** — accessible to a wide professional audience and starting to appear in high-quality press
+4. **Advanced enthusiast knowledge (acceptable)** — known to deeply engaged enthusiasts and hobbyists, already present in popular media
+5. **Mass / overused knowledge** — widely known, generic, repeated, and commonly encountered
+
+**Primary target level:** **Level 3**
+**Acceptable:** Level 4 (since most bloggers operate in this zone)
+Levels **1–2** are strong positive signals but rare.
+Level **5** should significantly lower the score.
+
+**Key evaluation criteria:**
+
+* Rarity of information relative to mass content
+* Actuality and freshness (not outdated or recycled insights)
+* Presence of non-obvious details, nuances, or trade-offs
+* Evidence that the blogger understands *why* the concept works, not just *what* it is
+
+**Strong signals include:**
+
+* Explaining concepts before they become widely popular
+* Translating professional knowledge into accessible explanations
+* Highlighting limitations, conditions, or edge cases
+* Connecting insights to real-world application shown in frames or captions
+
+If there is **no readable caption/on-screen text** or clear evidence of knowledge transmission, **reduce Confidence accordingly**, even if the visual presentation appears premium.
+
+---
+
+### 11. Age Over 30
+
+* **100** — provided video frames strongly indicates blogger is over 30
+* **0** — provided video frames strongly indicates blogger is under 30
+
+---
+
+### 12. Intelligence
+
+**Score = 100** if the blogger demonstrates high cognitive and communicative intelligence.
 
 Evaluate across two dimensions:
 
-Speech & Thinking:
+**Speech & Thinking:**
 
-Clear and logical structure of speech
+* Clear and logical structure of speech
+* Rich but precise vocabulary (without overload)
+* Ability to explain complex ideas in simple terms
+* Consistency and ability to justify positions
+* Presence of irony or self-irony (optional but strong signal)
 
-Rich but precise vocabulary (without overload)
+**Analytical Ability:**
 
-Ability to explain complex ideas in simple terms
+* Quickly grasps the essence of topics
+* Highlights the main points without getting lost in details
+* Compares and generalizes
+* Demonstrates critical thinking (does not accept everything at face value)
 
-Consistency and ability to justify positions
+---
 
-Presence of irony or self-irony (optional but strong signal)
+### 13. Personal Values & “Own Truth”
 
-Analytical Ability:
+**Score = 100** if the blogger consistently demonstrates a **personal worldview, values, and principles**, going beyond simple documentation of events.
 
-Quickly grasps the essence of topics
+The blogger **does not merely show events** ("what I eat / do / visit"), but **actively interprets them**.
 
-Highlights the main points without getting lost in details
+**1. Interpretation of events (mandatory):**
 
-Compares and generalizes
+* Explains **why** they act or choose something in a particular way
+* Expresses **personal likes and dislikes**, not neutral descriptions
+* Articulates **personal conclusions or lessons learned**
+* Explicitly connects actions, choices, or experiences to **personal values or principles**
 
-Demonstrates critical thinking (does not accept everything at face value)
+**2. Evaluation and conclusions (mandatory):**
+The blogger does not just describe, but **analytically comments**:
 
-13. Personal Values & “Own Truth”
-Score = 100 if the blogger consistently transmits a personal worldview, values, and principles.
+* What genuinely worked or was liked
+* What did not work or was disliked **and why**
+* What deserves attention and why
+* What experience or insight was gained
 
-The blogger:
+**3. Personal opinion vs. borrowed narratives (mandatory):**
+The blogger clearly formulates **their own opinion**, not a retransmission of brand or external messaging.
 
-Interprets events, not just shows them
+Clear distinctions include:
 
-Explains why they act a certain way
+* Instead of: “I was sent a pillow”
+* The blogger says:
 
-Shares personal likes/dislikes
+  * “I like that it gives me ___, because ___ is important to me.”
+  * “This brand resonates with me because it shares my idea/value of ___.”
+  * “I choose ___ because my principles are ___.”
 
-Draws conclusions and lessons
+**Key signals:**
 
-Connects actions to personal values
+* First-person language ("I choose", "it matters to me", "for me")
+* Explicit value-based reasoning
+* Consistent personal stance across frames or content pieces
 
-Gives evaluations and conclusions
+If readable captions/on-screen text or clear speaking-to-camera cues are **absent**, **reduce Confidence**, even if the visual storytelling appears polished.
 
-What genuinely worked or did not work
+---
 
-What deserves attention and why
+### 14. Enthusiasm & Positive Energy
 
-What experience was gained
-
-Expresses personal opinions, not borrowed narratives
-
-Speaks from first person
-
-Explains choices through principles ("this matters to me because…")
-
-Clearly differentiates personal stance from generic advertising language
-
-14. Enthusiasm & Positive Energy
-Score = 100 if the blogger radiates enthusiasm, optimism, and positive emotional energy.
+**Score = 100** if the blogger radiates enthusiasm, optimism, and positive emotional energy.
 
 Signals:
 
-Lively, engaging intonation
+* Lively, engaging intonation
+* Natural, effortless smiles
+* Warm, friendly tone (no sarcasm, irritation, or fatigue)
+* Dynamic speech (not dragging or monotonous)
+* Frequent light humor or laughter
+* Absence of constant complaints or negativity
+* Focus on opportunities, improvements, inspiration
+* Avoids toxic criticism and whining
 
-Natural, effortless smiles
+---
 
-Warm, friendly tone (no sarcasm, irritation, or fatigue)
+### 15. Charisma & Ability to Inspire
 
-Dynamic speech (not dragging or monotonous)
-
-Frequent light humor or laughter
-
-Absence of constant complaints or negativity
-
-Focus on opportunities, improvements, inspiration
-
-Avoids toxic criticism and whining
-
-15. Charisma & Ability to Inspire
-Score = 100 if the blogger can emotionally engage and "infect" others with ideas, values, or passion.
+**Score = 100** if the blogger can emotionally engage and "infect" others with ideas, values, or passion.
 
 The blogger:
 
-Consistently communicates core beliefs (health, beauty, self-care, quality of life)
-
-Explains why these beliefs matter personally
-
-Is not afraid to take a clear position and speak from first person
+* Consistently communicates core beliefs (health, beauty, self-care, quality of life)
+* Explains why these beliefs matter personally
+* Is not afraid to take a clear position and speak from first person
 
 Delivery signals:
 
-Speaks with energy and emotional involvement
-
-Uses expressive facial expressions and intonation
-
-Shows genuine enjoyment of the content creation process
-
-Uses phrases like "This really works", "I want you to try this too"
-
-Avoids indifferent or checklist-style product descriptions
+* Speaks with energy and emotional involvement
+* Uses expressive facial expressions and intonation
+* Shows genuine enjoyment of the content creation process
+* Uses phrases like "This really works", "I want you to try this too"
+* Avoids indifferent or checklist-style product descriptions
 
 Additional strength signals:
 
-Uses rhythm, pauses, and structure in speech
+* Uses rhythm, pauses, and structure in speech
+* Varies content formats (stories, POV, backstage, emotional addresses)
 
-Varies content formats (stories, POV, backstage, emotional addresses)
+---
 
-Output Format (Strict JSON)
+## Output Format (Strict provided video frames)
 
-
+json
 {
   "income_level": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "talking_head": {"Score": 0, "Confidence": 0, "Interpretation": ""},
@@ -393,283 +486,382 @@ Output Format (Strict JSON)
   "frequency_of_advertising": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "structured_thinking": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "knowledge_depth": {"Score": 0, "Confidence": 0, "Interpretation": ""},
-  "age_over_35": {"Score": 0, "Confidence": 0, "Interpretation": ""},
+  "age_over_30": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "intelligence": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "personal_values": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
 }
-Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed`
 
-export const DEFAULT_BLOGGER_PROMPT = `Task
-Analyze the provided JSON analyses and evaluate the blogger across the parameters listed below.
-Your goal is to score, justify, and assess confidence for each parameter based strictly on the signals available in the provided JSON analyses (derived from video frames, speech transcripts, metadata, or prior model outputs).
+Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed
+`
+
+export const DEFAULT_BLOGGER_PROMPT = `
+### Task
+
+Analyze the provided **JSON analyses** and evaluate the blogger across the parameters listed below.
+Your goal is to **score, justify, and assess confidence** for each parameter **based strictly on the signals available in the provided JSON analyses** (derived from video frames, speech transcripts, metadata, or prior model outputs).
 
 Avoid assumptions not supported by the JSON evidence. If evidence is weak, indirect, or missing, lower the confidence score accordingly.
 
-Scoring Rules
-Each parameter must be scored on a 0–100 scale
+---
 
-Additionally, return a confidence score (0–100) reflecting how reliable the assessment is based on the available JSON evidence
+### Scoring Rules
 
-Provide a concise textual interpretation explaining why the score was assigned, referencing specific fields, patterns, or signals from the JSON
+* Each parameter must be scored on a **0–100 scale**
+* Additionally, return a **confidence score (0–100)** reflecting how reliable the assessment is based on the available JSON evidence
+* Provide a **concise textual interpretation** explaining *why* the score was assigned, referencing specific fields, patterns, or signals from the JSON
 
-Parameters to Evaluate
-1. Blogger’s Income Level
-Score = 100 if the blogger demonstrates a European premium / luxury or higher lifestyle
-Score = 0 if the lifestyle appears clearly low-income
+---
 
-Positive markers inferred from JSON (non-exhaustive):
+## Parameters to Evaluate
 
-Mentions or detections of premium skincare & cosmetics (Aesop, Augustinus Bader, Dr. Barbara Sturm, La Mer, Fresh)
+### 1. Blogger’s Income Level
 
-Premium home elements (fresh flowers, designer candles: Diptyque, Jo Malone, Byredo)
+**Score = 100** if the blogger demonstrates a **European premium / luxury or higher lifestyle**
+**Score = 0** if the lifestyle appears clearly low-income
 
-High-quality, restrained interior descriptors (neutral palette, minimalism, coherence)
+**Positive markers inferred from JSON (non-exhaustive):**
 
-Cars: Audi, BMW, Mercedes, Volvo, Tesla, Lexus, Mini Cooper, Land Rover, Alfa Romeo, well-equipped VW (Tiguan, Touareg, Passat)
+* Mentions or detections of premium skincare & cosmetics (Aesop, Augustinus Bader, Dr. Barbara Sturm, La Mer, Fresh)
+* Premium home elements (fresh flowers, designer candles: Diptyque, Jo Malone, Byredo)
+* High-quality, restrained interior descriptors (neutral palette, minimalism, coherence)
+* Cars: Audi, BMW, Mercedes, Volvo, Tesla, Lexus, Mini Cooper, Land Rover, Alfa Romeo, well-equipped VW (Tiguan, Touareg, Passat)
+* Travel locations indicating non-budget lifestyle (Tuscany, Como, Amalfi, Paris, Provence, Nice, Mallorca non-budget, San Sebastián, Switzerland, UK, Japan, USA major cities, non-budget Portugal)
 
-Travel locations indicating non-budget lifestyle (Tuscany, Como, Amalfi, Paris, Provence, Nice, Mallorca non-budget, San Sebastián, Switzerland, UK, Japan, USA major cities, non-budget Portugal)
+**Negative markers (strong downgrade signals):**
 
-Negative markers (strong downgrade signals):
+* Fast-fashion brands: Shein, Zaful, Boohoo, PrettyLittleThing, Stradivarius, Bershka, Pimkie, Orsay, C&A
+* Cheap or generic household items and electronics
+* Excessive logo-mania
+* Pseudo-luxury or cluttered interiors
+* Budget mass tourism indicators
 
-Fast-fashion brands: Shein, Zaful, Boohoo, PrettyLittleThing, Stradivarius, Bershka, Pimkie, Orsay, C&A
+---
 
-Cheap or generic household items and electronics
+### 2. Talking Head Presence
 
-Excessive logo-mania
+**100** — JSON confirms blogger appears on camera, speaks directly (not voice-over only).
+**0** — Blogger does not appear or is voice-over only / poorly represented.
 
-Pseudo-luxury or cluttered interiors
+---
 
-Budget mass tourism indicators
+### 3. Alignment With Beauty & Self-Care Products
 
-2. Talking Head Presence
-100 — JSON confirms blogger appears on camera, speaks directly (not voice-over only).
-0 — Blogger does not appear or is voice-over only / poorly represented.
-
-3. Alignment With Beauty & Self-Care Products
-100 — Blogger naturally embodies beauty, wellness, or self-care themes.
+**100** — Blogger naturally embodies beauty, wellness, or self-care themes.
 
 Indicators inferred from JSON:
 
-Regular mentions of skincare routines, beauty devices, self-improvement, grooming, health
+* Regular mentions of skincare routines, beauty devices, self-improvement, grooming, health
+* References to LED masks, microcurrent therapy, gua sha, rollers, multi-step skincare, eye patches, scalp care, premium beauty devices
+* Sports-focused bloggers are acceptable if beauty/self-care is a recurring theme
 
-References to LED masks, microcurrent therapy, gua sha, rollers, multi-step skincare, eye patches, scalp care, premium beauty devices
+**0** — Beauty/self-care absent from content identity.
 
-Sports-focused bloggers are acceptable if beauty/self-care is a recurring theme
+---
 
-0 — Beauty/self-care absent from content identity.
+### 4. Absence of Low-End Retail Advertising
 
-4. Absence of Low-End Retail Advertising
-100 — No advertising for AliExpress, Shein, Temu, Aldi, Lidl, or similar low-cost retailers detected in JSON.
+**100** — No advertising for AliExpress, Shein, Temu, Aldi, Lidl, or similar low-cost retailers detected in JSON.
 Allowed: Costco, Target, Zara, Mango.
 
-5. Pillow Advertising Constraint
-100 — No pillow advertising detected OR only Sleep & Glow pillows are advertised.
+---
 
-6. Advertising Focus Consistency
-100 — Advertising is focused and coherent; no chaotic mix of unrelated product categories detected.
+### 5. Pillow Advertising Constraint
 
-7. Advertising Quality (Sales Authenticity)
-100 — JSON signals indicate that the blogger:
+**100** — No pillow advertising detected OR only Sleep & Glow pillows are advertised.
 
-Explains personal usage (how, when, why)
+---
 
-Integrates product naturally into lifestyle
+### 6. Advertising Focus Consistency
 
-Mentions specific, realistic benefits
+**100** — Advertising is focused and coherent; no chaotic mix of unrelated product categories detected.
 
-Avoids exaggerated or generic claims
+---
 
-Uses personal language rather than scripted ad phrasing
+### 7. Advertising Quality (Sales Authenticity)
 
-May mention small imperfections or nuances (trust signal)
+**Score = 100** if the frames and readable on-screen text/captions indicate **highly authentic, trust-based advertising**, not scripted or generic promotion.
 
-8. Frequency of Advertising 0 — Advertising appears in all pieces of content 100 — No advertising present across the analyzed content
+When advertising is present, the blogger:
 
-9. Structured Thinking & Argumentation
-Score = 100 if the blogger expresses thoughts clearly, structurally, and argumentatively, not limited to simple opinions.
+**Personal usage & realism**
 
-The blogger:
+* Clearly explains **how the product is used**
+* Explains **when** it is used (time, routine, situation)
+* Explains **why** it is used (personal motivation)
+* Describes **specific situations** in which the product is relevant
+* Demonstrates the product in a **realistic, non-idealized way** (not overly polished or staged)
 
-Explains why, not just likes / dislikes
+**Lifestyle integration**
 
-Uses arguments based on:
+* Shows that the integration is **not random**
+* Demonstrates that the product **supports and fits their lifestyle**, habits, or routines
+* Product appears naturally embedded into daily life shown in frames
 
-Personal experience ("on myself", "in my routine", "I noticed")
+**Concrete details & specificity**
 
-Observation & comparison (before/after, comparison with alternatives)
+* Mentions **specific, tangible effects or observations**:
 
-Logic and cause–effect reasoning ("if you do X, Y usually happens")
+  * e.g. “I wake up without creases”, “my skin feels less irritated”
+* Avoids abstract praise and focuses on **observable outcomes**
 
-Concrete usage scenarios (when, how, why the product or approach is used)
+**Contextual integration**
 
-Additional signals:
+* Connects the integration to context or audience interaction:
 
-Connects causes and outcomes
+  * “you often ask what I use”
+  * “I was looking for something to fix morning creases”
+* Avoids abrupt transitions like “Now advertising” unless the format explicitly requires it
 
-Occasionally explains why something works, not only what to do
+**Authentic voice & tone**
 
-Compares approaches ("this works differently because…")
+* Uses **their own natural manner of speech** and personal tone
+* Does not sound like reading a script or brand copy
 
-Avoids empty statements
+**Credibility & restraint**
 
-Uses simple, clear language and explains complex terms when needed
+* Avoids exaggerated or absolute claims (“the best product in the world”)
+* Focuses on **specific advantages**, not empty superlatives
 
-Formats that strengthen the score:
+**Real need → solution link**
 
-Before / after comparison
+* Describes a **real personal problem or need**:
 
-Comparison with alternatives
+  * acne, sensitive skin, frequent travel, lack of sleep, irritation, etc.
+* Clearly links the product to **solving their specific problem**, not a generic one
 
-Explanation of differences
+**Trust-enhancing nuance**
 
-Explanation of why one approach worked and others did not
+* May mention a **small nuance, limitation, or wish**
+* Light imperfection is treated as a **positive trust signal**
 
-10. Knowledge Depth & Usefulness
-Score = 100 if the blogger demonstrates above-average depth of knowledge and practical usefulness, even without formal expert credentials.
+If readable captions/on-screen text are missing and speech cannot be reliably inferred from frames, **reduce Confidence accordingly**, even if the visual presentation appears premium.
 
-Evaluate based on the rarity, freshness, and depth of information shared.
+---
 
-Use the following knowledge diffusion levels:
+### 8. Frequency of Advertising
 
-Scientific or emerging innovation (known mainly in research or niche expert circles)
+* **100** — Advertising appears in any piece of content
+* **0** — No advertising present across the analyzed content
 
-Knowledge known to a narrow group of professionals
+---
 
-Advanced professional knowledge entering quality media
+### 9. Structured Thinking & Argumentation
 
-Knowledge known to deeply interested enthusiasts
+**Score = 100** if the blogger demonstrates **clear, structured, and reasoned thinking**, going far beyond simple statements like “I like / I don’t like”.
 
-Generic, mass, overused information
+The blogger **does NOT limit themselves to opinions**, but:
 
-Primary interest levels: 1–3 (level 4 acceptable).
-Level 5 should significantly lower the score.
+* Explains **why** they think so
+* Provides **examples from practice**:
 
-Strong signals:
+  * personal experience ("on myself", "in my routine")
+  * experience with others (clients / followers, if visible via captions)
+* Clearly links **cause and effect**:
 
-Information not commonly repeated by mass bloggers
+  * “if you do X, Y usually happens”
+* Sometimes **compares approaches**:
 
-Nuanced explanations or non-obvious insights
+  * “this works like this, while that works differently, because…”
 
-Sharing "insider" practices, reasoning, or trade-offs
+**Language & clarity requirements:**
 
-11. Age Over 35
-100 — JSON strongly indicates blogger is over 35
+* Speaks in **simple, clear sentences**, without unnecessary filler
+* Explains complex terms **when they are used**
+* Avoids excessive professional jargon not common outside expert sources
+* Gives not only **“what to do”**, but also **“why it works”**
 
-0 — JSON strongly indicates blogger is under 35
+**Mandatory argument types to look for:**
 
-12. Intelligence
-Score = 100 if the blogger demonstrates high cognitive and communicative intelligence.
+1. **Arguments based on personal experience**
+
+   * first‑person statements
+   * visible routines or repeated personal usage
+
+2. **Arguments based on observation and comparison**
+
+   * before / after comparisons
+   * comparison with alternatives or analogs
+   * explanation of differences
+   * explanation of why one option worked and others did not
+
+3. **Logical and cause–effect arguments**
+
+   * clear explanation of why a certain effect occurs
+   * reasoning chains (X → Y → result)
+
+4. **Arguments through concrete usage scenarios**
+
+   * shows *how*, *when*, and *in which situations* something is used
+   * usage tied to real-life context
+
+**Strong scoring formats:**
+
+* Before / after comparisons
+* Comparison with analogs
+* Explanation of distinctions
+* Explanation of why this method worked and others failed
+
+If readable captions/on‑screen text or clear speaking‑to‑camera cues are **absent**, significantly **reduce Confidence**, even if the visual style appears polished.
+
+---
+
+### 10. Knowledge Depth & Usefulness
+
+**Score = 100** if the blogger demonstrates **high relevance, freshness, and rarity of transmitted knowledge**, even without formal expert credentials.
+
+The assessment must be based on **how far the information is from mass awareness** and **at what stage of societal diffusion the knowledge currently is**.
+
+Use the following **knowledge diffusion levels**:
+
+1. **Scientific innovation** — information originates from narrow academic or scientific journals and research circles
+2. **Narrow professional knowledge** — known to a small group of professionals, circulates in specialized or semi-academic publications
+3. **Professional mainstream (priority level)** — accessible to a wide professional audience and starting to appear in high-quality press
+4. **Advanced enthusiast knowledge (acceptable)** — known to deeply engaged enthusiasts and hobbyists, already present in popular media
+5. **Mass / overused knowledge** — widely known, generic, repeated, and commonly encountered
+
+**Primary target level:** **Level 3**
+**Acceptable:** Level 4 (since most bloggers operate in this zone)
+Levels **1–2** are strong positive signals but rare.
+Level **5** should significantly lower the score.
+
+**Key evaluation criteria:**
+
+* Rarity of information relative to mass content
+* Actuality and freshness (not outdated or recycled insights)
+* Presence of non-obvious details, nuances, or trade-offs
+* Evidence that the blogger understands *why* the concept works, not just *what* it is
+
+**Strong signals include:**
+
+* Explaining concepts before they become widely popular
+* Translating professional knowledge into accessible explanations
+* Highlighting limitations, conditions, or edge cases
+* Connecting insights to real-world application shown in frames or captions
+
+If there is **no readable caption/on-screen text** or clear evidence of knowledge transmission, **reduce Confidence accordingly**, even if the visual presentation appears premium.
+
+---
+
+### 11. Age Over 30
+
+* **100** — JSON strongly indicates blogger is over 30
+* **0** — JSON strongly indicates blogger is under 30
+
+---
+
+### 12. Intelligence
+
+**Score = 100** if the blogger demonstrates high cognitive and communicative intelligence.
 
 Evaluate across two dimensions:
 
-Speech & Thinking:
+**Speech & Thinking:**
 
-Clear and logical structure of speech
+* Clear and logical structure of speech
+* Rich but precise vocabulary (without overload)
+* Ability to explain complex ideas in simple terms
+* Consistency and ability to justify positions
+* Presence of irony or self-irony (optional but strong signal)
 
-Rich but precise vocabulary (without overload)
+**Analytical Ability:**
 
-Ability to explain complex ideas in simple terms
+* Quickly grasps the essence of topics
+* Highlights the main points without getting lost in details
+* Compares and generalizes
+* Demonstrates critical thinking (does not accept everything at face value)
 
-Consistency and ability to justify positions
+---
 
-Presence of irony or self-irony (optional but strong signal)
+### 13. Personal Values & “Own Truth”
 
-Analytical Ability:
+**Score = 100** if the blogger consistently demonstrates a **personal worldview, values, and principles**, going beyond simple documentation of events.
 
-Quickly grasps the essence of topics
+The blogger **does not merely show events** ("what I eat / do / visit"), but **actively interprets them**.
 
-Highlights the main points without getting lost in details
+**1. Interpretation of events (mandatory):**
 
-Compares and generalizes
+* Explains **why** they act or choose something in a particular way
+* Expresses **personal likes and dislikes**, not neutral descriptions
+* Articulates **personal conclusions or lessons learned**
+* Explicitly connects actions, choices, or experiences to **personal values or principles**
 
-Demonstrates critical thinking (does not accept everything at face value)
+**2. Evaluation and conclusions (mandatory):**
+The blogger does not just describe, but **analytically comments**:
 
-13. Personal Values & “Own Truth”
-Score = 100 if the blogger consistently transmits a personal worldview, values, and principles.
+* What genuinely worked or was liked
+* What did not work or was disliked **and why**
+* What deserves attention and why
+* What experience or insight was gained
 
-The blogger:
+**3. Personal opinion vs. borrowed narratives (mandatory):**
+The blogger clearly formulates **their own opinion**, not a retransmission of brand or external messaging.
 
-Interprets events, not just shows them
+Clear distinctions include:
 
-Explains why they act a certain way
+* Instead of: “I was sent a pillow”
+* The blogger says:
 
-Shares personal likes/dislikes
+  * “I like that it gives me ___, because ___ is important to me.”
+  * “This brand resonates with me because it shares my idea/value of ___.”
+  * “I choose ___ because my principles are ___.”
 
-Draws conclusions and lessons
+**Key signals:**
 
-Connects actions to personal values
+* First-person language ("I choose", "it matters to me", "for me")
+* Explicit value-based reasoning
+* Consistent personal stance across frames or content pieces
 
-Gives evaluations and conclusions
+If readable captions/on-screen text or clear speaking-to-camera cues are **absent**, **reduce Confidence**, even if the visual storytelling appears polished.
 
-What genuinely worked or did not work
+---
 
-What deserves attention and why
+### 14. Enthusiasm & Positive Energy
 
-What experience was gained
-
-Expresses personal opinions, not borrowed narratives
-
-Speaks from first person
-
-Explains choices through principles ("this matters to me because…")
-
-Clearly differentiates personal stance from generic advertising language
-
-14. Enthusiasm & Positive Energy
-Score = 100 if the blogger radiates enthusiasm, optimism, and positive emotional energy.
+**Score = 100** if the blogger radiates enthusiasm, optimism, and positive emotional energy.
 
 Signals:
 
-Lively, engaging intonation
+* Lively, engaging intonation
+* Natural, effortless smiles
+* Warm, friendly tone (no sarcasm, irritation, or fatigue)
+* Dynamic speech (not dragging or monotonous)
+* Frequent light humor or laughter
+* Absence of constant complaints or negativity
+* Focus on opportunities, improvements, inspiration
+* Avoids toxic criticism and whining
 
-Natural, effortless smiles
+---
 
-Warm, friendly tone (no sarcasm, irritation, or fatigue)
+### 15. Charisma & Ability to Inspire
 
-Dynamic speech (not dragging or monotonous)
-
-Frequent light humor or laughter
-
-Absence of constant complaints or negativity
-
-Focus on opportunities, improvements, inspiration
-
-Avoids toxic criticism and whining
-
-15. Charisma & Ability to Inspire
-Score = 100 if the blogger can emotionally engage and "infect" others with ideas, values, or passion.
+**Score = 100** if the blogger can emotionally engage and "infect" others with ideas, values, or passion.
 
 The blogger:
 
-Consistently communicates core beliefs (health, beauty, self-care, quality of life)
-
-Explains why these beliefs matter personally
-
-Is not afraid to take a clear position and speak from first person
+* Consistently communicates core beliefs (health, beauty, self-care, quality of life)
+* Explains why these beliefs matter personally
+* Is not afraid to take a clear position and speak from first person
 
 Delivery signals:
 
-Speaks with energy and emotional involvement
-
-Uses expressive facial expressions and intonation
-
-Shows genuine enjoyment of the content creation process
-
-Uses phrases like "This really works", "I want you to try this too"
-
-Avoids indifferent or checklist-style product descriptions
+* Speaks with energy and emotional involvement
+* Uses expressive facial expressions and intonation
+* Shows genuine enjoyment of the content creation process
+* Uses phrases like "This really works", "I want you to try this too"
+* Avoids indifferent or checklist-style product descriptions
 
 Additional strength signals:
 
-Uses rhythm, pauses, and structure in speech
+* Uses rhythm, pauses, and structure in speech
+* Varies content formats (stories, POV, backstage, emotional addresses)
 
-Varies content formats (stories, POV, backstage, emotional addresses)
+---
 
-Output Format (Strict JSON)
+## Output Format (Strict JSON)
 
-
+json
 {
   "income_level": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "talking_head": {"Score": 0, "Confidence": 0, "Interpretation": ""},
@@ -681,13 +873,15 @@ Output Format (Strict JSON)
   "frequency_of_advertising": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "structured_thinking": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "knowledge_depth": {"Score": 0, "Confidence": 0, "Interpretation": ""},
-  "age_over_35": {"Score": 0, "Confidence": 0, "Interpretation": ""},
+  "age_over_30": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "intelligence": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "personal_values": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
 }
-Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed`
+
+Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed
+`
 export const TEMPLATE_COMMENTS_PROMPT = `Analyze the following Instagram comments and determine if they contain template/bot-like patterns.
 
 Template comment indicators:
