@@ -121,8 +121,8 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
         try {
             return await fn();
         } catch (error) {
+            console.error(`[speechToText] Attempt ${attempt}/${maxRetries} failed: ${error}`)
             lastError = error as Error;
-            console.log(`[speechToText] Attempt ${attempt}/${maxRetries} failed: ${lastError.message}`);
             if (attempt === maxRetries) throw lastError;
             await sleep(1000);
         }

@@ -1,6 +1,6 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, TEMPLATE_COMMENTS_PROMPT, REDFLAG_PHOTO_ANALYSIS_PROMPT } from '../constants.js';
+import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, TEMPLATE_COMMENTS_PROMPT, REDFLAG_PHOTO_ANALYSIS_PROMPT, AVATAR_AGE_ANALYSIS_PROMPT } from '../constants.js';
 import { fetchProfile, fetchPosts, fetchComments } from '../scrape-creators.js';
 import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.js';
 import { sleep, chunk } from '../utils/helpers.js';
@@ -9,9 +9,48 @@ import path from 'path';
 
 const REDFLAG_POST_COUNT = 5;
 const MIN_FOLLOWERS = 10000;
+const MIN_AGE_SCORE = 60;
 const MIN_REPUTATION_SCORE = 60;
 const MIN_INCOME_LEVEL = 60;
 const MIN_ER = 0.01;
+
+async function checkAvatarAge(
+    avatarUrl: string,
+    username: string
+): Promise<{ passed: boolean; score: number | null }> {
+    console.log(`[redflag-check] Analyzing avatar age for ${username}`);
+
+    const avatarDir = path.join(process.env.DATA_PATH!, username);
+    const avatarPath = path.join(avatarDir, 'avatar.jpg');
+
+    if (!fs.existsSync(avatarDir)) {
+        fs.mkdirSync(avatarDir, { recursive: true });
+    }
+
+    const response = await fetch(avatarUrl);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    fs.writeFileSync(avatarPath, buffer);
+
+    const result = await askOpenai([avatarPath], AVATAR_AGE_ANALYSIS_PROMPT);
+
+    let score: number | null = null;
+    if (result.text) {
+        try {
+            const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                score = parsed.age_over_35?.Score ?? null;
+            }
+        } catch (e) {
+            console.warn(`[redflag-check] Failed to parse avatar age result`);
+        }
+    }
+
+    const passed = score === null || score >= MIN_AGE_SCORE;
+    console.log(`[redflag-check] Avatar age score: ${score}, Passed: ${passed}`);
+
+    return { passed, score };
+}
 
 export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
@@ -66,7 +105,24 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             return;
         }
 
-        // === CHECK 2: Internet search reputation ===
+        // === CHECK 2: Avatar age estimation ===
+        const avatarUrl = profile.profile_pic_url_hd || profile.profile_pic_url;
+        const ageCheck = await checkAvatarAge(avatarUrl, job.username);
+
+        if (!ageCheck.passed) {
+            console.log(`[redflag-check] REDFLAG: under_35 (${ageCheck.score})`);
+            await prisma.job.update({
+                where: { id: job.id },
+                data: {
+                    status: 'completed',
+                    redflag: 'under_35',
+                    followers
+                }
+            });
+            return;
+        }
+
+        // === CHECK 3: Internet search reputation ===
         console.log(`[redflag-check] Checking reputation for ${job.username}`);
         const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(job.username);
         const nicknameResult = await askOpenaiWithWebSearch(nicknamePrompt);
@@ -100,7 +156,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             return;
         }
 
-        // === CHECK 3: Photo analysis (income_level) ===
+        // === CHECK 4: Photo analysis (income_level) ===
         console.log(`[redflag-check] Fetching ${REDFLAG_POST_COUNT} posts for photo analysis`);
         const posts = await fetchPosts(job.username, REDFLAG_POST_COUNT);
 
@@ -188,7 +244,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             }
         }
 
-        // === CHECK 4: Comments + ER analysis ===
+        // === CHECK 5: Comments + ER analysis ===
         // Fetch comments for posts
         const allPosts = await prisma.post.findMany({ where: { jobId: job.id } });
 
