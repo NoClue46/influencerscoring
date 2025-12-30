@@ -306,7 +306,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             }
         }
 
-        if (templateCommentsPresent && avgER < MIN_ER) {
+        if (templateCommentsPresent) {
             console.log(`[redflag-check] REDFLAG: template_comments_low_er`);
             await prisma.job.update({
                 where: { id: job.id },
