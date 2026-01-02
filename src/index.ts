@@ -397,7 +397,7 @@ app.get("/jobs/:id", async (c: Context) => {
 
 const server = serve(app)
 
-startCronJobs();
+await startCronJobs();
 
 process.on('SIGINT', () => {
     stopCronJobs();

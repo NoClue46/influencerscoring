@@ -5,8 +5,12 @@ import { framingJob } from './framing.js';
 import { speechToTextJob } from './speech-to-text.js';
 import { analyzeJob } from './analyze.js';
 import { cleanupJob } from './cleanup.js';
+import { recoverStuckJobs } from './recovery.js';
 
-export function startCronJobs(): void {
+export async function startCronJobs(): Promise<void> {
+    console.log('Recovering stuck jobs...');
+    await recoverStuckJobs();
+
     console.log('Cron jobs started');
 
     redflagCheckJob.start()
