@@ -28,6 +28,37 @@ function calculateScore(analysisJson: string): number | null {
     }
 }
 
+function validateBloggerMetrics(analysisJson: string): string | null {
+    try {
+        const data = JSON.parse(analysisJson);
+        const requiredMetrics = [
+            'income_level',
+            'talking_head',
+            'beauty_alignment',
+            'low_end_ads_absence',
+            'pillow_ads_constraint',
+            'ads_focus_consistency',
+            'sales_authenticity',
+            'frequency_of_advertising'
+        ];
+
+        const failedMetrics: string[] = [];
+
+        for (const metric of requiredMetrics) {
+            const score = data[metric]?.Score;
+            if (score !== undefined && score <= 60) {
+                failedMetrics.push(metric);
+            }
+        }
+
+        return failedMetrics.length > 0
+            ? `Low scores: ${failedMetrics.join(', ')}`
+            : null;
+    } catch {
+        return null; // Don't fail job on parse errors
+    }
+}
+
 export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
         where: { status: 'speech_to_text_finished' }
@@ -280,13 +311,18 @@ ${job.bloggerPrompt || 'Analyze posts above'}`;
         const score = calculateScore(response.text);
         console.log(`[analyze] Calculated score for job ${job.id}: ${score}`);
 
+        // Validate blogger metrics for red flags
+        const redflagReason = validateBloggerMetrics(response.text);
+        console.log(`[analyze] Validation result for job ${job.id}: ${redflagReason || 'PASS'}`);
+
         await prisma.job.update({
             where: { id: job.id },
             data: {
                 analyzeRawText: response.text,
                 nicknameAnalyseRawText: nicknameResult.text,
                 score,
-                status: 'completed'
+                status: 'completed',
+                redflag: redflagReason
             }
         });
 
