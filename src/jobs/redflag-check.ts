@@ -306,20 +306,20 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             }
         }
 
-        if (templateCommentsPresent) {
-            console.log(`[redflag-check] REDFLAG: template_comments_low_er`);
-            await prisma.job.update({
-                where: { id: job.id },
-                data: {
-                    status: 'completed',
-                    redflag: 'template_comments_low_er',
-                    followers,
-                    nicknameAnalyseRawText: nicknameResult.text,
-                    avgIncomeLevel
-                }
-            });
-            return;
-        }
+        // if (templateCommentsPresent) {
+        //     console.log(`[redflag-check] REDFLAG: template_comments_low_er`);
+        //     await prisma.job.update({
+        //         where: { id: job.id },
+        //         data: {
+        //             status: 'completed',
+        //             redflag: 'template_comments_low_er',
+        //             followers,
+        //             nicknameAnalyseRawText: nicknameResult.text,
+        //             avgIncomeLevel
+        //         }
+        //     });
+        //     return;
+        // }
 
         // All checks passed
         console.log(`[redflag-check] All checks passed for ${job.username}`);
