@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import fs from 'fs';
-import path from 'path';
+import { getJobBasePath } from '../utils/paths.js';
 
 export const cleanupJob = new CronJob('0 */10 * * * *', async () => {
     const jobs = await prisma.job.findMany({
@@ -13,7 +13,7 @@ export const cleanupJob = new CronJob('0 */10 * * * *', async () => {
     console.info(`[cleanup] Found ${jobs.length} jobs to clean up`);
 
     for (const job of jobs) {
-        const jobDir = path.join(process.env.DATA_PATH!, job.username);
+        const jobDir = getJobBasePath(job.username, job.id);
 
         try {
             if (fs.existsSync(jobDir)) {

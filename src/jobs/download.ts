@@ -3,6 +3,7 @@ import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS, MAX_FILE_SIZE } from '../constants.js';
 import fs from 'fs';
 import path from 'path';
+import { getItemPath } from '../utils/paths.js';
 
 export const downloadJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
@@ -32,7 +33,7 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
                 continue;
             }
 
-            const dest = path.join(process.env.DATA_PATH!, job.username, reel.id, "reels.mp4")
+            const dest = getItemPath(job.username, job.id, reel.id, "reels.mp4")
 
             for (let it = 0; it < 5; it++) {
                 try {
@@ -62,7 +63,7 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
                 continue;
             }
 
-            const dest = path.join(process.env.DATA_PATH!, job.username, post.id, "post.jpg")
+            const dest = getItemPath(job.username, job.id, post.id, "post.jpg")
 
             for (let it = 0; it < 5; it++) {
                 try {
@@ -93,7 +94,7 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
             }
 
             const extension = story.isVideo ? "mp4" : "jpg"
-            const dest = path.join(process.env.DATA_PATH!, job.username, story.id, `story.${extension}`)
+            const dest = getItemPath(job.username, job.id, story.id, `story.${extension}`)
 
             for (let it = 0; it < 5; it++) {
                 try {

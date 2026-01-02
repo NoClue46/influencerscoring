@@ -6,6 +6,7 @@ import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.
 import { sleep, chunk } from '../utils/helpers.js';
 import fs from 'fs';
 import path from 'path';
+import { getAvatarPath, getItemPath } from '../utils/paths.js';
 
 const REDFLAG_POST_COUNT = 5;
 const MIN_FOLLOWERS = 10000;
@@ -16,12 +17,13 @@ const MIN_ER = 0.01;
 
 async function checkAvatarAge(
     avatarUrl: string,
-    username: string
+    username: string,
+    jobId: string
 ): Promise<{ passed: boolean; score: number | null }> {
     console.log(`[redflag-check] Analyzing avatar age for ${username}`);
 
-    const avatarDir = path.join(process.env.DATA_PATH!, username);
-    const avatarPath = path.join(avatarDir, 'avatar.jpg');
+    const avatarPath = getAvatarPath(username, jobId);
+    const avatarDir = path.dirname(avatarPath);
 
     if (!fs.existsSync(avatarDir)) {
         fs.mkdirSync(avatarDir, { recursive: true });
@@ -107,7 +109,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
 
         // === CHECK 2: Avatar age estimation ===
         const avatarUrl = profile.profile_pic_url_hd || profile.profile_pic_url;
-        const ageCheck = await checkAvatarAge(avatarUrl, job.username);
+        const ageCheck = await checkAvatarAge(avatarUrl, job.username, job.id);
 
         if (!ageCheck.passed) {
             console.log(`[redflag-check] REDFLAG: under_35 (${ageCheck.score})`);
@@ -182,7 +184,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
         for (const post of createdPosts) {
             if (!post.downloadUrl) continue;
 
-            const dest = path.join(process.env.DATA_PATH!, job.username, post.id, "post.jpg");
+            const dest = getItemPath(job.username, job.id, post.id, "post.jpg");
             const dir = path.dirname(dest);
 
             if (!fs.existsSync(dir)) {
