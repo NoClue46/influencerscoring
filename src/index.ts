@@ -65,7 +65,7 @@ app.post("/", async (c: Context) => {
 
 app.get("/", async (c: Context) => {
     const jobs = await prisma.job.findMany({
-        orderBy: { createdAt: 'desc' }
+        orderBy: { id: 'desc' }
     });
 
     const jobsHtml = jobs.length > 0 ? jobs.map(job => {
