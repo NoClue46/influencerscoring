@@ -110,6 +110,7 @@ Output Format (Strict JSON)
 }`
 
 export const DEFAULT_POST_PROMPT = `
+
 ### Task
 
 Analyze the provided **provided video frames analyses** and evaluate the blogger across the parameters listed below.
@@ -134,42 +135,253 @@ Avoid assumptions not supported by the provided video frames evidence. If eviden
 **Score = 100** if the blogger demonstrates a **European premium / luxury or higher lifestyle**
 **Score = 0** if the lifestyle appears clearly low-income
 
-**Positive markers inferred from provided video frames (non-exhaustive):**
+Assessment must rely on cumulative visual markers, not on a single isolated cue.
 
-* Mentions or detections of premium skincare & cosmetics (Aesop, Augustinus Bader, Dr. Barbara Sturm, La Mer, Fresh)
-* Premium home elements (fresh flowers, designer candles: Diptyque, Jo Malone, Byredo)
-* High-quality, restrained interior descriptors (neutral palette, minimalism, coherence)
-* Cars: Audi, BMW, Mercedes, Volvo, Tesla, Lexus, Mini Cooper, Land Rover, Alfa Romeo, well-equipped VW (Tiguan, Touareg, Passat)
-* Travel locations indicating non-budget lifestyle (Tuscany, Como, Amalfi, Paris, Provence, Nice, Mallorca non-budget, San Sebastián, Switzerland, UK, Japan, USA major cities, non-budget Portugal)
+Positive markers indicating above-average income include (non-exhaustive):
 
-**Negative markers (strong downgrade signals):**
+Home & lifestyle cues:
 
-* Fast-fashion brands: Shein, Zaful, Boohoo, PrettyLittleThing, Stradivarius, Bershka, Pimkie, Orsay, C&A
-* Cheap or generic household items and electronics
-* Excessive logo-mania
-* Pseudo-luxury or cluttered interiors
-* Budget mass tourism indicators
+Fresh flowers at home
+
+Mid-to-premium cosmetics and skincare visibly present:
+
+Aesop
+
+Augustinus Bader
+
+Dr. Barbara Sturm
+
+La Mer
+
+Fresh
+
+Premium candles:
+
+Diptyque
+
+Jo Malone
+
+Byredo
+
+Clothing & personal style (absence of non-premium signals is important):
+
+Clothing appears well-fitted, restrained, and coherent
+
+No visible fast-fashion or ultra-low-cost brands
+
+No excessive logo-mania
+
+Brands that are not characteristic of above-average income (negative signals):
+
+Shein / Zaful
+
+Boohoo / PrettyLittleThing
+
+Stradivarius
+
+Bershka
+
+Pimkie
+
+Orsay
+
+C&A
+
+Cheap unnamed brands with AliExpress-style cuts
+
+Household items & appliances (negative signals):
+
+Cheap, unbranded cookware sets
+
+Bright-colored cheap plastic appliances
+
+Supermarket-brand microwaves or kettles
+
+Budget product lines (e.g., Tefal budget series)
+
+Mismatched “everything on sale” household sets
+
+Interior design constraints (negative signals):
+
+Bright glossy furniture (red / black / purple gloss)
+
+Pseudo-luxury decor (gold imitation, baroque, fake luxury)
+
+Overloaded decor (cheap moldings, heavy ornamentation)
+
+Carpets with bright patterns
+
+Mirrored walls
+
+Excessive cheap LED lighting
+
+Quote posters in shiny frames
+
+Chair covers, wall stickers
+
+Kitchens with screaming facades
+
+Cheap plastic containers dominating the frame
+
+Vehicles indicating above-average income:
+
+Audi
+
+BMW
+
+Mercedes
+
+Volvo
+
+Tesla
+
+Volkswagen (Tiguan, Touareg, Passat — high trim)
+
+Lexus
+
+Mini Cooper
+
+Land Rover (including Range Rover Evoque)
+
+Jeep Compass / Grand Cherokee
+
+Alfa Romeo
+
+Travel contexts indicating above-average lifestyle:
+
+Italy: Tuscany, Como, Amalfi
+
+France: Paris, Provence, Nice
+
+Spain: Mallorca, Ibiza (non-budget), San Sebastián
+
+Switzerland, Austria, Germany
+
+United Kingdom
+
+Japan
+
+USA: New York, California, Chicago
+
+Portugal (non-budget regions)
+
+Travel patterns that do not indicate above-average income (negative signals):
+
+Mass all-inclusive resorts (Antalya, Marmaris, Bodrum — budget hotels)
+
+Budget package tours to Egypt (Hurghada, Sharm — low-cost hotels)
+
+Tunisia (mass segment)
+
+Cheap beach packages (budget Cyprus, Bulgaria, Albania)
+
+Bus tours like “7 countries in 5 days”
+
+Hostels in Asia, budget areas of Bali (e.g., Kuta)
+
+Low-cost Caribbean travel packages
+
+If visual signals are mixed, sparse, or partially obscured, reduce Confidence accordingly.
 
 ---
 
 ### 2. Talking Head Presence
 
-**100** — provided video frames confirms blogger appears on camera, speaks directly (not voice-over only).
-**0** — Blogger does not appear or is voice-over only / poorly represented.
+Score = 100 if the blogger personally speaks on camera, looking directly into the lens, actively explaining and persuading ("talking head" format).
+
+This applies equally to Stories and Reels.
+
+The blogger:
+
+Appears in frame themselves (their face is clearly visible)
+
+Looks into the camera while speaking
+
+Speaks personally, not via voice-over
+
+Delivers content in an engaged, explanatory manner (not passive narration)
+
+Strong visual signals:
+
+Face centered or dominant in frame
+
+Eye contact with the camera
+
+Mouth movement consistent with speech
+
+Expressive facial movements and gestures typical of explanation or persuasion
+
+Self-recorded framing typical of Stories/Reels
+
+If the face is partially visible, frames are low-quality, or speaking cannot be confidently inferred, reduce Confidence accordingly.
 
 ---
 
 ### 3. Alignment With Beauty & Self-Care Products
 
-**100** — Blogger naturally embodies beauty, wellness, or self-care themes.
+Score = 100 if the blogger’s content identity is clearly associated with self-care, beauty, and becoming a better version of oneself in terms of appearance.
 
-Indicators inferred from provided video frames:
+Assessment is based on what the blogger consistently talks about and demonstrates in their content, not on a single post.
 
-* Regular mentions of skincare routines, beauty devices, self-improvement, grooming, health
-* References to LED masks, microcurrent therapy, gua sha, rollers, multi-step skincare, eye patches, scalp care, premium beauty devices
-* Sports-focused bloggers are acceptable if beauty/self-care is a recurring theme
+The blogger must have ongoing content related to self-care and making oneself more beautiful (not necessarily in every post, but as a stable, recognizable theme).
 
-**0** — Beauty/self-care absent from content identity.
+The blogger may:
+
+Talk about different aspects of the beauty industry:
+
+new cosmetics or skincare products
+
+care routines and treatments
+
+beauty or wellness gadgets
+
+new ingredients and formulations
+
+Discuss compositions, textures, aromas, and sensations
+
+Use beauty devices and explain them
+
+OR not use devices but regularly visit cosmetologists or clinics
+
+OR focus mostly on home care routines
+
+What matters is that the blogger can be clearly associated with the theme:
+
+“How to take care of yourself and make yourself look better.”
+
+Important inclusion cases:
+
+Bloggers whose main topic is sports or fitness (making the body look better) are acceptable if:
+
+they sometimes also talk about facial care, skincare, procedures, or beauty products
+
+Clear exclusion rule:
+
+Bloggers who never talk about self-care, beauty, or appearance improvement are not suitable.
+
+Strong positive (green-flag) signals include visible presence of:
+
+Masks with active ingredients (AHA/BHA, enzyme, oxygen, carbonated, etc.)
+
+Microcurrent therapy
+
+LED masks (home or professional)
+
+Gua sha massage or rollers made from natural stone
+
+Multi-step skincare routines (5+ steps: toner, essence, serum, ampoules, etc.)
+
+Under-eye patches with anti-aging or deep hydration effects
+
+Hair and scalp spa care (peels, ampoules, massages, “hair happiness” treatments)
+
+Fractional mesotherapy or mesorollers
+
+Anti-cellulite massage and body wraps
+
+Beauty devices from original premium brands (not mass-market knockoffs)
+
+If self-care / beauty appears only sporadically or weakly, reduce Confidence accordingly.
 
 ---
 
@@ -188,8 +400,41 @@ Allowed: Costco, Target, Zara, Mango.
 
 ### 6. Advertising Focus Consistency
 
-**100** — Advertising is focused and coherent; no chaotic mix of unrelated product categories detected.
+Score = 100 if advertising shown in the provided video frames is thematically consistent and coherent, without a mix of unrelated product categories.
 
+The blogger must NOT advertise a random assortment of heterogeneous products.
+
+Clear negative signal (score downgrade):
+
+Presence of advertising for absolutely unrelated categories within the same creator’s content set, such as:
+
+cookware (pans, pots, kitchen sets)
+
+clothing or fashion items
+
+cosmetics or skincare
+
+aroma candles
+
+home decor or interior accessories
+
+household items with no shared theme
+
+Advertising is considered inconsistent when:
+
+Products do not share a common theme, lifestyle, or problem space
+
+Ads look opportunistic rather than aligned with the blogger’s core identity
+
+Multiple unrelated categories appear without a unifying narrative or positioning
+
+Score = 100 only if:
+
+Advertising focuses on one clear category or on closely related categories
+
+All advertised products logically fit the blogger’s lifestyle, values, and content niche
+
+If only limited frames are available or advertising frequency is low, reduce Confidence accordingly.
 ---
 
 ### 7. Advertising Quality (Sales Authenticity)
@@ -255,7 +500,7 @@ If readable captions/on-screen text are missing and speech cannot be reliably in
 
 ### 8. Frequency of Advertising
 
-* **100** — Advertising appears in any piece of content
+* **100** — Advertising appears inside the content
 * **0** — No advertising present across the analyzed content
 
 ---
@@ -357,10 +602,10 @@ If there is **no readable caption/on-screen text** or clear evidence of knowledg
 
 ---
 
-### 11. Age Over 30
+### 11. Age Over 35
 
-* **100** — provided video frames strongly indicates blogger is over 30
-* **0** — provided video frames strongly indicates blogger is under 30
+* **100** — provided video frames strongly indicates blogger is over 35
+* **0** — provided video frames strongly indicates blogger is under 35
 
 ---
 
@@ -432,19 +677,39 @@ If readable captions/on-screen text or clear speaking-to-camera cues are **absen
 
 ### 14. Enthusiasm & Positive Energy
 
-**Score = 100** if the blogger radiates enthusiasm, optimism, and positive emotional energy.
+Score = 100 if the blogger consistently radiates enthusiasm, optimism, and positive emotional energy, clearly visible in facial expressions, gestures, and readable on-screen text/captions.
 
-Signals:
+The blogger:
 
-* Lively, engaging intonation
-* Natural, effortless smiles
-* Warm, friendly tone (no sarcasm, irritation, or fatigue)
-* Dynamic speech (not dragging or monotonous)
-* Frequent light humor or laughter
-* Absence of constant complaints or negativity
-* Focus on opportunities, improvements, inspiration
-* Avoids toxic criticism and whining
+Speaks with light liveliness and emotional accents
 
+Smiles naturally, not forced or strained
+
+Uses a warm, friendly tone — without sarcasm, fatigue, irritation, or bitterness
+
+Shows energetic, engaging intonation; speech does not feel dragging or monotonous
+
+Laughs easily or jokes naturally, when appropriate
+
+Does not demonstrate constant complaining, whining, or negativity
+
+Additional positive markers:
+
+Talks about topics as if they genuinely interest them
+
+Emphasizes positives, opportunities, and new ideas, rather than problems
+
+Explicitly notes:
+
+what has improved
+
+what they like
+
+what inspires them
+
+Avoids toxic criticism, cynical framing, and persistent complaints
+
+If enthusiasm is inferred only weakly from visuals or captions, reduce Confidence accordingly.
 ---
 
 ### 15. Charisma & Ability to Inspire
@@ -474,7 +739,7 @@ Additional strength signals:
 
 ## Output Format (Strict provided video frames)
 
-json
+\`\`\`json
 {
   "income_level": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "talking_head": {"Score": 0, "Confidence": 0, "Interpretation": ""},
@@ -492,77 +757,280 @@ json
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
 }
+\`\`\`
 
 Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed
 `
 
 export const DEFAULT_BLOGGER_PROMPT = `
-### Task
-
-Analyze the provided **JSON analyses** and evaluate the blogger across the parameters listed below.
-Your goal is to **score, justify, and assess confidence** for each parameter **based strictly on the signals available in the provided JSON analyses** (derived from video frames, speech transcripts, metadata, or prior model outputs).
+Task
+Analyze the provided JSON analyses and evaluate the blogger across the parameters listed below.
+Your goal is to score, justify, and assess confidence for each parameter based strictly on the signals available in the provided JSON analyses (derived from video frames, speech transcripts, metadata, or prior model outputs).
 
 Avoid assumptions not supported by the JSON evidence. If evidence is weak, indirect, or missing, lower the confidence score accordingly.
 
+Scoring Rules
+Each parameter must be scored on a 0–100 scale
+
+Additionally, return a confidence score (0–100) reflecting how reliable the assessment is based on the available JSON evidence
+
+Provide a concise textual interpretation explaining why the score was assigned, referencing specific fields, patterns, or signals from the JSON
+
+Parameters to Evaluate
+1. Blogger's Income Level
+Score = 100 if the blogger demonstrates a European premium / luxury or higher lifestyle
+Score = 0 if the lifestyle appears clearly low-income
+
+Assessment must rely on cumulative visual markers, not on a single isolated cue.
+
+Positive markers inferred from JSON (non-exhaustive):
+
+Home & lifestyle cues:
+
+Fresh flowers at home
+
+Mid-to-premium cosmetics and skincare visibly present:
+
+Aesop
+
+Augustinus Bader
+
+Dr. Barbara Sturm
+
+La Mer
+
+Fresh
+
+Premium candles:
+
+Diptyque
+
+Jo Malone
+
+Byredo
+
+Clothing & personal style (absence of non-premium signals is important):
+
+Clothing appears well-fitted, restrained, and coherent
+
+No visible fast-fashion or ultra-low-cost brands
+
+No excessive logo-mania
+
+Brands that are not characteristic of above-average income (negative signals):
+
+Shein / Zaful
+
+Boohoo / PrettyLittleThing
+
+Stradivarius
+
+Bershka
+
+Pimkie
+
+Orsay
+
+C&A
+
+Cheap unnamed brands with AliExpress-style cuts
+
+Household items & appliances (negative signals):
+
+Cheap, unbranded cookware sets
+
+Bright-colored cheap plastic appliances
+
+Supermarket-brand microwaves or kettles
+
+Budget product lines (e.g., Tefal budget series)
+
+Mismatched “everything on sale” household sets
+
+Interior design constraints (negative signals):
+
+Bright glossy furniture (red / black / purple gloss)
+
+Pseudo-luxury decor (gold imitation, baroque, fake luxury)
+
+Overloaded decor (cheap moldings, heavy ornamentation)
+
+Carpets with bright patterns
+
+Mirrored walls
+
+Excessive cheap LED lighting
+
+Quote posters in shiny frames
+
+Chair covers, wall stickers
+
+Kitchens with screaming facades
+
+Cheap plastic containers dominating the frame
+
+Vehicles indicating above-average income:
+
+Audi
+
+BMW
+
+Mercedes
+
+Volvo
+
+Tesla
+
+Volkswagen (Tiguan, Touareg, Passat — high trim)
+
+Lexus
+
+Mini Cooper
+
+Land Rover (including Range Rover Evoque)
+
+Jeep Compass / Grand Cherokee
+
+Alfa Romeo
+
+Travel contexts indicating above-average lifestyle:
+
+Italy: Tuscany, Como, Amalfi
+
+France: Paris, Provence, Nice
+
+Spain: Mallorca, Ibiza (non-budget), San Sebastián
+
+Switzerland, Austria, Germany
+
+United Kingdom
+
+Japan
+
+USA: New York, California, Chicago
+
+Portugal (non-budget regions)
+
+Travel patterns that do not indicate above-average income (negative signals):
+
+Mass all-inclusive resorts (Antalya, Marmaris, Bodrum — budget hotels)
+
+Budget package tours to Egypt (Hurghada, Sharm — low-cost hotels)
+
+Tunisia (mass segment)
+
+Cheap beach packages (budget Cyprus, Bulgaria, Albania)
+
+Bus tours like “7 countries in 5 days”
+
+Hostels in Asia, budget areas of Bali (e.g., Kuta)
+
+Low-cost Caribbean travel packages
+
+If visual signals are mixed, sparse, or partially obscured, reduce Confidence accordingly.
+
 ---
 
-### Scoring Rules
+2. Talking Head Presence
+100 — JSON confirms if the blogger personally speaks on camera, looking directly into the lens, actively explaining and persuading ("talking head" format).
 
-* Each parameter must be scored on a **0–100 scale**
-* Additionally, return a **confidence score (0–100)** reflecting how reliable the assessment is based on the available JSON evidence
-* Provide a **concise textual interpretation** explaining *why* the score was assigned, referencing specific fields, patterns, or signals from the JSON
+This applies equally to Stories and Reels.
 
----
+The blogger:
 
-## Parameters to Evaluate
+Appears in frame themselves (their face is clearly visible)
 
-### 1. Blogger’s Income Level
+Looks into the camera while speaking
 
-**Score = 100** if the blogger demonstrates a **European premium / luxury or higher lifestyle**
-**Score = 0** if the lifestyle appears clearly low-income
+Speaks personally, not via voice-over
 
-**Positive markers inferred from JSON (non-exhaustive):**
+Delivers content in an engaged, explanatory manner (not passive narration)
 
-* Mentions or detections of premium skincare & cosmetics (Aesop, Augustinus Bader, Dr. Barbara Sturm, La Mer, Fresh)
-* Premium home elements (fresh flowers, designer candles: Diptyque, Jo Malone, Byredo)
-* High-quality, restrained interior descriptors (neutral palette, minimalism, coherence)
-* Cars: Audi, BMW, Mercedes, Volvo, Tesla, Lexus, Mini Cooper, Land Rover, Alfa Romeo, well-equipped VW (Tiguan, Touareg, Passat)
-* Travel locations indicating non-budget lifestyle (Tuscany, Como, Amalfi, Paris, Provence, Nice, Mallorca non-budget, San Sebastián, Switzerland, UK, Japan, USA major cities, non-budget Portugal)
+Strong visual signals:
 
-**Negative markers (strong downgrade signals):**
+Face centered or dominant in frame
 
-* Fast-fashion brands: Shein, Zaful, Boohoo, PrettyLittleThing, Stradivarius, Bershka, Pimkie, Orsay, C&A
-* Cheap or generic household items and electronics
-* Excessive logo-mania
-* Pseudo-luxury or cluttered interiors
-* Budget mass tourism indicators
+Eye contact with the camera
 
----
+Mouth movement consistent with speech
 
-### 2. Talking Head Presence
+Expressive facial movements and gestures typical of explanation or persuasion
 
-**100** — JSON confirms blogger appears on camera, speaks directly (not voice-over only).
-**0** — Blogger does not appear or is voice-over only / poorly represented.
+Self-recorded framing typical of Stories/Reels
 
----
+If the face is partially visible, frames are low-quality, or speaking cannot be confidently inferred, reduce Confidence accordingly.
 
-### 3. Alignment With Beauty & Self-Care Products
 
-**100** — Blogger naturally embodies beauty, wellness, or self-care themes.
+3. Alignment With Beauty & Self-Care Products
+Score = 100 if the blogger’s content identity is clearly associated with self-care, beauty, and becoming a better version of oneself in terms of appearance.
 
-Indicators inferred from JSON:
+Assessment is based on what the blogger consistently talks about and demonstrates in their content, not on a single post.
 
-* Regular mentions of skincare routines, beauty devices, self-improvement, grooming, health
-* References to LED masks, microcurrent therapy, gua sha, rollers, multi-step skincare, eye patches, scalp care, premium beauty devices
-* Sports-focused bloggers are acceptable if beauty/self-care is a recurring theme
+The blogger must have ongoing content related to self-care and making oneself more beautiful (not necessarily in every post, but as a stable, recognizable theme).
 
-**0** — Beauty/self-care absent from content identity.
+The blogger may:
+
+Talk about different aspects of the beauty industry:
+
+new cosmetics or skincare products
+
+care routines and treatments
+
+beauty or wellness gadgets
+
+new ingredients and formulations
+
+Discuss compositions, textures, aromas, and sensations
+
+Use beauty devices and explain them
+
+OR not use devices but regularly visit cosmetologists or clinics
+
+OR focus mostly on home care routines
+
+What matters is that the blogger can be clearly associated with the theme:
+
+“How to take care of yourself and make yourself look better.”
+
+Important inclusion cases:
+
+Bloggers whose main topic is sports or fitness (making the body look better) are acceptable if:
+
+they sometimes also talk about facial care, skincare, procedures, or beauty products
+
+Clear exclusion rule:
+
+Bloggers who never talk about self-care, beauty, or appearance improvement are not suitable.
+
+Strong positive (green-flag) signals include visible presence of:
+
+Masks with active ingredients (AHA/BHA, enzyme, oxygen, carbonated, etc.)
+
+Microcurrent therapy
+
+LED masks (home or professional)
+
+Gua sha massage or rollers made from natural stone
+
+Multi-step skincare routines (5+ steps: toner, essence, serum, ampoules, etc.)
+
+Under-eye patches with anti-aging or deep hydration effects
+
+Hair and scalp spa care (peels, ampoules, massages, “hair happiness” treatments)
+
+Fractional mesotherapy or mesorollers
+
+Anti-cellulite massage and body wraps
+
+Beauty devices from original premium brands (not mass-market knockoffs)
+
+If self-care / beauty appears only sporadically or weakly, reduce Confidence accordingly.
 
 ---
 
 ### 4. Absence of Low-End Retail Advertising
 
-**100** — No advertising for AliExpress, Shein, Temu, Aldi, Lidl, or similar low-cost retailers detected in JSON.
+**100** — No advertising for AliExpress, Shein, Temu, Aldi, Lidl, or similar low-cost retailers detected in provided video frames.
 Allowed: Costco, Target, Zara, Mango.
 
 ---
@@ -575,8 +1043,41 @@ Allowed: Costco, Target, Zara, Mango.
 
 ### 6. Advertising Focus Consistency
 
-**100** — Advertising is focused and coherent; no chaotic mix of unrelated product categories detected.
+Score = 100 if advertising shown in the provided video frames is thematically consistent and coherent, without a mix of unrelated product categories.
 
+The blogger must NOT advertise a random assortment of heterogeneous products.
+
+Clear negative signal (score downgrade):
+
+Presence of advertising for absolutely unrelated categories within the same creator’s content set, such as:
+
+cookware (pans, pots, kitchen sets)
+
+clothing or fashion items
+
+cosmetics or skincare
+
+aroma candles
+
+home decor or interior accessories
+
+household items with no shared theme
+
+Advertising is considered inconsistent when:
+
+Products do not share a common theme, lifestyle, or problem space
+
+Ads look opportunistic rather than aligned with the blogger’s core identity
+
+Multiple unrelated categories appear without a unifying narrative or positioning
+
+Score = 100 only if:
+
+Advertising focuses on one clear category or on closely related categories
+
+All advertised products logically fit the blogger’s lifestyle, values, and content niche
+
+If only limited frames are available or advertising frequency is low, reduce Confidence accordingly.
 ---
 
 ### 7. Advertising Quality (Sales Authenticity)
@@ -642,7 +1143,7 @@ If readable captions/on-screen text are missing and speech cannot be reliably in
 
 ### 8. Frequency of Advertising
 
-* **100** — Advertising appears in any piece of content
+* **100** — Advertising appears inside each post
 * **0** — No advertising present across the analyzed content
 
 ---
@@ -744,10 +1245,10 @@ If there is **no readable caption/on-screen text** or clear evidence of knowledg
 
 ---
 
-### 11. Age Over 30
+### 11. Age Over 35
 
-* **100** — JSON strongly indicates blogger is over 30
-* **0** — JSON strongly indicates blogger is under 30
+* **100** — provided video frames strongly indicates blogger is over 35
+* **0** — provided video frames strongly indicates blogger is under 35
 
 ---
 
@@ -819,19 +1320,39 @@ If readable captions/on-screen text or clear speaking-to-camera cues are **absen
 
 ### 14. Enthusiasm & Positive Energy
 
-**Score = 100** if the blogger radiates enthusiasm, optimism, and positive emotional energy.
+Score = 100 if the blogger consistently radiates enthusiasm, optimism, and positive emotional energy, clearly visible in facial expressions, gestures, and readable on-screen text/captions.
 
-Signals:
+The blogger:
 
-* Lively, engaging intonation
-* Natural, effortless smiles
-* Warm, friendly tone (no sarcasm, irritation, or fatigue)
-* Dynamic speech (not dragging or monotonous)
-* Frequent light humor or laughter
-* Absence of constant complaints or negativity
-* Focus on opportunities, improvements, inspiration
-* Avoids toxic criticism and whining
+Speaks with light liveliness and emotional accents
 
+Smiles naturally, not forced or strained
+
+Uses a warm, friendly tone — without sarcasm, fatigue, irritation, or bitterness
+
+Shows energetic, engaging intonation; speech does not feel dragging or monotonous
+
+Laughs easily or jokes naturally, when appropriate
+
+Does not demonstrate constant complaining, whining, or negativity
+
+Additional positive markers:
+
+Talks about topics as if they genuinely interest them
+
+Emphasizes positives, opportunities, and new ideas, rather than problems
+
+Explicitly notes:
+
+what has improved
+
+what they like
+
+what inspires them
+
+Avoids toxic criticism, cynical framing, and persistent complaints
+
+If enthusiasm is inferred only weakly from visuals or captions, reduce Confidence accordingly.
 ---
 
 ### 15. Charisma & Ability to Inspire
@@ -859,9 +1380,9 @@ Additional strength signals:
 
 ---
 
-## Output Format (Strict JSON)
+## Output Format (Strict provided video frames)
 
-json
+\`\`\`json
 {
   "income_level": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "talking_head": {"Score": 0, "Confidence": 0, "Interpretation": ""},
@@ -879,6 +1400,7 @@ json
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
 }
+\`\`\`
 
 Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed
 `
