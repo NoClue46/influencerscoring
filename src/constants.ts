@@ -1143,8 +1143,8 @@ If readable captions/on-screen text are missing and speech cannot be reliably in
 
 ### 8. Frequency of Advertising
 
-* **100** — Advertising appears inside each post
-* **0** — No advertising present across the analyzed content
+* 0 — Advertising appears inside each post
+* 100 — No advertising present across the analyzed content
 
 ---
 
