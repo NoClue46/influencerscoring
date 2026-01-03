@@ -46,7 +46,7 @@ function validateBloggerMetrics(analysisJson: string): string | null {
 
         for (const metric of requiredMetrics) {
             const score = data[metric]?.Score;
-            if (score !== undefined && score <= 60) {
+            if (score !== undefined && score < 60) {
                 failedMetrics.push(metric);
             }
         }
