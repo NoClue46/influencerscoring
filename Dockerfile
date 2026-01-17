@@ -22,7 +22,7 @@ COPY . .
 RUN mkdir -p /app/data
 
 # Expose порт
-EXPOSE 8080
+EXPOSE 4141
 
 # Запуск приложения
 CMD ["bun", "run", "src/index.ts"]
