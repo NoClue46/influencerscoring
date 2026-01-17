@@ -21,8 +21,8 @@ COPY . .
 # Создание директории для данных
 RUN mkdir -p /app/data
 
-# Expose порт (Hono по умолчанию 3000)
-EXPOSE 3000
+# Expose порт
+EXPOSE 8080
 
 # Запуск приложения
 CMD ["bun", "run", "src/index.ts"]
