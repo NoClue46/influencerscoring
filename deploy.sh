@@ -28,7 +28,7 @@ echo "Starting new container..."
 sudo docker run -d \
   --name $CONTAINER_NAME \
   --restart unless-stopped \
-  -p 3000:3000 \
+  -p 8080:8080 \
   --env-file .env \
   -e DATABASE_URL=file:///app/db/prod.db \
   -v $DATA_PATH:/app/data \
