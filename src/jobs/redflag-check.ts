@@ -9,7 +9,7 @@ import path from 'path';
 import { getAvatarPath, getItemPath } from '../utils/paths.js';
 
 const REDFLAG_POST_COUNT = 5;
-const MIN_FOLLOWERS = 10000;
+const MIN_FOLLOWERS = 7000;
 const MIN_AGE_SCORE = 60;
 const MIN_REPUTATION_SCORE = 60;
 const MIN_INCOME_LEVEL = 60;
