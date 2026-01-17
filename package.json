@@ -2,8 +2,8 @@
   "name": "influencerscoring",
   "version": "0.0.0",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "node --import tsx src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
