@@ -5,8 +5,8 @@ IMAGE_NAME="influencer-scoring"
 CONTAINER_NAME="influencer-scoring"
 
 # Кастомные пути для volumes (можно переопределить через env)
-DATA_PATH="${DATA_PATH:-$(pwd)/data}"
-DB_PATH="${DB_PATH:-$(pwd)/prisma}"
+DATA_PATH="${DATA_PATH:-/home/ai-user/inf/app/data}"
+DB_PATH="${DB_PATH:-/home/ai-user/inf/app}"
 
 echo "Pulling latest changes..."
 git pull
@@ -20,7 +20,7 @@ docker rm $CONTAINER_NAME 2>/dev/null || true
 
 echo "Running migrations..."
 docker run --rm \
-  -e DATABASE_URL=file:///app/db/dev.db \
+  -e DATABASE_URL=file:///app/db/prod.db \
   -v $DB_PATH:/app/db \
   $IMAGE_NAME bunx prisma migrate deploy
 
@@ -30,7 +30,7 @@ docker run -d \
   --restart unless-stopped \
   -p 3000:3000 \
   --env-file .env \
-  -e DATABASE_URL=file:///app/db/dev.db \
+  -e DATABASE_URL=file:///app/db/prod.db \
   -v $DATA_PATH:/app/data \
   -v $DB_PATH:/app/db \
   $IMAGE_NAME
