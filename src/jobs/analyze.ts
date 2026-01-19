@@ -46,7 +46,8 @@ function validateBloggerMetrics(analysisJson: string): string | null {
 
         for (const metric of requiredMetrics) {
             const score = data[metric]?.Score;
-            if (score !== undefined && score < 60) {
+            const threshold = metric === 'frequency_of_advertising' ? 95 : 60;
+            if (score !== undefined && score < threshold) {
                 failedMetrics.push(metric);
             }
         }
