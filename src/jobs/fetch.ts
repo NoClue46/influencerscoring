@@ -58,7 +58,7 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
                     downloadUrl: p.downloadUrl,
                     isVideo: p.isVideo,
                     commentCount: p.commentCount,
-                    commentEr: p.isVideo && p.viewCount > 0 ? p.commentCount / p.viewCount : 0
+                    commentEr: job.followers > 0 ? p.commentCount / job.followers : 0
                 }))
             }) : Promise.resolve(),
             newReels.length > 0 ? prisma.reels.createMany({
@@ -67,7 +67,7 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
                     reelsUrl: r.url,
                     downloadUrl: r.downloadUrl,
                     commentCount: r.commentCount,
-                    commentEr: r.viewCount > 0 ? r.commentCount / r.viewCount : 0
+                    commentEr: job.followers > 0 ? r.commentCount / job.followers : 0
                 }))
             }) : Promise.resolve(),
             prisma.story.createMany({
