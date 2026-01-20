@@ -2,8 +2,6 @@ module.exports = {
   apps: [
     {
       name: 'influencerscoring',
-      script: 'bun',
-      args: 'run start',
       cwd: __dirname,
       interpreter: '/home/planmasta/.bun/bin/bun', 
       log_file: '/home/planmasta/inf/app.log',
