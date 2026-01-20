@@ -461,12 +461,12 @@ async function fetchHighlightDetail(id: string): Promise<{
     return result;
 }
 
-export async function fetchComments(postUrl: string, amount: number = 15): Promise<Comment[]> {
+export async function fetchComments(postUrl: string, amount: number = 105): Promise<Comment[]> {
     try {
         const url = new URL(BASE_URL);
         url.pathname = `/v1/instagram/post/comments`;
         url.searchParams.set('url', postUrl);
-        if (amount !== 15) {
+        if (amount !== 105) {
             url.searchParams.set('amount', amount.toString());
         }
 

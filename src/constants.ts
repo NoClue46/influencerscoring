@@ -110,7 +110,6 @@ Output Format (Strict JSON)
 }`
 
 export const DEFAULT_POST_PROMPT = `
-
 ### Task
 
 Analyze the provided **provided video frames analyses** and evaluate the blogger across the parameters listed below.
@@ -632,46 +631,131 @@ Evaluate across two dimensions:
 
 ---
 
-### 13. Personal Values & “Own Truth”
+13. Personal Values & “Own Truth” (Own Truth Transmission)
 
-**Score = 100** if the blogger consistently demonstrates a **personal worldview, values, and principles**, going beyond simple documentation of events.
+Core methodology: Transmitting “own truth” is the synchronization of the inner world with external expression — the process of turning personal meaning into social coordinates.
 
-The blogger **does not merely show events** ("what I eat / do / visit"), but **actively interprets them**.
+This process is defined by three pillars:
 
-**1. Interpretation of events (mandatory):**
+Support (Principles): You know who you are.
 
-* Explains **why** they act or choose something in a particular way
-* Expresses **personal likes and dislikes**, not neutral descriptions
-* Articulates **personal conclusions or lessons learned**
-* Explicitly connects actions, choices, or experiences to **personal values or principles**
+Voice (Vision): You are not afraid to say it out loud.
 
-**2. Evaluation and conclusions (mandatory):**
-The blogger does not just describe, but **analytically comments**:
+Filter (Values): You attract “your people” and filter out “not your people.”
 
-* What genuinely worked or was liked
-* What did not work or was disliked **and why**
-* What deserves attention and why
-* What experience or insight was gained
+Score = 100 if the blogger consistently demonstrates this “own truth” mechanism through visible content patterns, strong first-person stance, and value-driven reasoning.
 
-**3. Personal opinion vs. borrowed narratives (mandatory):**
-The blogger clearly formulates **their own opinion**, not a retransmission of brand or external messaging.
+13.1 Support — Principles (Identity anchor)
 
-Clear distinctions include:
+The blogger shows they have stable internal principles and use them as an anchor:
 
-* Instead of: “I was sent a pillow”
-* The blogger says:
+Clearly states personal principles (e.g., health, beauty, self-care, quality of life, freedom, discipline, honesty)
 
-  * “I like that it gives me ___, because ___ is important to me.”
-  * “This brand resonates with me because it shares my idea/value of ___.”
-  * “I choose ___ because my principles are ___.”
+Makes consistent choices aligned with those principles
 
-**Key signals:**
+Shows that criticism affects them less because they stand on a value foundation (if visible via captions/text)
 
-* First-person language ("I choose", "it matters to me", "for me")
-* Explicit value-based reasoning
-* Consistent personal stance across frames or content pieces
+Strong signals:
 
-If readable captions/on-screen text or clear speaking-to-camera cues are **absent**, **reduce Confidence**, even if the visual storytelling appears polished.
+“For me, ___ matters more than ___.”
+
+“I don’t tolerate ___.”
+
+“I always choose ___ because ___ is my principle.”
+
+13.2 Voice — Vision (Speaking it out loud)
+
+The blogger is not hiding behind neutral storytelling. They explicitly voice their worldview:
+
+Talks from first person (I / my / for me)
+
+Names things clearly instead of vague lifestyle narration
+
+Explains personal conclusions, lessons learned, and why something is important
+
+Strong signals:
+
+“This is my way.”
+
+“Here’s what I believe.”
+
+“I realized that…”
+
+13.3 Filter — Values (Content moderates the audience)
+
+The blogger’s content acts as a reality filter:
+
+Their values are expressed strongly enough to attract aligned people
+
+They naturally repel those who disagree (not by aggression, but by clarity)
+
+They do not “adjust” to everyone — their stance is already public
+
+Strong signals:
+
+“If you don’t agree — it’s okay, this is not for you.”
+
+“People who value ___ will understand.”
+
+13.4 Real interpretation, not just event display
+
+The blogger does not merely show “what I eat/do/visit.” They interpret reality:
+
+Explains why they act this way
+
+States what they personally like/dislike
+
+Makes conclusions and links them to values
+
+13.5 Analytical evaluations & conclusions
+
+The blogger does not just describe, but evaluates:
+
+What truly worked or was liked
+
+What didn’t work and why
+
+What deserves attention
+
+What experience or lesson they gained
+
+13.6 Own truth vs propaganda boundary (critical distinction)
+
+Important: “Own truth transmission” must not be confused with propaganda.
+
+Own truth: “I’m like this. This is my path. If it resonates — join.”
+
+Propaganda: “You must think like me. The world is black-and-white.”
+
+Score higher when the blogger:
+
+Encourages reflection rather than forcing belief
+
+Avoids manipulation, fear pressure, or aggressive moral superiority
+
+Shares coordinates, not conquest
+
+13.7 Mission → Enlightenment → Learning loop (advanced signals)
+
+When strong, own-truth transmission often includes:
+
+Mission drive (“I can’t stay silent”)
+
+The idea is expressed from internal conviction, not cold calculation
+
+Enlightenment (“bringing clarity”)
+
+They give language/tools for viewers to describe their own experience
+
+Their message acts like a “flashlight” for the audience
+
+Learning (“content as a mirror”)
+
+The blogger refines principles through feedback
+
+You can see growth, calibration, and nuanced positioning
+
+If readable captions/on-screen text or clear speaking-to-camera cues are absent, reduce Confidence, even if the visual storytelling appears polished.
 
 ---
 
@@ -735,6 +819,77 @@ Additional strength signals:
 * Uses rhythm, pauses, and structure in speech
 * Varies content formats (stories, POV, backstage, emotional addresses)
 
+
+16. Expert Status in Beauty-Related Domains
+
+Determine whether the blogger can be reasonably identified as an expert in at least one of the following domains based on the provided video frames:
+
+Cosmetology
+
+Makeup artistry
+
+Plastic surgery
+
+Dermatology
+
+Women’s fashion
+
+Important: Do not assume expertise without clear evidence. If expertise cannot be reliably inferred from visuals and readable text/captions, assign a low Confidence.
+
+Score meaning:
+
+100 — Strong evidence the blogger is an expert in at least one listed domain
+
+50 — Moderate evidence (strong enthusiast / semi-professional indicators)
+
+0 — No evidence of expert status
+
+High-confidence expert signals (strong indicators):
+
+Explicit professional title or credentials visible in on-screen text (e.g., “Dermatologist”, “MD”, “Board Certified”, “Cosmetologist”, “Makeup Artist”, “Plastic Surgeon”, “Stylist”, “Fashion editor”)
+
+Professional environment visible:
+
+medical office, treatment room, clinic equipment (for dermatology / plastic surgery / cosmetology)
+
+professional makeup setup (chair lighting, full kit, working on a client)
+
+fashion studio, fittings, editorial environment (for women’s fashion)
+
+Demonstrations requiring professional skill:
+
+structured procedures, technique explanations, safety warnings
+
+before/after examples with professional framing
+
+ingredient breakdowns + contraindications (dermatology)
+
+surgical context explanation (plastic surgery)
+
+detailed technique breakdowns (makeup)
+
+wardrobe analysis, styling rules, body-type fit logic (women’s fashion)
+
+Medium-confidence expert signals:
+
+Consistent advanced educational content with professional depth
+
+Correct terminology used and explained clearly
+
+Mentions of professional work with clients/patients (only if supported by captions)
+
+Teaching-style content: “common mistakes”, “do/don’t”, “protocol”, “contraindications”, “for professionals”
+
+Low-confidence / non-expert signals:
+
+Only casual product showcasing without depth
+
+Generic mass tips repeated by many creators
+
+No professional environment, no credentials, no advanced technique
+
+If multiple domains appear, select the strongest one.
+
 ---
 
 ## Output Format (Strict provided video frames)
@@ -756,6 +911,7 @@ Additional strength signals:
   "personal_values": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
+  "expert_status": { "Score": 0, "Confidence": 0, "Interpretation": "" }
 }
 \`\`\`
 
@@ -1143,8 +1299,8 @@ If readable captions/on-screen text are missing and speech cannot be reliably in
 
 ### 8. Frequency of Advertising
 
-* 0 — Advertising appears inside each post
-* 100 — No advertising present across the analyzed content
+* **100** — Advertising appears inside each post
+* **0** — No advertising present across the analyzed content
 
 ---
 
@@ -1275,46 +1431,78 @@ Evaluate across two dimensions:
 
 ---
 
-### 13. Personal Values & “Own Truth”
 
-**Score = 100** if the blogger consistently demonstrates a **personal worldview, values, and principles**, going beyond simple documentation of events.
+13. Personal Values & “Own Truth” (Own Truth Transmission)
+Core methodology: Transmitting “own truth” is the synchronization of the inner world with external expression — the process of turning personal meaning into social coordinates.
+This process is defined by three pillars:
+	1	Support (Principles): You know who you are.
+	2	Voice (Vision): You are not afraid to say it out loud.
+	3	Filter (Values): You attract “your people” and filter out “not your people.”
+Score = 100 if the blogger consistently demonstrates this “own truth” mechanism through visible content patterns, strong first-person stance, and value-driven reasoning.
 
-The blogger **does not merely show events** ("what I eat / do / visit"), but **actively interprets them**.
+13.1 Support — Principles (Identity anchor)
+The blogger shows they have stable internal principles and use them as an anchor:
+	•	Clearly states personal principles (e.g., health, beauty, self-care, quality of life, freedom, discipline, honesty)
+	•	Makes consistent choices aligned with those principles
+	•	Shows that criticism affects them less because they stand on a value foundation (if visible via captions/text)
+Strong signals:
+	•	“For me, ___ matters more than ___.”
+	•	“I don’t tolerate ___.”
+	•	“I always choose ___ because ___ is my principle.”
 
-**1. Interpretation of events (mandatory):**
+13.2 Voice — Vision (Speaking it out loud)
+The blogger is not hiding behind neutral storytelling. They explicitly voice their worldview:
+	•	Talks from first person (I / my / for me)
+	•	Names things clearly instead of vague lifestyle narration
+	•	Explains personal conclusions, lessons learned, and why something is important
+Strong signals:
+	•	“This is my way.”
+	•	“Here’s what I believe.”
+	•	“I realized that…”
 
-* Explains **why** they act or choose something in a particular way
-* Expresses **personal likes and dislikes**, not neutral descriptions
-* Articulates **personal conclusions or lessons learned**
-* Explicitly connects actions, choices, or experiences to **personal values or principles**
+13.3 Filter — Values (Content moderates the audience)
+The blogger’s content acts as a reality filter:
+	•	Their values are expressed strongly enough to attract aligned people
+	•	They naturally repel those who disagree (not by aggression, but by clarity)
+	•	They do not “adjust” to everyone — their stance is already public
+Strong signals:
+	•	“If you don’t agree — it’s okay, this is not for you.”
+	•	“People who value ___ will understand.”
 
-**2. Evaluation and conclusions (mandatory):**
-The blogger does not just describe, but **analytically comments**:
+13.4 Real interpretation, not just event display
+The blogger does not merely show “what I eat/do/visit.” They interpret reality:
+	•	Explains why they act this way
+	•	States what they personally like/dislike
+	•	Makes conclusions and links them to values
 
-* What genuinely worked or was liked
-* What did not work or was disliked **and why**
-* What deserves attention and why
-* What experience or insight was gained
+13.5 Analytical evaluations & conclusions
+The blogger does not just describe, but evaluates:
+	•	What truly worked or was liked
+	•	What didn’t work and why
+	•	What deserves attention
+	•	What experience or lesson they gained
 
-**3. Personal opinion vs. borrowed narratives (mandatory):**
-The blogger clearly formulates **their own opinion**, not a retransmission of brand or external messaging.
+13.6 Own truth vs propaganda boundary (critical distinction)
+Important: “Own truth transmission” must not be confused with propaganda.
+	•	Own truth: “I’m like this. This is my path. If it resonates — join.”
+	•	Propaganda: “You must think like me. The world is black-and-white.”
+Score higher when the blogger:
+	•	Encourages reflection rather than forcing belief
+	•	Avoids manipulation, fear pressure, or aggressive moral superiority
+	•	Shares coordinates, not conquest
 
-Clear distinctions include:
+13.7 Mission → Enlightenment → Learning loop (advanced signals)
+When strong, own-truth transmission often includes:
+	1	Mission drive (“I can’t stay silent”)
+	•	The idea is expressed from internal conviction, not cold calculation
+	2	Enlightenment (“bringing clarity”)
+	•	They give language/tools for viewers to describe their own experience
+	•	Their message acts like a “flashlight” for the audience
+	3	Learning (“content as a mirror”)
+	•	The blogger refines principles through feedback
+	•	You can see growth, calibration, and nuanced positioning
 
-* Instead of: “I was sent a pillow”
-* The blogger says:
-
-  * “I like that it gives me ___, because ___ is important to me.”
-  * “This brand resonates with me because it shares my idea/value of ___.”
-  * “I choose ___ because my principles are ___.”
-
-**Key signals:**
-
-* First-person language ("I choose", "it matters to me", "for me")
-* Explicit value-based reasoning
-* Consistent personal stance across frames or content pieces
-
-If readable captions/on-screen text or clear speaking-to-camera cues are **absent**, **reduce Confidence**, even if the visual storytelling appears polished.
+If readable captions/on-screen text or clear speaking-to-camera cues are absent, reduce Confidence, even if the visual storytelling appears polished.
 
 ---
 
@@ -1378,6 +1566,77 @@ Additional strength signals:
 * Uses rhythm, pauses, and structure in speech
 * Varies content formats (stories, POV, backstage, emotional addresses)
 
+16. Expert Status in Beauty-Related Domains
+
+Determine whether the blogger can be reasonably identified as an expert in at least one of the following domains based on the JSON File
+
+Cosmetology
+
+Makeup artistry
+
+Plastic surgery
+
+Dermatology
+
+Women’s fashion
+
+Important: Do not assume expertise without clear evidence. If expertise cannot be reliably inferred from visuals and readable text/captions, assign a low Confidence.
+
+Score meaning:
+
+100 — Strong evidence the blogger is an expert in at least one listed domain
+
+50 — Moderate evidence (strong enthusiast / semi-professional indicators)
+
+0 — No evidence of expert status
+
+High-confidence expert signals (strong indicators):
+
+Explicit professional title or credentials visible in on-screen text (e.g., “Dermatologist”, “MD”, “Board Certified”, “Cosmetologist”, “Makeup Artist”, “Plastic Surgeon”, “Stylist”, “Fashion editor”)
+
+Professional environment visible:
+
+medical office, treatment room, clinic equipment (for dermatology / plastic surgery / cosmetology)
+
+professional makeup setup (chair lighting, full kit, working on a client)
+
+fashion studio, fittings, editorial environment (for women’s fashion)
+
+Demonstrations requiring professional skill:
+
+structured procedures, technique explanations, safety warnings
+
+before/after examples with professional framing
+
+ingredient breakdowns + contraindications (dermatology)
+
+surgical context explanation (plastic surgery)
+
+detailed technique breakdowns (makeup)
+
+wardrobe analysis, styling rules, body-type fit logic (women’s fashion)
+
+Medium-confidence expert signals:
+
+Consistent advanced educational content with professional depth
+
+Correct terminology used and explained clearly
+
+Mentions of professional work with clients/patients (only if supported by captions)
+
+Teaching-style content: “common mistakes”, “do/don’t”, “protocol”, “contraindications”, “for professionals”
+
+Low-confidence / non-expert signals:
+
+Only casual product showcasing without depth
+
+Generic mass tips repeated by many creators
+
+No professional environment, no credentials, no advanced technique
+
+If multiple domains appear, select the strongest one.
+
+
 ---
 
 ## Output Format (Strict provided video frames)
@@ -1399,32 +1658,16 @@ Additional strength signals:
   "personal_values": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
+  "expert_status": { "Score": 0, "Confidence": 0, "Interpretation": "" }
+
 }
 \`\`\`
 
 Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed
+
+
+
 `
-export const TEMPLATE_COMMENTS_PROMPT = `Analyze the following Instagram comments and determine if they contain template/bot-like patterns.
-
-Template comment indicators:
-- Single emoji or emoji-only comments (🔥, ❤️, 👏, 😍)
-- Generic short phrases: "nice!", "cool!", "love it!", "amazing!", "beautiful!", "great post!", "wow!"
-- Single word comments without substance
-- Repetitive patterns across multiple comments
-- Generic compliments without specific reference to content
-- Bot-like promotional comments with links or @mentions
-
-Analyze all comments and provide:
-1. Whether template/bot comments are present (true/false)
-2. Percentage of comments that appear templated
-3. Brief explanation
-
-Output Format (Strict JSON):
-{
-  "template_comments_present": true,
-  "template_percentage": 0,
-  "explanation": ""
-}`
 
 export const REDFLAG_PHOTO_ANALYSIS_PROMPT = `Analyze the provided photo and evaluate the Blogger's Income Level:
 
