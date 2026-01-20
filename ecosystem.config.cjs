@@ -3,7 +3,8 @@ module.exports = {
     {
       name: 'influencerscoring',
       cwd: __dirname,
-      interpreter: '/home/planmasta/.bun/bin/bun', 
+      script: 'src/index.ts',
+      interpreter: '/home/planmasta/.bun/bin/bun',
       log_file: '/home/planmasta/inf/app.log',
       merge_logs: true,
       env: {
