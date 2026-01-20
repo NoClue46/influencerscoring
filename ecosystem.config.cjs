@@ -5,6 +5,7 @@ module.exports = {
       script: 'npm',
       args: 'run start',
       cwd: __dirname,
+      interpreter: '/home/planmasta/.bun/bin/bun', 
       log_file: '/home/planmasta/inf/app.log',
       merge_logs: true,
       env: {
