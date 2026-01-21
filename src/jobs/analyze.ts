@@ -16,14 +16,18 @@ const SCORING_WEIGHTS: Record<string, number> = {
 };
 
 function calculateScore(analysisJson: string): number | null {
+    console.log(`[calculateScore] Input:`, analysisJson);
     try {
         const data = JSON.parse(analysisJson);
         let sum = 0;
         for (const [key, weight] of Object.entries(SCORING_WEIGHTS)) {
             sum += (data[key]?.Score || 0) * weight;
         }
-        return sum / 100;
-    } catch {
+        const result = sum / 100;
+        console.log(`[calculateScore] Output:`, result);
+        return result;
+    } catch (error) {
+        console.log(`[calculateScore] Error:`, error);
         return null;
     }
 }
