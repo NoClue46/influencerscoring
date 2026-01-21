@@ -50,9 +50,18 @@ function validateBloggerMetrics(analysisJson: string): string | null {
 
         for (const metric of requiredMetrics) {
             const score = data[metric]?.Score;
-            const threshold = metric === 'frequency_of_advertising' ? 95 : 60;
-            if (score !== undefined && score < threshold) {
-                failedMetrics.push(metric);
+            if (score === undefined) continue;
+
+            if (metric === 'frequency_of_advertising') {
+                // >= 95 = red flag (слишком много рекламы)
+                if (score >= 95) {
+                    failedMetrics.push(metric);
+                }
+            } else {
+                // < 60 = red flag
+                if (score < 60) {
+                    failedMetrics.push(metric);
+                }
             }
         }
 
