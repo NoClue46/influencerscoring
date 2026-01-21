@@ -15,7 +15,8 @@ const MIN_REPUTATION_SCORE = 60;
 const MIN_INCOME_LEVEL = 60;
 const MIN_ER = 0.01;
 
-async function checkAvatarAge(
+// Временно не используется, оставлена для возможного включения
+export async function checkAvatarAge(
     avatarUrl: string,
     username: string,
     jobId: string
@@ -108,21 +109,22 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
         }
 
         // === CHECK 2: Avatar age estimation ===
-        const avatarUrl = profile.profile_pic_url_hd || profile.profile_pic_url;
-        const ageCheck = await checkAvatarAge(avatarUrl, job.username, job.id);
-
-        if (!ageCheck.passed) {
-            console.log(`[redflag-check] REDFLAG: under_35 (${ageCheck.score})`);
-            await prisma.job.update({
-                where: { id: job.id },
-                data: {
-                    status: 'completed',
-                    redflag: 'under_35',
-                    followers
-                }
-            });
-            return;
-        }
+        // DISABLED: Проверка возраста по аватару отключена, так как добавлен анализ возраста по интернет-поиску (CHECK 3)
+        // const avatarUrl = profile.profile_pic_url_hd || profile.profile_pic_url;
+        // const ageCheck = await checkAvatarAge(avatarUrl, job.username, job.id);
+        //
+        // if (!ageCheck.passed) {
+        //     console.log(`[redflag-check] REDFLAG: under_35 (${ageCheck.score})`);
+        //     await prisma.job.update({
+        //         where: { id: job.id },
+        //         data: {
+        //             status: 'completed',
+        //             redflag: 'under_35',
+        //             followers
+        //         }
+        //     });
+        //     return;
+        // }
 
         // === CHECK 3: Internet search reputation ===
         console.log(`[redflag-check] Checking reputation for ${job.username}`);
