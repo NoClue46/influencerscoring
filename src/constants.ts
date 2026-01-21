@@ -7,6 +7,8 @@ Instagram: https://www.instagram.com/${username}/
 
 Conduct a deep online reputation research for this username with source citations. Identify any negative statements, scandal involvement that leaked to media, and controversial statements.
 
+Additionally, determine the blogger's age based on public information (interviews, Wikipedia, bio pages, news articles). Return estimated_age as a number or null if unknown.
+
 Provide a blogger reputation score from 0 to 100, confidence level from 0 to 100, and full explanation.
 
 Example response:
@@ -85,6 +87,7 @@ Output Format (Strict JSON)
 {
   "reputation_score": 0,
   "confidence": 0,
+  "estimated_age": null,
   "summary": "",
   "negative_findings": [
     {"issue": "", "source": "", "severity": "low|medium|high"}

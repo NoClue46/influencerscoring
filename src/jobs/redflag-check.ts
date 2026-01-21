@@ -130,19 +130,36 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
         const nicknameResult = await askOpenaiWithWebSearch(nicknamePrompt);
 
         let reputationScore = 100;
+        let estimatedAge: number | null = null;
         try {
             if (nicknameResult.text) {
                 const jsonMatch = nicknameResult.text.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                     const parsed = JSON.parse(jsonMatch[0]);
                     reputationScore = parsed.reputation_score ?? 100;
+                    estimatedAge = parsed.estimated_age ?? null;
                 }
             }
         } catch (e) {
             console.warn(`[redflag-check] Failed to parse reputation score, using default`);
         }
 
-        console.log(`[redflag-check] Reputation score: ${reputationScore}`);
+        console.log(`[redflag-check] Reputation score: ${reputationScore}, Estimated age: ${estimatedAge}`);
+
+        // Check age from web search
+        if (estimatedAge !== null && estimatedAge < 35) {
+            console.log(`[redflag-check] REDFLAG: under_35_web (${estimatedAge})`);
+            await prisma.job.update({
+                where: { id: job.id },
+                data: {
+                    status: 'completed',
+                    redflag: 'under_35',
+                    followers,
+                    nicknameAnalyseRawText: nicknameResult.text
+                }
+            });
+            return;
+        }
 
         if (reputationScore < MIN_REPUTATION_SCORE) {
             console.log(`[redflag-check] REDFLAG: low_reputation (${reputationScore})`);
