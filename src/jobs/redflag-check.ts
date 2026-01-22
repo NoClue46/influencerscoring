@@ -13,7 +13,6 @@ const MIN_FOLLOWERS = 7000;
 const MIN_AGE_SCORE = 60;
 const MIN_REPUTATION_SCORE = 60;
 const MIN_INCOME_LEVEL = 60;
-const MIN_ER = 0.01;
 
 // Временно не используется, оставлена для возможного включения
 export async function checkAvatarAge(

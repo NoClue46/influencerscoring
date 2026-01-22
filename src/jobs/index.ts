@@ -19,7 +19,7 @@ export async function startCronJobs(): Promise<void> {
     framingJob.start()
     speechToTextJob.start()
     analyzeJob.start()
-    // cleanupJob.start()
+    cleanupJob.start()
 }
 
 export function stopCronJobs(): void {
@@ -29,5 +29,5 @@ export function stopCronJobs(): void {
     framingJob.stop()
     speechToTextJob.stop()
     analyzeJob.stop()
-    // cleanupJob.stop()
+    cleanupJob.stop()
 }

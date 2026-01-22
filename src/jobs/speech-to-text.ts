@@ -5,7 +5,7 @@ import { promisify } from 'util';
 import { exec } from 'child_process';
 import path from 'path';
 import { transcribeAudio } from '../ask-openai.js';
-import { sleep } from '../utils/helpers.js';
+import { withRetry } from '../utils/helpers.js';
 
 export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
@@ -113,19 +113,4 @@ async function extractAudio(videoPath: string, audioPath: string): Promise<void>
         console.error(`[extractAudio] Failed: ${err.message}`);
         throw error;
     }
-}
-
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
-    let lastError: Error;
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            return await fn();
-        } catch (error) {
-            console.error(`[speechToText] Attempt ${attempt}/${maxRetries} failed: ${error}`)
-            lastError = error as Error;
-            if (attempt === maxRetries) throw lastError;
-            await sleep(1000);
-        }
-    }
-    throw lastError!;
 }
