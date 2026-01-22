@@ -4,6 +4,7 @@ import { MAX_ATTEMPTS, MAX_FILE_SIZE } from '../constants.js';
 import fs from 'fs';
 import path from 'path';
 import { getItemPath } from '../utils/paths.js';
+import { withRetry } from '../utils/helpers.js';
 
 export const downloadJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
@@ -35,25 +36,18 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
 
             const dest = getItemPath(job.username, job.id, reel.id, "reels.mp4")
 
-            for (let it = 0; it < 5; it++) {
-                try {
-                    const downloadResult = await download(reel.downloadUrl, dest);
-
-                    await prisma.reels.update({
-                        where: { id: reel.id },
-                        data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
-                    })
-
-                    break;
-                } catch (error) {
-                    console.error(`[download] Failed to download reels ${reel.id}: `, error);
-                    if (it === 4) {
-                        await prisma.reels.update({
-                            where: { id: reel.id },
-                            data: { reason: "Failed to download" }
-                        })
-                    }
-                }
+            try {
+                const downloadResult = await withRetry(() => download(reel.downloadUrl!, dest), 3);
+                await prisma.reels.update({
+                    where: { id: reel.id },
+                    data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
+                });
+            } catch (error) {
+                console.error(`[download] Failed to download reels ${reel.id}: `, error);
+                await prisma.reels.update({
+                    where: { id: reel.id },
+                    data: { reason: "Failed to download" }
+                });
             }
         }
 
@@ -65,25 +59,18 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
 
             const dest = getItemPath(job.username, job.id, post.id, "post.jpg")
 
-            for (let it = 0; it < 5; it++) {
-                try {
-                    const downloadResult = await download(post.downloadUrl, dest);
-
-                    await prisma.post.update({
-                        where: { id: post.id },
-                        data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
-                    })
-
-                    break;
-                } catch (error) {
-                    console.error(`[download] Failed to download post ${post.id}: `, error);
-                    if (it === 4) {
-                        await prisma.post.update({
-                            where: { id: post.id },
-                            data: { reason: "Failed to download" }
-                        })
-                    }
-                }
+            try {
+                const downloadResult = await withRetry(() => download(post.downloadUrl!, dest), 3);
+                await prisma.post.update({
+                    where: { id: post.id },
+                    data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
+                });
+            } catch (error) {
+                console.error(`[download] Failed to download post ${post.id}: `, error);
+                await prisma.post.update({
+                    where: { id: post.id },
+                    data: { reason: "Failed to download" }
+                });
             }
         }
 
@@ -96,25 +83,18 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
             const extension = story.isVideo ? "mp4" : "jpg"
             const dest = getItemPath(job.username, job.id, story.id, `story.${extension}`)
 
-            for (let it = 0; it < 5; it++) {
-                try {
-                    const downloadResult = await download(story.downloadUrl, dest);
-
-                    await prisma.story.update({
-                        where: { id: story.id },
-                        data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
-                    })
-
-                    break;
-                } catch (error) {
-                    console.error(`[download] Failed to download story ${story.id}: `, error);
-                    if (it === 4) {
-                        await prisma.story.update({
-                            where: { id: story.id },
-                            data: { reason: "Failed to download" }
-                        })
-                    }
-                }
+            try {
+                const downloadResult = await withRetry(() => download(story.downloadUrl!, dest), 3);
+                await prisma.story.update({
+                    where: { id: story.id },
+                    data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
+                });
+            } catch (error) {
+                console.error(`[download] Failed to download story ${story.id}: `, error);
+                await prisma.story.update({
+                    where: { id: story.id },
+                    data: { reason: "Failed to download" }
+                });
             }
         }
 
