@@ -1,8 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS } from '../constants.js';
-import { promisify } from 'util';
-import { exec } from 'child_process';
+import { extractAudio } from '../ffmpeg.js';
 import path from 'path';
 import { transcribeAudio } from '../ask-openai.js';
 import { withRetry } from '../utils/helpers.js';
@@ -100,17 +99,3 @@ export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
         }
     }
 });
-
-const execAsync = promisify(exec);
-
-async function extractAudio(videoPath: string, audioPath: string): Promise<void> {
-    console.log(`[extractAudio] Starting: ${videoPath} -> ${audioPath}`);
-    try {
-        await execAsync(`ffmpeg -y -i "${videoPath}" -vn -acodec mp3 "${audioPath}"`);
-        console.log(`[extractAudio] Success: ${audioPath}`);
-    } catch (error) {
-        const err = error as Error;
-        console.error(`[extractAudio] Failed: ${err.message}`);
-        throw error;
-    }
-}

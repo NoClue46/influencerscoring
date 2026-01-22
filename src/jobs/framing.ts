@@ -1,10 +1,8 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS } from '../constants.js';
-import { promisify } from 'util';
-import fs from 'fs';
+import { extractFrames } from '../ffmpeg.js';
 import path from 'path';
-import { exec } from 'child_process';
 
 export const framingJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({
@@ -74,14 +72,3 @@ export const framingJob = new CronJob('*/5 * * * * *', async () => {
         }
     }
 });
-
-const execAsync = promisify(exec);
-
-async function extractFrames(videoPath: string, framesDir: string): Promise<void> {
-    if (!fs.existsSync(framesDir)) {
-        fs.mkdirSync(framesDir, { recursive: true });
-    }
-
-    const outputPattern = path.join(framesDir, 'frame_%04d.jpg');
-    await execAsync(`ffmpeg -i "${videoPath}" -vf "fps=1" "${outputPattern}"`);
-}
