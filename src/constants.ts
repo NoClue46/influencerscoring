@@ -913,7 +913,7 @@ If multiple domains appear, select the strongest one.
   "intelligence": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "personal_values": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
-  "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
+  "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "expert_status": { "Score": 0, "Confidence": 0, "Interpretation": "" }
 }
 \`\`\`
@@ -1723,7 +1723,7 @@ If multiple domains appear, select the strongest one.
   "intelligence": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "personal_values": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
-  "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
+  "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "expert_status": { "Score": 0, "Confidence": 0, "Interpretation": "" }
 }
 \`\`\`
