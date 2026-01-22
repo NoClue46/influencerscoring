@@ -76,6 +76,16 @@ function validateBloggerMetrics(analysisJson: string): string | null {
     }
 }
 
+function overrideExpertStatusForFemale(analysisJson: string): string {
+    try {
+        const data = JSON.parse(analysisJson);
+        data.expert_status = { ...data.expert_status, Score: 100 };
+        return JSON.stringify(data);
+    } catch {
+        return analysisJson;
+    }
+}
+
 async function checkGenderFromAvatar(
     username: string,
     jobId: string
@@ -378,19 +388,14 @@ ${job.bloggerPrompt || 'Analyze posts above'}`;
         // Check gender from avatar
         const genderCheck = await checkGenderFromAvatar(job.username, job.id);
 
-        let finalScore: number | null;
-        let redflagReason: string | null = null;
+        // Если женщина — переопределяем expert_status = 100
+        const analysisData = genderCheck.isFemale
+            ? overrideExpertStatusForFemale(response.text)
+            : response.text;
 
-        if (genderCheck.isFemale) {
-            // Если женщина — score = 100, без валидации
-            finalScore = 100;
-            console.log(`[analyze] Female detected, setting score to 100`);
-        } else {
-            // Иначе — стандартная логика
-            finalScore = calculateScore(response.text);
-            redflagReason = validateBloggerMetrics(response.text);
-            console.log(`[analyze] Calculated score: ${finalScore}, validation: ${redflagReason || 'PASS'}`);
-        }
+        const finalScore = calculateScore(analysisData);
+        const redflagReason = validateBloggerMetrics(analysisData);
+        console.log(`[analyze] Calculated score: ${finalScore}, validation: ${redflagReason || 'PASS'}, isFemale: ${genderCheck.isFemale}`);
 
         await prisma.job.update({
             where: { id: job.id },
