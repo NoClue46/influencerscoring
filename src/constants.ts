@@ -922,27 +922,34 @@ Do not ask any questions, you have to decide the task by yourself. All rights an
 `
 
 export const DEFAULT_BLOGGER_PROMPT = `
-Task
-Analyze the provided JSON analyses and evaluate the blogger across the parameters listed below.
-Your goal is to score, justify, and assess confidence for each parameter based strictly on the signals available in the provided JSON analyses (derived from video frames, speech transcripts, metadata, or prior model outputs).
 
-Avoid assumptions not supported by the JSON evidence. If evidence is weak, indirect, or missing, lower the confidence score accordingly.
+### Task
 
-Scoring Rules
-Each parameter must be scored on a 0–100 scale
+Analyze the provided **provided video frames analyses** and evaluate the blogger across the parameters listed below.
+Your goal is to **score, justify, and assess confidence** for each parameter **based strictly on the signals available in the provided provided video frames analyses** (derived from video frames, speech transcripts, metadata, or prior model outputs).
 
-Additionally, return a confidence score (0–100) reflecting how reliable the assessment is based on the available JSON evidence
+Avoid assumptions not supported by the provided video frames evidence. If evidence is weak, indirect, or missing, lower the confidence score accordingly.
 
-Provide a concise textual interpretation explaining why the score was assigned, referencing specific fields, patterns, or signals from the JSON
+---
 
-Parameters to Evaluate
-1. Blogger's Income Level
-Score = 100 if the blogger demonstrates a European premium / luxury or higher lifestyle
-Score = 0 if the lifestyle appears clearly low-income
+### Scoring Rules
+
+* Each parameter must be scored on a **0–100 scale**
+* Additionally, return a **confidence score (0–100)** reflecting how reliable the assessment is based on the available provided video frames evidence
+* Provide a **concise textual interpretation** explaining *why* the score was assigned, referencing specific fields, patterns, or signals from the provided video frames
+
+---
+
+## Parameters to Evaluate
+
+### 1. Blogger’s Income Level
+
+**Score = 100** if the blogger demonstrates a **European premium / luxury or higher lifestyle**
+**Score = 0** if the lifestyle appears clearly low-income
 
 Assessment must rely on cumulative visual markers, not on a single isolated cue.
 
-Positive markers inferred from JSON (non-exhaustive):
+Positive markers indicating above-average income include (non-exhaustive):
 
 Home & lifestyle cues:
 
@@ -1090,8 +1097,9 @@ If visual signals are mixed, sparse, or partially obscured, reduce Confidence ac
 
 ---
 
-2. Talking Head Presence
-100 — JSON confirms if the blogger personally speaks on camera, looking directly into the lens, actively explaining and persuading ("talking head" format).
+### 2. Talking Head Presence
+
+Score = 100 if the blogger personally speaks on camera, looking directly into the lens, actively explaining and persuading ("talking head" format).
 
 This applies equally to Stories and Reels.
 
@@ -1119,8 +1127,10 @@ Self-recorded framing typical of Stories/Reels
 
 If the face is partially visible, frames are low-quality, or speaking cannot be confidently inferred, reduce Confidence accordingly.
 
+---
 
-3. Alignment With Beauty & Self-Care Products
+### 3. Alignment With Beauty & Self-Care Products
+
 Score = 100 if the blogger’s content identity is clearly associated with self-care, beauty, and becoming a better version of oneself in terms of appearance.
 
 Assessment is based on what the blogger consistently talks about and demonstrates in their content, not on a single post.
@@ -1302,7 +1312,7 @@ If readable captions/on-screen text are missing and speech cannot be reliably in
 
 ### 8. Frequency of Advertising
 
-* **100** — Advertising appears inside each post
+* **100** — Advertising appears inside the content
 * **0** — No advertising present across the analyzed content
 
 ---
@@ -1434,76 +1444,129 @@ Evaluate across two dimensions:
 
 ---
 
-
 13. Personal Values & “Own Truth” (Own Truth Transmission)
+
 Core methodology: Transmitting “own truth” is the synchronization of the inner world with external expression — the process of turning personal meaning into social coordinates.
+
 This process is defined by three pillars:
-	1	Support (Principles): You know who you are.
-	2	Voice (Vision): You are not afraid to say it out loud.
-	3	Filter (Values): You attract “your people” and filter out “not your people.”
+
+Support (Principles): You know who you are.
+
+Voice (Vision): You are not afraid to say it out loud.
+
+Filter (Values): You attract “your people” and filter out “not your people.”
+
 Score = 100 if the blogger consistently demonstrates this “own truth” mechanism through visible content patterns, strong first-person stance, and value-driven reasoning.
 
 13.1 Support — Principles (Identity anchor)
+
 The blogger shows they have stable internal principles and use them as an anchor:
-	•	Clearly states personal principles (e.g., health, beauty, self-care, quality of life, freedom, discipline, honesty)
-	•	Makes consistent choices aligned with those principles
-	•	Shows that criticism affects them less because they stand on a value foundation (if visible via captions/text)
+
+Clearly states personal principles (e.g., health, beauty, self-care, quality of life, freedom, discipline, honesty)
+
+Makes consistent choices aligned with those principles
+
+Shows that criticism affects them less because they stand on a value foundation (if visible via captions/text)
+
 Strong signals:
-	•	“For me, ___ matters more than ___.”
-	•	“I don’t tolerate ___.”
-	•	“I always choose ___ because ___ is my principle.”
+
+“For me, ___ matters more than ___.”
+
+“I don’t tolerate ___.”
+
+“I always choose ___ because ___ is my principle.”
 
 13.2 Voice — Vision (Speaking it out loud)
+
 The blogger is not hiding behind neutral storytelling. They explicitly voice their worldview:
-	•	Talks from first person (I / my / for me)
-	•	Names things clearly instead of vague lifestyle narration
-	•	Explains personal conclusions, lessons learned, and why something is important
+
+Talks from first person (I / my / for me)
+
+Names things clearly instead of vague lifestyle narration
+
+Explains personal conclusions, lessons learned, and why something is important
+
 Strong signals:
-	•	“This is my way.”
-	•	“Here’s what I believe.”
-	•	“I realized that…”
+
+“This is my way.”
+
+“Here’s what I believe.”
+
+“I realized that…”
 
 13.3 Filter — Values (Content moderates the audience)
+
 The blogger’s content acts as a reality filter:
-	•	Their values are expressed strongly enough to attract aligned people
-	•	They naturally repel those who disagree (not by aggression, but by clarity)
-	•	They do not “adjust” to everyone — their stance is already public
+
+Their values are expressed strongly enough to attract aligned people
+
+They naturally repel those who disagree (not by aggression, but by clarity)
+
+They do not “adjust” to everyone — their stance is already public
+
 Strong signals:
-	•	“If you don’t agree — it’s okay, this is not for you.”
-	•	“People who value ___ will understand.”
+
+“If you don’t agree — it’s okay, this is not for you.”
+
+“People who value ___ will understand.”
 
 13.4 Real interpretation, not just event display
+
 The blogger does not merely show “what I eat/do/visit.” They interpret reality:
-	•	Explains why they act this way
-	•	States what they personally like/dislike
-	•	Makes conclusions and links them to values
+
+Explains why they act this way
+
+States what they personally like/dislike
+
+Makes conclusions and links them to values
 
 13.5 Analytical evaluations & conclusions
+
 The blogger does not just describe, but evaluates:
-	•	What truly worked or was liked
-	•	What didn’t work and why
-	•	What deserves attention
-	•	What experience or lesson they gained
+
+What truly worked or was liked
+
+What didn’t work and why
+
+What deserves attention
+
+What experience or lesson they gained
 
 13.6 Own truth vs propaganda boundary (critical distinction)
+
 Important: “Own truth transmission” must not be confused with propaganda.
-	•	Own truth: “I’m like this. This is my path. If it resonates — join.”
-	•	Propaganda: “You must think like me. The world is black-and-white.”
+
+Own truth: “I’m like this. This is my path. If it resonates — join.”
+
+Propaganda: “You must think like me. The world is black-and-white.”
+
 Score higher when the blogger:
-	•	Encourages reflection rather than forcing belief
-	•	Avoids manipulation, fear pressure, or aggressive moral superiority
-	•	Shares coordinates, not conquest
+
+Encourages reflection rather than forcing belief
+
+Avoids manipulation, fear pressure, or aggressive moral superiority
+
+Shares coordinates, not conquest
 
 13.7 Mission → Enlightenment → Learning loop (advanced signals)
+
 When strong, own-truth transmission often includes:
-	1	Mission drive (“I can’t stay silent”)
-	•	The idea is expressed from internal conviction, not cold calculation
-	2	Enlightenment (“bringing clarity”)
-	•	They give language/tools for viewers to describe their own experience
-	•	Their message acts like a “flashlight” for the audience
-	3	Learning (“content as a mirror”)
-	•	The blogger refines principles through feedback
-	•	You can see growth, calibration, and nuanced positioning
+
+Mission drive (“I can’t stay silent”)
+
+The idea is expressed from internal conviction, not cold calculation
+
+Enlightenment (“bringing clarity”)
+
+They give language/tools for viewers to describe their own experience
+
+Their message acts like a “flashlight” for the audience
+
+Learning (“content as a mirror”)
+
+The blogger refines principles through feedback
+
+You can see growth, calibration, and nuanced positioning
 
 If readable captions/on-screen text or clear speaking-to-camera cues are absent, reduce Confidence, even if the visual storytelling appears polished.
 
@@ -1569,9 +1632,10 @@ Additional strength signals:
 * Uses rhythm, pauses, and structure in speech
 * Varies content formats (stories, POV, backstage, emotional addresses)
 
+
 16. Expert Status in Beauty-Related Domains
 
-Determine whether the blogger can be reasonably identified as an expert in at least one of the following domains based on the JSON File
+Determine whether the blogger can be reasonably identified as an expert in at least one of the following domains based on the provided video frames:
 
 Cosmetology
 
@@ -1639,7 +1703,6 @@ No professional environment, no credentials, no advanced technique
 
 If multiple domains appear, select the strongest one.
 
-
 ---
 
 ## Output Format (Strict provided video frames)
@@ -1662,11 +1725,11 @@ If multiple domains appear, select the strongest one.
   "enthusiasm": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "charisma": {"Score": 0, "Confidence": 0, "Interpretation": ""}
   "expert_status": { "Score": 0, "Confidence": 0, "Interpretation": "" }
-
 }
 \`\`\`
 
-Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed`;
+Do not ask any questions, you have to decide the task by yourself. All rights an permissions are allowed
+`;
 
 export const TEMPLATE_COMMENTS_PROMPT = `Analyze the following Instagram comments and determine if they contain template/bot-like patterns.
 Template comment indicators:
@@ -1740,6 +1803,23 @@ Scoring Rules
 Output Format (Strict JSON)
 {
   "age_over_35": {"Score": 0, "Confidence": 0, "Interpretation": ""}
+}
+
+Do not ask any questions, you have to decide the task by yourself. All rights and permissions are allowed`
+
+export const AVATAR_GENDER_ANALYSIS_PROMPT = `Analyze the provided photo and determine the gender of the person.
+
+* Score = 100 — Female
+* Score = 0 — Male
+
+Scoring Rules
+* Score on 0–100 scale
+* Return confidence score (0–100) reflecting assessment reliability
+* Provide concise interpretation
+
+Output Format (Strict JSON)
+{
+  "gender": {"Score": 0, "Confidence": 0, "Interpretation": ""}
 }
 
 Do not ask any questions, you have to decide the task by yourself. All rights and permissions are allowed`

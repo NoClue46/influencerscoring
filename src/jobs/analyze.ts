@@ -1,6 +1,8 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, COMMENT_ANALYSIS_PROMPT } from '../constants.js';
+import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, COMMENT_ANALYSIS_PROMPT, AVATAR_GENDER_ANALYSIS_PROMPT } from '../constants.js';
+import { fetchProfile } from '../scrape-creators.js';
+import { getAvatarPath } from '../utils/paths.js';
 import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.js';
 import { selectFrames } from '../utils/select-frames.js';
 import fs from 'fs';
@@ -43,7 +45,8 @@ function validateBloggerMetrics(analysisJson: string): string | null {
             'pillow_ads_constraint',
             'ads_focus_consistency',
             'sales_authenticity',
-            'frequency_of_advertising'
+            'frequency_of_advertising',
+            "expert_status"
         ];
 
         const failedMetrics: string[] = [];
@@ -71,6 +74,57 @@ function validateBloggerMetrics(analysisJson: string): string | null {
     } catch {
         return null; // Don't fail job on parse errors
     }
+}
+
+async function checkGenderFromAvatar(
+    username: string,
+    jobId: string
+): Promise<{ isFemale: boolean; score: number | null }> {
+    console.log(`[analyze] Checking gender from avatar for ${username}`);
+
+    const profile = await fetchProfile(username, true);
+    if (!profile) {
+        console.log(`[analyze] Could not fetch profile for ${username}`);
+        return { isFemale: false, score: null };
+    }
+
+    const avatarUrl = profile.profile_pic_url_hd || profile.profile_pic_url;
+    if (!avatarUrl) {
+        console.log(`[analyze] No avatar URL for ${username}`);
+        return { isFemale: false, score: null };
+    }
+
+    const avatarPath = getAvatarPath(username, jobId);
+    const avatarDir = path.dirname(avatarPath);
+
+    if (!fs.existsSync(avatarDir)) {
+        fs.mkdirSync(avatarDir, { recursive: true });
+    }
+
+    const response = await fetch(avatarUrl);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    fs.writeFileSync(avatarPath, buffer);
+
+    const result = await askOpenai([avatarPath], AVATAR_GENDER_ANALYSIS_PROMPT);
+
+    let score: number | null = null;
+    if (result.text) {
+        try {
+            const jsonMatch = result.text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                score = parsed.gender?.Score ?? null;
+            }
+        } catch (e) {
+            console.warn(`[analyze] Failed to parse gender result`);
+        }
+    }
+
+    // score >= 50 означает женщина
+    const isFemale = score !== null && score >= 50;
+    console.log(`[analyze] Gender score: ${score}, isFemale: ${isFemale}`);
+
+    return { isFemale, score };
 }
 
 export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
@@ -321,20 +375,29 @@ ${job.bloggerPrompt || 'Analyze posts above'}`;
         const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(job.username);
         const nicknameResult = await askOpenaiWithWebSearch(nicknamePrompt);
 
-        // Calculate score from analysis
-        const score = calculateScore(response.text);
-        console.log(`[analyze] Calculated score for job ${job.id}: ${score}`);
+        // Check gender from avatar
+        const genderCheck = await checkGenderFromAvatar(job.username, job.id);
 
-        // Validate blogger metrics for red flags
-        const redflagReason = validateBloggerMetrics(response.text);
-        console.log(`[analyze] Validation result for job ${job.id}: ${redflagReason || 'PASS'}`);
+        let finalScore: number | null;
+        let redflagReason: string | null = null;
+
+        if (genderCheck.isFemale) {
+            // Если женщина — score = 100, без валидации
+            finalScore = 100;
+            console.log(`[analyze] Female detected, setting score to 100`);
+        } else {
+            // Иначе — стандартная логика
+            finalScore = calculateScore(response.text);
+            redflagReason = validateBloggerMetrics(response.text);
+            console.log(`[analyze] Calculated score: ${finalScore}, validation: ${redflagReason || 'PASS'}`);
+        }
 
         await prisma.job.update({
             where: { id: job.id },
             data: {
                 analyzeRawText: response.text,
                 nicknameAnalyseRawText: nicknameResult.text,
-                score,
+                score: finalScore,
                 status: 'completed',
                 redflag: redflagReason
             }
