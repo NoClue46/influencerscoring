@@ -1,23 +1,16 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS } from '../constants.js';
 import { extractFrames } from '../ffmpeg/extract-frames.js';
 import path from 'path';
+import { withJobTransition } from './with-job-transition.js';
 
-export const framingJob = new CronJob('*/5 * * * * *', async () => {
-    const job = await prisma.job.findFirst({
-        where: { status: 'downloading_finished' }
-    });
-    if (!job) return;
-
-    console.log(`[framing] Started for job ${JSON.stringify(job)}`);
-
-    try {
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'framing_started' }
-        });
-
+export const framingJob = new CronJob('*/5 * * * * *', () =>
+    withJobTransition({
+        fromStatus: 'downloading_finished',
+        startedStatus: 'framing_started',
+        finishedStatus: 'framing_finished',
+        jobName: 'framing'
+    }, async (job) => {
         const [reels, stories] = await Promise.all([
             prisma.reels.findMany({
                 where: {
@@ -49,26 +42,5 @@ export const framingJob = new CronJob('*/5 * * * * *', async () => {
             }
             console.log(`[framing] Extracted frames for ${stories.length} video stories`);
         }
-
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'framing_finished' }
-        });
-
-        console.log(`[framing] Completed successfully for job ${job.id}`);
-    } catch (error) {
-        const err = error as Error;
-        console.error(`[framing] Failed for job ${job.id}:`, err.message);
-        if (job.attempts >= MAX_ATTEMPTS) {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'failed', reason: err.message }
-            });
-        } else {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'downloading_finished', reason: err.message, attempts: { increment: 1 } }
-            });
-        }
-    }
-});
+    })
+);

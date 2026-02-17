@@ -1,12 +1,14 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, COMMENT_ANALYSIS_PROMPT, AVATAR_GENDER_ANALYSIS_PROMPT } from '../constants.js';
+import { COMMENT_ANALYSIS_PROMPT, AVATAR_GENDER_ANALYSIS_PROMPT } from '../constants.js';
 import { fetchProfile } from '../scrape-creators/index.js';
 import { downloadAvatar } from '../utils/avatar.js';
-import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.js';
+import { askOpenai, askOpenaiText } from '../ask-openai.js';
+import { analyzeNicknameReputation } from '../utils/nickname-reputation.js';
 import { selectFrames } from '../utils/select-frames.js';
 import fs from 'fs';
 import path from 'path';
+import { withJobTransition } from './with-job-transition.js';
 
 const SCORING_WEIGHTS: Record<string, number> = {
     structured_thinking: 10,
@@ -128,21 +130,13 @@ async function checkGenderFromAvatar(
     return { isFemale, score };
 }
 
-export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
-    const job = await prisma.job.findFirst({
-        where: { status: 'speech_to_text_finished' }
-    });
-
-    if (!job) return;
-
-    console.log(`[analyze] Started for job ${JSON.stringify(job)}`);
-
-    try {
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'analyzing_started' }
-        });
-
+export const analyzeJob = new CronJob('*/5 * * * * *', () =>
+    withJobTransition({
+        fromStatus: 'speech_to_text_finished',
+        startedStatus: 'analyzing_started',
+        finishedStatus: 'analyzing_finished',
+        jobName: 'analyze'
+    }, async (job) => {
         const [reels, posts, stories] = await Promise.all([
             prisma.reels.findMany({ where: { jobId: job.id }, include: { comments: true } }),
             prisma.post.findMany({ where: { jobId: job.id }, include: { comments: true } }),
@@ -313,13 +307,8 @@ export const analyzeJob = new CronJob('*/5 * * * * *', async () => {
             throw new Error(`Analysis completed with errors: ${errors.join('; ')}`);
         }
 
-        // Check if full analysis is needed
+        // If not full analysis, let withJobTransition set analyzing_finished
         if (!job.allVideos) {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'analyzing_finished' }
-            });
-            console.log(`[analyze] Completed successfully for job ${job.id}`);
             return;
         }
 
@@ -373,8 +362,7 @@ ${job.bloggerPrompt || 'Analyze posts above'}`;
 
         // Nickname analysis via web search
         console.log(`[analyze] Starting nickname analysis for job ${job.id}`);
-        const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(job.username);
-        const nicknameResult = await askOpenaiWithWebSearch(nicknamePrompt);
+        const { rawText: nicknameRawText } = await analyzeNicknameReputation(job.username);
 
         // Check gender from avatar
         const genderCheck = await checkGenderFromAvatar(job.username, job.id);
@@ -388,11 +376,12 @@ ${job.bloggerPrompt || 'Analyze posts above'}`;
         const redflagReason = validateBloggerMetrics(analysisData);
         console.log(`[analyze] Calculated score: ${finalScore}, validation: ${redflagReason || 'PASS'}, isFemale: ${genderCheck.isFemale}`);
 
+        // Early complete with 'completed' — withJobTransition will skip finishedStatus
         await prisma.job.update({
             where: { id: job.id },
             data: {
                 analyzeRawText: response.text,
-                nicknameAnalyseRawText: nicknameResult.text,
+                nicknameAnalyseRawText: nicknameRawText,
                 score: finalScore,
                 status: 'completed',
                 redflag: redflagReason
@@ -400,19 +389,5 @@ ${job.bloggerPrompt || 'Analyze posts above'}`;
         });
 
         console.log(`[analyze] Completed full analysis for job ${job.id}`);
-    } catch (error) {
-        const err = error as Error;
-        console.error(`[analyze] Failed for job ${job.id}:`, err.message);
-        if (job.attempts >= MAX_ATTEMPTS) {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'failed', reason: err.message }
-            });
-        } else {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'speech_to_text_finished', reason: err.message, attempts: { increment: 1 } }
-            });
-        }
-    }
-});
+    })
+);

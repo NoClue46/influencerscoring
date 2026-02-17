@@ -1,23 +1,15 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS } from '../constants.js';
 import { fetchPosts, fetchReels, fetchStories, fetchComments } from '../scrape-creators/index.js';
+import { withJobTransition } from './with-job-transition.js';
 
-export const fetchJob = new CronJob('*/5 * * * * *', async () => {
-    const job = await prisma.job.findFirst({
-        where: { status: 'redflag_checking_finished' }
-    });
-
-    if (!job) return;
-
-    console.log(`[fetch] Started for job ${JSON.stringify(job)}`);
-
-    try {
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'fetching_started' }
-        });
-
+export const fetchJob = new CronJob('*/5 * * * * *', () =>
+    withJobTransition({
+        fromStatus: 'redflag_checking_finished',
+        startedStatus: 'fetching_started',
+        finishedStatus: 'fetching_finished',
+        jobName: 'fetch'
+    }, async (job) => {
         // Check existing posts/reels from redflag check
         const [existingPosts, existingReels] = await Promise.all([
             prisma.post.count({ where: { jobId: job.id } }),
@@ -39,8 +31,8 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
 
         // Fetch only remaining content (followers already saved by redflag-check)
         const [reels, posts, stories] = await Promise.all([
-            remainingReels > 0 ? fetchReels(job.username, job.postNumber) : [],
-            remainingPosts > 0 ? fetchPosts(job.username, job.postNumber) : [],
+            remainingReels > 0 ? fetchReels(job.username, job.postNumber, existingReelUrls) : [],
+            remainingPosts > 0 ? fetchPosts(job.username, job.postNumber, existingPostUrls) : [],
             fetchStories(job.username, job.postNumber)
         ])
 
@@ -119,26 +111,5 @@ export const fetchJob = new CronJob('*/5 * * * * *', async () => {
                 });
             }
         }
-
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'fetching_finished' }
-        });
-
-        console.log(`[fetch] Completed successfully for job ${job.id}`);
-    } catch (error) {
-        const err = error as Error;
-        console.error(`[fetch] Failed for job ${job.id}:`, err.message);
-        if (job.attempts >= MAX_ATTEMPTS) {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'failed', reason: err.message }
-            });
-        } else {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'redflag_checking_finished', reason: err.message, attempts: { increment: 1 } }
-            });
-        }
-    }
-});
+    })
+);

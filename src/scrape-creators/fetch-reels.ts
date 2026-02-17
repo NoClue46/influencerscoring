@@ -2,7 +2,7 @@ import type { ReelItem, ReelsResponse, PostResponse } from './types.js';
 
 const BASE_URL = "https://api.scrapecreators.com/s";
 
-export async function fetchReels(handle: string, count: number = 12) {
+export async function fetchReels(handle: string, count: number = 12, ignoreUrls: Set<string> = new Set()) {
     try {
         // 1. Fetch reel URLs
         let allItems: ReelItem[] = [];
@@ -39,7 +39,9 @@ export async function fetchReels(handle: string, count: number = 12) {
             if (!cursor || !json.paging_info?.more_available) break;
         }
 
-        const reelUrls = allItems.slice(0, count).map((item) => (`https://www.instagram.com/reel/${item.media.code}`));
+        const reelUrls = allItems.slice(0, count)
+            .map((item) => (`https://www.instagram.com/reel/${item.media.code}`))
+            .filter(url => !ignoreUrls.has(url));
 
         let result: {
             url: string;

@@ -1,25 +1,18 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS } from '../constants.js';
 import { extractAudio } from '../ffmpeg/extract-audio.js';
 import path from 'path';
 import { transcribeAudio } from '../ask-openai.js';
 import { withRetry } from '../utils/helpers.js';
+import { withJobTransition } from './with-job-transition.js';
 
-export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
-    const job = await prisma.job.findFirst({
-        where: { status: 'framing_finished' }
-    });
-    if (!job) return;
-
-    console.log(`[speechToText] Started for job ${JSON.stringify(job)}`);
-
-    try {
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'speech_to_text_started' }
-        });
-
+export const speechToTextJob = new CronJob('*/5 * * * * *', () =>
+    withJobTransition({
+        fromStatus: 'framing_finished',
+        startedStatus: 'speech_to_text_started',
+        finishedStatus: 'speech_to_text_finished',
+        jobName: 'speechToText'
+    }, async (job) => {
         const [reels, stories] = await Promise.all([
             prisma.reels.findMany({ where: { jobId: job.id } }),
             prisma.story.findMany({ where: { jobId: job.id, isVideo: true } })
@@ -76,26 +69,5 @@ export const speechToTextJob = new CronJob('*/5 * * * * *', async () => {
             }
         }
         console.log(`[speechToText] Transcribed ${stories.length} stories`);
-
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'speech_to_text_finished' }
-        });
-
-        console.log(`[speechToText] Completed for job ${job.id}`);
-    } catch (error) {
-        const err = error as Error;
-        console.error(`[speechToText] Failed for job ${job.id}:`, err.message);
-        if (job.attempts >= MAX_ATTEMPTS) {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'failed', reason: err.message }
-            });
-        } else {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'framing_finished', reason: err.message, attempts: { increment: 1 } }
-            });
-        }
-    }
-});
+    })
+);

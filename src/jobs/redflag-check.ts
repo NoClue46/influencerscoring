@@ -1,75 +1,48 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, TEMPLATE_COMMENTS_PROMPT, REDFLAG_PHOTO_ANALYSIS_PROMPT, AVATAR_AGE_ANALYSIS_PROMPT } from '../constants.js';
+import { TEMPLATE_COMMENTS_PROMPT, REDFLAG_PHOTO_ANALYSIS_PROMPT } from '../constants.js';
 import { fetchProfile, fetchPosts, fetchComments } from '../scrape-creators/index.js';
-import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.js';
+import { askOpenai, askOpenaiText } from '../ask-openai.js';
 import { sleep, chunk } from '../utils/helpers.js';
-import fs from 'fs';
-import path from 'path';
+import { analyzeNicknameReputation } from '../utils/nickname-reputation.js';
 import { getItemPath } from '../utils/paths.js';
-import { downloadAvatar } from '../utils/avatar.js';
+import { downloadFile } from '../utils/download-file.js';
+import { withJobTransition } from './with-job-transition.js';
 
 const REDFLAG_POST_COUNT = 5;
 const MIN_FOLLOWERS = 7000;
-const MIN_AGE_SCORE = 60;
 const MIN_REPUTATION_SCORE = 60;
 const MIN_INCOME_LEVEL = 60;
 
-// Временно не используется, оставлена для возможного включения
-export async function checkAvatarAge(
-    avatarUrl: string,
-    username: string,
-    jobId: string
-): Promise<{ passed: boolean; score: number | null }> {
-    console.log(`[redflag-check] Analyzing avatar age for ${username}`);
-
-    const avatarPath = await downloadAvatar(avatarUrl, username, jobId);
-
-    const result = await askOpenai([avatarPath], AVATAR_AGE_ANALYSIS_PROMPT);
-
-    let score: number | null = null;
-    if (result.text) {
-        try {
-            const jsonMatch = result.text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                score = parsed.age_over_35?.Score ?? null;
-            }
-        } catch (e) {
-            console.warn(`[redflag-check] Failed to parse avatar age result`);
-        }
-    }
-
-    const passed = score === null || score >= MIN_AGE_SCORE;
-    console.log(`[redflag-check] Avatar age score: ${score}, Passed: ${passed}`);
-
-    return { passed, score };
-}
-
-export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
-    const job = await prisma.job.findFirst({
-        where: { status: 'pending' }
-    });
-
-    if (!job) return;
-
-    console.log(`[redflag-check] Started for job ${job.id} (${job.username})`);
-
-    try {
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'redflag_checking_started' }
-        });
-
-        // === CHECK 1: Followers count ===
+/**
+ * Red-flag check job — предварительная проверка блогера перед полным анализом.
+ *
+ * Шаги:
+ * 1. Берёт pending-джоб из БД, ставит статус `redflag_checking_started`
+ * 2. Проверка приватности аккаунта → завершение с `isPrivate: true`
+ * 3. Проверка кол-ва подписчиков (< 7 000) → redflag `followers_below_10k`
+ * 4. Веб-поиск репутации через OpenAI: парсит `reputation_score` и `estimated_age`
+ *    - Возраст < 35 → redflag `under_35`
+ *    - Репутация < 60 → redflag `low_reputation`
+ * 5. Скачивание 5 постов + анализ фото через GPT Vision на уровень дохода
+ *    - Средний income < 60 → redflag `low_income`
+ * 6. Загрузка комментариев + анализ на шаблонные комменты + расчёт среднего ER
+ * 7. Все проверки пройдены → статус `redflag_checking_finished`
+ * 8. При ошибке — retry до MAX_ATTEMPTS, затем `failed`
+ */
+export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
+    withJobTransition({
+        fromStatus: 'pending',
+        startedStatus: 'redflag_checking_started',
+        finishedStatus: 'redflag_checking_finished',
+        jobName: 'redflag-check'
+    }, async (job) => {
         console.log(`[redflag-check] Fetching profile for ${job.username}`);
         const profile = await fetchProfile(job.username, true);
-
         if (!profile) {
             throw new Error('Failed to fetch profile');
         }
 
-        // === CHECK 0: Private account ===
         const isPrivate = profile.is_private === true;
         if (isPrivate) {
             console.log(`[redflag-check] REDFLAG: private_account`);
@@ -99,47 +72,10 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             return;
         }
 
-        // === CHECK 2: Avatar age estimation ===
-        // DISABLED: Проверка возраста по аватару отключена, так как добавлен анализ возраста по интернет-поиску (CHECK 3)
-        // const avatarUrl = profile.profile_pic_url_hd || profile.profile_pic_url;
-        // const ageCheck = await checkAvatarAge(avatarUrl, job.username, job.id);
-        //
-        // if (!ageCheck.passed) {
-        //     console.log(`[redflag-check] REDFLAG: under_35 (${ageCheck.score})`);
-        //     await prisma.job.update({
-        //         where: { id: job.id },
-        //         data: {
-        //             status: 'completed',
-        //             redflag: 'under_35',
-        //             followers
-        //         }
-        //     });
-        //     return;
-        // }
-
-        // === CHECK 3: Internet search reputation ===
         console.log(`[redflag-check] Checking reputation for ${job.username}`);
-        const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(job.username);
-        const nicknameResult = await askOpenaiWithWebSearch(nicknamePrompt);
-
-        let reputationScore = 100;
-        let estimatedAge: number | null = null;
-        try {
-            if (nicknameResult.text) {
-                const jsonMatch = nicknameResult.text.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    const parsed = JSON.parse(jsonMatch[0]);
-                    reputationScore = parsed.reputation_score ?? 100;
-                    estimatedAge = parsed.estimated_age ?? null;
-                }
-            }
-        } catch (e) {
-            console.warn(`[redflag-check] Failed to parse reputation score, using default`);
-        }
-
+        const { reputationScore, estimatedAge, rawText: nicknameRawText } = await analyzeNicknameReputation(job.username);
         console.log(`[redflag-check] Reputation score: ${reputationScore}, Estimated age: ${estimatedAge}`);
 
-        // Check age from web search
         if (estimatedAge !== null && estimatedAge < 35) {
             console.log(`[redflag-check] REDFLAG: under_35_web (${estimatedAge})`);
             await prisma.job.update({
@@ -148,7 +84,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                     status: 'completed',
                     redflag: 'under_35',
                     followers,
-                    nicknameAnalyseRawText: nicknameResult.text
+                    nicknameAnalyseRawText: nicknameRawText
                 }
             });
             return;
@@ -162,17 +98,15 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                     status: 'completed',
                     redflag: 'low_reputation',
                     followers,
-                    nicknameAnalyseRawText: nicknameResult.text
+                    nicknameAnalyseRawText: nicknameRawText
                 }
             });
             return;
         }
 
-        // === CHECK 4: Photo analysis (income_level) ===
         console.log(`[redflag-check] Fetching ${REDFLAG_POST_COUNT} posts for photo analysis`);
         const posts = await fetchPosts(job.username, REDFLAG_POST_COUNT);
 
-        // Save posts to DB
         if (posts.length > 0) {
             await prisma.post.createMany({
                 data: posts.map((p) => ({
@@ -186,7 +120,6 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             });
         }
 
-        // Download posts and analyze
         const createdPosts = await prisma.post.findMany({ where: { jobId: job.id } });
         let totalIncomeLevel = 0;
         let analyzedPhotos = 0;
@@ -195,25 +128,15 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             if (!post.downloadUrl) continue;
 
             const dest = getItemPath(job.username, job.id, post.id, "post.jpg");
-            const dir = path.dirname(dest);
-
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
 
             try {
-                const response = await fetch(post.downloadUrl);
-                if (!response.ok) continue;
-
-                const buffer = Buffer.from(await response.arrayBuffer());
-                fs.writeFileSync(dest, buffer);
+                await downloadFile(post.downloadUrl, dest);
 
                 await prisma.post.update({
                     where: { id: post.id },
                     data: { filepath: dest }
                 });
 
-                // Analyze photo for income level
                 const analysisResult = await askOpenai([dest], REDFLAG_PHOTO_ANALYSIS_PROMPT);
 
                 if (analysisResult.text) {
@@ -248,7 +171,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
                         status: 'completed',
                         redflag: 'low_income',
                         followers,
-                        nicknameAnalyseRawText: nicknameResult.text,
+                        nicknameAnalyseRawText: nicknameRawText,
                         avgIncomeLevel
                     }
                 });
@@ -256,8 +179,6 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             }
         }
 
-        // === CHECK 5: Comments + ER analysis ===
-        // Fetch comments for posts
         const allPosts = await prisma.post.findMany({ where: { jobId: job.id } });
 
         const allComments: string[] = [];
@@ -295,7 +216,6 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
         const avgER = erCount > 0 ? totalER / erCount : 0;
         console.log(`[redflag-check] Average ER: ${avgER}, Total comments: ${allComments.length}`);
 
-        // Analyze comments for template patterns
         let templateCommentsPresent = false;
 
         if (allComments.length > 0) {
@@ -318,46 +238,14 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', async () => {
             }
         }
 
-        // if (templateCommentsPresent) {
-        //     console.log(`[redflag-check] REDFLAG: template_comments_low_er`);
-        //     await prisma.job.update({
-        //         where: { id: job.id },
-        //         data: {
-        //             status: 'completed',
-        //             redflag: 'template_comments_low_er',
-        //             followers,
-        //             nicknameAnalyseRawText: nicknameResult.text,
-        //             avgIncomeLevel
-        //         }
-        //     });
-        //     return;
-        // }
-
-        // All checks passed
         console.log(`[redflag-check] All checks passed for ${job.username}`);
         await prisma.job.update({
             where: { id: job.id },
             data: {
-                status: 'redflag_checking_finished',
                 followers,
-                nicknameAnalyseRawText: nicknameResult.text,
+                nicknameAnalyseRawText: nicknameRawText,
                 avgIncomeLevel
             }
         });
-
-    } catch (error) {
-        const err = error as Error;
-        console.error(`[redflag-check] Failed for job ${job.id}:`, err.message);
-        if (job.attempts >= MAX_ATTEMPTS) {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'failed', reason: err.message }
-            });
-        } else {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'pending', reason: err.message, attempts: { increment: 1 } }
-            });
-        }
-    }
-});
+    })
+);

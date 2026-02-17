@@ -2,7 +2,7 @@ import type { PostsListResponse } from './types.js';
 
 const BASE_URL = "https://api.scrapecreators.com/s";
 
-export async function fetchPosts(handle: string, count: number = 12) {
+export async function fetchPosts(handle: string, count: number = 12, ignoreUrls: Set<string> = new Set()) {
     console.log(`[fetchPosts] starting for @${handle}, limit: ${count}`);
     try {
         let result: {
@@ -59,6 +59,8 @@ export async function fetchPosts(handle: string, count: number = 12) {
                 }
 
                 const postUrl = `https://www.instagram.com/p/${node.shortcode}`;
+
+                if (ignoreUrls.has(postUrl)) continue;
 
                 // Use data from list response directly (optimization)
                 result.push({

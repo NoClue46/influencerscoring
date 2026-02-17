@@ -1,32 +1,23 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
-import { MAX_ATTEMPTS, MAX_FILE_SIZE } from '../constants.js';
-import fs from 'fs';
-import path from 'path';
+import { MAX_FILE_SIZE } from '../constants.js';
 import { getItemPath } from '../utils/paths.js';
 import { withRetry } from '../utils/helpers.js';
+import { withJobTransition } from './with-job-transition.js';
+import { downloadFile } from '../utils/download-file.js';
 
-export const downloadJob = new CronJob('*/5 * * * * *', async () => {
-    const job = await prisma.job.findFirst({
-        where: { status: 'fetching_finished' }
-    });
-
-    if (!job) return;
-
-    console.info(`[download] Started for job ${JSON.stringify(job)}`);
-
-    try {
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'downloading_started' }
-        });
-
+export const downloadJob = new CronJob('*/5 * * * * *', () =>
+    withJobTransition({
+        fromStatus: 'fetching_finished',
+        startedStatus: 'downloading_started',
+        finishedStatus: 'downloading_finished',
+        jobName: 'download'
+    }, async (job) => {
         const [reels, posts, stories] = await Promise.all([
             prisma.reels.findMany({ where: { jobId: job.id } }),
             prisma.post.findMany({ where: { jobId: job.id } }),
             prisma.story.findMany({ where: { jobId: job.id } })
         ])
-
 
         for (const reel of reels) {
             if (!reel.downloadUrl) {
@@ -37,7 +28,7 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
             const dest = getItemPath(job.username, job.id, reel.id, "reels.mp4")
 
             try {
-                const downloadResult = await withRetry(() => download(reel.downloadUrl!, dest), 3);
+                const downloadResult = await withRetry(() => downloadFile(reel.downloadUrl!, dest, { maxSize: MAX_FILE_SIZE }), 3);
                 await prisma.reels.update({
                     where: { id: reel.id },
                     data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
@@ -60,7 +51,7 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
             const dest = getItemPath(job.username, job.id, post.id, "post.jpg")
 
             try {
-                const downloadResult = await withRetry(() => download(post.downloadUrl!, dest), 3);
+                const downloadResult = await withRetry(() => downloadFile(post.downloadUrl!, dest, { maxSize: MAX_FILE_SIZE }), 3);
                 await prisma.post.update({
                     where: { id: post.id },
                     data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
@@ -84,7 +75,7 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
             const dest = getItemPath(job.username, job.id, story.id, `story.${extension}`)
 
             try {
-                const downloadResult = await withRetry(() => download(story.downloadUrl!, dest), 3);
+                const downloadResult = await withRetry(() => downloadFile(story.downloadUrl!, dest, { maxSize: MAX_FILE_SIZE }), 3);
                 await prisma.story.update({
                     where: { id: story.id },
                     data: downloadResult.skipped ? { reason: downloadResult.reason } : { filepath: dest }
@@ -97,53 +88,6 @@ export const downloadJob = new CronJob('*/5 * * * * *', async () => {
                 });
             }
         }
+    })
+);
 
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { status: 'downloading_finished' }
-        });
-
-        console.log(`[download] Completed successfully for job ${job.id}`);
-    } catch (error) {
-        const err = error as Error;
-        console.error(`[download] Failed for job ${job.id}:`, err.message);
-        if (job.attempts >= MAX_ATTEMPTS) {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'failed', reason: err.message }
-            });
-        } else {
-            await prisma.job.update({
-                where: { id: job.id },
-                data: { status: 'fetching_finished', reason: err.message, attempts: { increment: 1 } }
-            });
-        }
-    }
-});
-
-interface DownloadResult {
-    skipped: boolean;
-    reason?: string;
-}
-
-async function download(url: string, destPath: string): Promise<DownloadResult> {
-    const headResponse = await fetch(url, { method: 'HEAD' });
-    const contentLength = parseInt(headResponse.headers.get('content-length') ?? '0');
-
-    if (contentLength > MAX_FILE_SIZE) {
-        return { skipped: true, reason: `File size ${Math.round(contentLength / 1024 / 1024)}MB exceeds 200MB limit` };
-    }
-
-    const dir = path.dirname(destPath);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    fs.writeFileSync(destPath, buffer);
-
-    return { skipped: false };
-}
