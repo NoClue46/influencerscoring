@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS } from '../constants.js';
-import { fetchPosts, fetchReels, fetchStories, fetchComments } from '../scrape-creators.js';
+import { fetchPosts, fetchReels, fetchStories, fetchComments } from '../scrape-creators/index.js';
 
 export const fetchJob = new CronJob('*/5 * * * * *', async () => {
     const job = await prisma.job.findFirst({

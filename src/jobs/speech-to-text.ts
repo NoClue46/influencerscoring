@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS } from '../constants.js';
-import { extractAudio } from '../ffmpeg.js';
+import { extractAudio } from '../ffmpeg/extract-audio.js';
 import path from 'path';
 import { transcribeAudio } from '../ask-openai.js';
 import { withRetry } from '../utils/helpers.js';

@@ -1,8 +1,8 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, COMMENT_ANALYSIS_PROMPT, AVATAR_GENDER_ANALYSIS_PROMPT } from '../constants.js';
-import { fetchProfile } from '../scrape-creators.js';
-import { getAvatarPath } from '../utils/paths.js';
+import { fetchProfile } from '../scrape-creators/index.js';
+import { downloadAvatar } from '../utils/avatar.js';
 import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.js';
 import { selectFrames } from '../utils/select-frames.js';
 import fs from 'fs';
@@ -104,16 +104,7 @@ async function checkGenderFromAvatar(
         return { isFemale: false, score: null };
     }
 
-    const avatarPath = getAvatarPath(username, jobId);
-    const avatarDir = path.dirname(avatarPath);
-
-    if (!fs.existsSync(avatarDir)) {
-        fs.mkdirSync(avatarDir, { recursive: true });
-    }
-
-    const response = await fetch(avatarUrl);
-    const buffer = Buffer.from(await response.arrayBuffer());
-    fs.writeFileSync(avatarPath, buffer);
+    const avatarPath = await downloadAvatar(avatarUrl, username, jobId);
 
     const result = await askOpenai([avatarPath], AVATAR_GENDER_ANALYSIS_PROMPT);
 

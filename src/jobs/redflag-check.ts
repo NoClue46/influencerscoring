@@ -1,12 +1,13 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS, NICKNAME_ANALYSIS_PROMPT, TEMPLATE_COMMENTS_PROMPT, REDFLAG_PHOTO_ANALYSIS_PROMPT, AVATAR_AGE_ANALYSIS_PROMPT } from '../constants.js';
-import { fetchProfile, fetchPosts, fetchComments } from '../scrape-creators.js';
+import { fetchProfile, fetchPosts, fetchComments } from '../scrape-creators/index.js';
 import { askOpenai, askOpenaiText, askOpenaiWithWebSearch } from '../ask-openai.js';
 import { sleep, chunk } from '../utils/helpers.js';
 import fs from 'fs';
 import path from 'path';
-import { getAvatarPath, getItemPath } from '../utils/paths.js';
+import { getItemPath } from '../utils/paths.js';
+import { downloadAvatar } from '../utils/avatar.js';
 
 const REDFLAG_POST_COUNT = 5;
 const MIN_FOLLOWERS = 7000;
@@ -22,16 +23,7 @@ export async function checkAvatarAge(
 ): Promise<{ passed: boolean; score: number | null }> {
     console.log(`[redflag-check] Analyzing avatar age for ${username}`);
 
-    const avatarPath = getAvatarPath(username, jobId);
-    const avatarDir = path.dirname(avatarPath);
-
-    if (!fs.existsSync(avatarDir)) {
-        fs.mkdirSync(avatarDir, { recursive: true });
-    }
-
-    const response = await fetch(avatarUrl);
-    const buffer = Buffer.from(await response.arrayBuffer());
-    fs.writeFileSync(avatarPath, buffer);
+    const avatarPath = await downloadAvatar(avatarUrl, username, jobId);
 
     const result = await askOpenai([avatarPath], AVATAR_AGE_ANALYSIS_PROMPT);
 

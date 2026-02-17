@@ -1,7 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { MAX_ATTEMPTS } from '../constants.js';
-import { extractFrames } from '../ffmpeg.js';
+import { extractFrames } from '../ffmpeg/extract-frames.js';
 import path from 'path';
 
 export const framingJob = new CronJob('*/5 * * * * *', async () => {
