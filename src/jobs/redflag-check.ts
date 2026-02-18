@@ -57,6 +57,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
         }
 
         const followers = profile.edge_followed_by?.count ?? 0;
+        const avatarUrl = profile.profile_pic_url_hd || profile.profile_pic_url || null;
         console.log(`[redflag-check] Followers: ${followers}`);
 
         if (followers < MIN_FOLLOWERS) {
@@ -66,7 +67,8 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
                 data: {
                     status: 'completed',
                     redflag: 'followers_below_10k',
-                    followers
+                    followers,
+                    avatarUrl
                 }
             });
             return;
@@ -84,6 +86,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
                     status: 'completed',
                     redflag: 'under_35',
                     followers,
+                    avatarUrl,
                     nicknameAnalyseRawText: nicknameRawText
                 }
             });
@@ -98,6 +101,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
                     status: 'completed',
                     redflag: 'low_reputation',
                     followers,
+                    avatarUrl,
                     nicknameAnalyseRawText: nicknameRawText
                 }
             });
@@ -171,6 +175,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
                         status: 'completed',
                         redflag: 'low_income',
                         followers,
+                        avatarUrl,
                         nicknameAnalyseRawText: nicknameRawText,
                         avgIncomeLevel
                     }
@@ -243,6 +248,7 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
             where: { id: job.id },
             data: {
                 followers,
+                avatarUrl,
                 nicknameAnalyseRawText: nicknameRawText,
                 avgIncomeLevel
             }

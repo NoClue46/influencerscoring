@@ -1,8 +1,7 @@
 import { CronJob } from 'cron';
 import { prisma } from '../prisma.js';
 import { COMMENT_ANALYSIS_PROMPT, AVATAR_GENDER_ANALYSIS_PROMPT } from '../constants.js';
-import { fetchProfile } from '../scrape-creators/index.js';
-import { downloadAvatar } from '../utils/avatar.js';
+import { getAvatarPath } from '../utils/paths.js';
 import { askOpenai, askOpenaiText } from '../ask-openai.js';
 import { analyzeNicknameReputation } from '../utils/nickname-reputation.js';
 import { selectFrames } from '../utils/select-frames.js';
@@ -94,19 +93,11 @@ async function checkGenderFromAvatar(
 ): Promise<{ isFemale: boolean; score: number | null }> {
     console.log(`[analyze] Checking gender from avatar for ${username}`);
 
-    const profile = await fetchProfile(username, true);
-    if (!profile) {
-        console.log(`[analyze] Could not fetch profile for ${username}`);
+    const avatarPath = getAvatarPath(username, jobId);
+    if (!fs.existsSync(avatarPath)) {
+        console.log(`[analyze] Avatar not found at ${avatarPath}`);
         return { isFemale: false, score: null };
     }
-
-    const avatarUrl = profile.profile_pic_url_hd || profile.profile_pic_url;
-    if (!avatarUrl) {
-        console.log(`[analyze] No avatar URL for ${username}`);
-        return { isFemale: false, score: null };
-    }
-
-    const avatarPath = await downloadAvatar(avatarUrl, username, jobId);
 
     const result = await askOpenai([avatarPath], AVATAR_GENDER_ANALYSIS_PROMPT);
 
