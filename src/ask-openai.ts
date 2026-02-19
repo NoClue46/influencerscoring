@@ -103,7 +103,7 @@ export async function askOpenaiWithWebSearch(
     const response = await client.responses.create({
         model: "gpt-5",
         tools: [
-            { type: "web_search" }
+            { type: "web_search_preview" }
         ],
         input: prompt,
     });

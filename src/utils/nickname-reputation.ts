@@ -1,5 +1,43 @@
+import { generateText, NoObjectGeneratedError, Output } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { z } from 'zod';
 import { NICKNAME_ANALYSIS_PROMPT } from '../constants.js';
-import { askOpenaiWithWebSearch } from '../ask-openai.js';
+
+const nicknameFindingSchema = z.object({
+    issue: z.string(),
+    source: z.string().optional(),
+    severity: z.string().optional(),
+});
+
+const nicknameAnalysisSchema = z.object({
+    reputation_score: z.number(),
+    estimated_age: z.number().nullable(),
+    confidence: z.number().optional(),
+    summary: z.string().optional(),
+    negative_findings: z.array(nicknameFindingSchema).optional(),
+    sources: z.array(z.string()).optional(),
+    risk_level: z.string().optional(),
+});
+
+function normalizeReputationScore(score: number): number {
+    if (!Number.isFinite(score)) {
+        return 100;
+    }
+
+    return Math.min(100, Math.max(0, score));
+}
+
+function normalizeEstimatedAge(age: number | null): number | null {
+    if (age === null || !Number.isFinite(age)) {
+        return null;
+    }
+
+    if (age < 10 || age > 120) {
+        return null;
+    }
+
+    return Math.round(age);
+}
 
 export async function analyzeNicknameReputation(username: string): Promise<{
     reputationScore: number;
@@ -7,22 +45,36 @@ export async function analyzeNicknameReputation(username: string): Promise<{
     rawText: string | null;
 }> {
     const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(username);
-    const nicknameResult = await askOpenaiWithWebSearch(nicknamePrompt);
 
-    let reputationScore = 100;
-    let estimatedAge: number | null = null;
     try {
-        if (nicknameResult.text) {
-            const jsonMatch = nicknameResult.text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                reputationScore = parsed.reputation_score ?? 100;
-                estimatedAge = parsed.estimated_age ?? null;
-            }
-        }
-    } catch (e) {
-        console.warn(`[nickname-reputation] Failed to parse reputation score, using default`);
-    }
+        const { output } = await generateText({
+            model: openai('gpt-5'),
+            output: Output.object({ schema: nicknameAnalysisSchema }),
+            prompt: nicknamePrompt,
+            tools: {
+                web_search: openai.tools.webSearch({
+                    externalWebAccess: true,
+                    searchContextSize: 'high',
+                }),
+            },
+            toolChoice: { type: 'tool', toolName: 'web_search' },
+        });
 
-    return { reputationScore, estimatedAge, rawText: nicknameResult.text ?? null };
+        return {
+            reputationScore: normalizeReputationScore(output.reputation_score),
+            estimatedAge: normalizeEstimatedAge(output.estimated_age),
+            rawText: JSON.stringify(output, null, 2),
+        };
+    } catch (error) {
+        if (NoObjectGeneratedError.isInstance(error)) {
+            console.warn(`[nickname-reputation] Failed to generate structured output, using default`);
+            return {
+                reputationScore: 100,
+                estimatedAge: null,
+                rawText: error.text ?? null,
+            };
+        }
+
+        throw error;
+    }
 }

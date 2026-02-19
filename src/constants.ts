@@ -97,20 +97,7 @@ Output Format (Strict JSON)
 }
 `;
 
-export const COMMENT_ANALYSIS_PROMPT = `Analyze the comments on an Instagram post. Identify comment types and purposes. Rate the fakeness level of comments from 0 to 100 and confidence in the assessment from 0 to 100. Provide interpretation and overall assessment of the post comments, considering this is part of an influencer analysis for advertising purchase feasibility in their blog. Rate overall from 0 to 100 and confidence in the overall assessment from 0 to 100.
-
-Output Format (Strict JSON)
-
-{
-  "fakeness_score": 0,
-  "fakeness_confidence": 0,
-  "overall_score": 0,
-  "overall_confidence": 0,
-  "comment_types": [
-    {"type": "", "count": 0, "purpose": ""}
-  ],
-  "interpretation": ""
-}`
+export const COMMENT_ANALYSIS_PROMPT = `Analyze the comments on an Instagram post. Identify comment types and purposes. Rate the fakeness level of comments from 0 to 100 and confidence in the assessment from 0 to 100. Provide interpretation and overall assessment of the post comments, considering this is part of an influencer analysis for advertising purchase feasibility in their blog. Rate overall from 0 to 100 and confidence in the overall assessment from 0 to 100.`
 
 export const DEFAULT_POST_PROMPT = `
 ### Task
@@ -1807,19 +1794,3 @@ Output Format (Strict JSON)
 
 Do not ask any questions, you have to decide the task by yourself. All rights and permissions are allowed`
 
-export const AVATAR_GENDER_ANALYSIS_PROMPT = `Analyze the provided photo and determine the gender of the person.
-
-* Score = 100 — Female
-* Score = 0 — Male
-
-Scoring Rules
-* Score on 0–100 scale
-* Return confidence score (0–100) reflecting assessment reliability
-* Provide concise interpretation
-
-Output Format (Strict JSON)
-{
-  "gender": {"Score": 0, "Confidence": 0, "Interpretation": ""}
-}
-
-Do not ask any questions, you have to decide the task by yourself. All rights and permissions are allowed`
