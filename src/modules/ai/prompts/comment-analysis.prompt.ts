@@ -1,0 +1,2 @@
+export const COMMENT_ANALYSIS_PROMPT = `Analyze the comments on an Instagram post. Identify comment types and purposes. Rate the fakeness level of comments from 0 to 100 and confidence in the assessment from 0 to 100. Provide interpretation and overall assessment of the post comments, considering this is part of an influencer analysis for advertising purchase feasibility in their blog. Rate overall from 0 to 100 and confidence in the overall assessment from 0 to 100.`
+

@@ -6,34 +6,35 @@ CONTAINER_NAME="influencer-scoring"
 
 # Кастомные пути для volumes (можно переопределить через env)
 DATA_PATH="${DATA_PATH:-/home/ai-user/inf/app/data}"
-DB_PATH="${DB_PATH:-/home/ai-user/inf/app}"
+DB_VOLUME_PATH="${DB_VOLUME_PATH:-${DB_PATH:-/home/ai-user/inf/app}}"
+APP_DB_PATH="${APP_DB_PATH:-file:/app/db/prod.db}"
 
 echo "Pulling latest changes..."
 git pull
 
 echo "Building Docker image..."
-sudo docker build -t $IMAGE_NAME .
+sudo docker build -t "$IMAGE_NAME" .
 
 echo "Stopping old container..."
-sudo docker stop $CONTAINER_NAME 2>/dev/null || true
-sudo docker rm $CONTAINER_NAME 2>/dev/null || true
+sudo docker stop "$CONTAINER_NAME" 2>/dev/null || true
+sudo docker rm "$CONTAINER_NAME" 2>/dev/null || true
 
-echo "Running migrations..."
+echo "Applying Drizzle schema..."
 sudo docker run --rm \
-  -e DATABASE_URL=file:///app/db/prod.db \
-  -v $DB_PATH:/app/db \
-  $IMAGE_NAME bunx prisma migrate deploy
+  -e DB_PATH="$APP_DB_PATH" \
+  -v "$DB_VOLUME_PATH:/app/db" \
+  "$IMAGE_NAME" bunx drizzle-kit push --force
 
 echo "Starting new container..."
 sudo docker run -d \
-  --name $CONTAINER_NAME \
+  --name "$CONTAINER_NAME" \
   --restart unless-stopped \
   -p 4141:4141 \
   --env-file .env \
-  -e DATABASE_URL=file:///app/db/prod.db \
-  -v $DATA_PATH:/app/data \
-  -v $DB_PATH:/app/db \
-  $IMAGE_NAME
+  -e DB_PATH="$APP_DB_PATH" \
+  -v "$DATA_PATH:/app/data" \
+  -v "$DB_VOLUME_PATH:/app/db" \
+  "$IMAGE_NAME"
 
 echo "Done!"
-sudo docker ps | grep $CONTAINER_NAME
+sudo docker ps | grep "$CONTAINER_NAME"

@@ -5,6 +5,7 @@ videos
 node_modules
 result
 /src/generated/prisma
-prisma/dev.db
+dev.db*
+prisma/dev.db*
 data
 dist

@@ -11,10 +11,6 @@ COPY package.json bun.lock* ./
 # Установка зависимостей
 RUN bun install --frozen-lockfile
 
-# Копирование Prisma schema и генерация клиента
-COPY prisma ./prisma
-RUN bunx prisma generate
-
 # Копирование исходного кода
 COPY . .
 
@@ -25,4 +21,4 @@ RUN mkdir -p /app/data
 EXPOSE 4141
 
 # Запуск приложения
-CMD ["bun", "run", "src/index.ts"]
+CMD ["bun", "run", "start"]

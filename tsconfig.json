@@ -23,6 +23,10 @@
     // Вывод
     "outDir": "./dist",
     "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
 
     // Интероп с CommonJS
     "esModuleInterop": true,
