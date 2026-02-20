@@ -9,6 +9,7 @@ import { DEFAULT_BLOGGER_PROMPT } from '@/modules/ai/prompts/blogger-analysis.pr
 import { analyzeNicknameReputation } from '@/modules/ai/application/analyze-nickname-reputation.js';
 import { checkGenderFromAvatar } from '@/modules/ai/application/check-gender-from-avatar.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
+import type { PerItemAnalysis } from '@/modules/ai/prompts/post-analysis.prompt.js';
 
 const metricSchema = z.object({
     Score: z.number(),
@@ -109,6 +110,14 @@ function validateBloggerMetrics(analysis: BloggerAnalysis): string | null {
         : null;
 }
 
+function parseItemAnalysis(rawText: string): PerItemAnalysis | null {
+    try {
+        return JSON.parse(rawText) as PerItemAnalysis;
+    } catch {
+        return null;
+    }
+}
+
 export async function runFullBloggerAnalysis(job: Job): Promise<void> {
     console.log(`[analyze] Starting full analysis aggregation for job ${job.id}`);
 
@@ -125,22 +134,53 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
     ]);
 
     // Filter to only items with analyzeRawText
-    const filteredReels = analyzedReels.filter(r => r.analyzeRawText !== null);
-    const filteredPosts = analyzedPosts.filter(p => p.analyzeRawText !== null);
-    const filteredStories = analyzedStories.filter(s => s.analyzeRawText !== null);
+    const allItems = [
+        ...analyzedReels.filter(r => r.analyzeRawText !== null),
+        ...analyzedPosts.filter(p => p.analyzeRawText !== null),
+        ...analyzedStories.filter(s => s.analyzeRawText !== null),
+    ];
 
-    const allAnalyzed = [...filteredReels, ...filteredPosts, ...filteredStories];
-    console.log(
-        `[analyze] Found ${allAnalyzed.length} analyzed items (${filteredReels.length} reels, ${filteredPosts.length} posts, ${filteredStories.length} stories)`
-    );
+    console.log(`[analyze] Found ${allItems.length} analyzed items`);
 
-    const itemsSection = allAnalyzed
-        .map((item, idx) => `Post #${idx + 1}:\n${item.analyzeRawText ?? ''}`)
+    // Split by analysis type
+    const faceItems: Array<{ index: number; personality: NonNullable<PerItemAnalysis['personality']> }> = [];
+    const contentItems: Array<{ index: number; data: PerItemAnalysis }> = [];
+
+    for (let i = 0; i < allItems.length; i++) {
+        const parsed = parseItemAnalysis(allItems[i].analyzeRawText!);
+        if (!parsed) continue;
+
+        if (parsed.has_blogger_face && parsed.personality) {
+            faceItems.push({ index: i, personality: parsed.personality });
+        }
+
+        // All items contribute to content section
+        contentItems.push({ index: i, data: parsed });
+    }
+
+    console.log(`[analyze] Face items: ${faceItems.length}, Total content items: ${contentItems.length}`);
+
+    // Build personality section
+    const personalitySection = faceItems.length > 0
+        ? faceItems
+            .map((item, idx) => `Item #${idx + 1}:\n${JSON.stringify(item.personality)}`)
+            .join('\n\n')
+        : '(No items with blogger face detected)';
+
+    // Build content section — content is always filled
+    const contentSection = contentItems
+        .map((item, idx) => {
+            return `Item #${idx + 1} (${item.data.analysis_type}):\n${JSON.stringify(item.data.content)}`;
+        })
         .join('\n\n');
 
-    const aggregatedPrompt = `=== REELS/POSTS ANALYSIS (${allAnalyzed.length} items) ===
+    const aggregatedPrompt = `=== PERSONALITY ANALYSES (${faceItems.length} items with blogger face) ===
 
-${itemsSection}
+${personalitySection}
+
+=== CONTENT ANALYSES (${contentItems.length} total items) ===
+
+${contentSection}
 
 === TASK ===
 ${DEFAULT_BLOGGER_PROMPT}`;

@@ -3,7 +3,7 @@ import type { Hono, Context } from 'hono';
 import { db } from '@/infra/db/index.js';
 import { jobs, reelsUrls, posts, stories } from '@/infra/db/schema.js';
 import { eq, desc, asc } from 'drizzle-orm';
-import { DEFAULT_POST_PROMPT } from '@/modules/ai/prompts/post-analysis.prompt.js';
+import { POST_ANALYSIS_PROMPT } from '@/modules/ai/prompts/post-analysis.prompt.js';
 import { DEFAULT_BLOGGER_PROMPT } from '@/modules/ai/prompts/blogger-analysis.prompt.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
 import { layout } from '@/app/http/views/layout.js';
@@ -26,7 +26,7 @@ export function registerJobsRoutes(app: Hono): void {
 
             await db.insert(jobs).values({
                 username,
-                postPrompt: DEFAULT_POST_PROMPT,
+                postPrompt: POST_ANALYSIS_PROMPT,
                 bloggerPrompt: DEFAULT_BLOGGER_PROMPT,
                 allVideos: true,
                 postNumber: 20,

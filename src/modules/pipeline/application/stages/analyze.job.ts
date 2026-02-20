@@ -9,12 +9,6 @@ import { analyzePosts } from '@/modules/pipeline/application/analyze/analyze-pos
 import { analyzeReels } from '@/modules/pipeline/application/analyze/analyze-reel.js';
 import { analyzeStories } from '@/modules/pipeline/application/analyze/analyze-story.js';
 import { runFullBloggerAnalysis } from '@/modules/pipeline/application/analyze/full-blogger-analysis.js';
-import {
-    detectPostsBloggerFace,
-    detectReelsBloggerFace,
-    detectStoriesBloggerFace,
-    markAllContentWithoutBloggerFace
-} from '@/modules/pipeline/application/analyze/detect-blogger-face-content.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
 
 export const analyzeJob = new CronJob('*/5 * * * * *', () =>
@@ -31,31 +25,25 @@ export const analyzeJob = new CronJob('*/5 * * * * *', () =>
         ]);
 
         const avatarPath = getAvatarPath(job.username, job.id);
-        if (!fs.existsSync(avatarPath)) {
-            console.warn(`[analyze] Avatar not found for ${job.username}. Setting hasBloggerFace=false for all content`);
-            await markAllContentWithoutBloggerFace(job.id);
-        } else {
-            console.log(
-                `[analyze] Face detection started for job ${job.id}: reels=${reels.length}, posts=${allPosts.length}, stories=${allStories.length}`
-            );
-            await detectReelsBloggerFace(avatarPath, reels);
-            await detectPostsBloggerFace(avatarPath, allPosts);
-            await detectStoriesBloggerFace(avatarPath, allStories);
-            console.log(`[analyze] Face detection completed for job ${job.id}`);
+        const resolvedAvatarPath = fs.existsSync(avatarPath) ? avatarPath : null;
+
+        if (!resolvedAvatarPath) {
+            console.warn(`[analyze] Avatar not found for ${job.username}. All items will get hasBloggerFace=false`);
         }
+
+        console.log(
+            `[analyze] Starting combined analysis for job ${job.id}: reels=${reels.length}, posts=${allPosts.length}, stories=${allStories.length}`
+        );
 
         const errors: string[] = [];
 
-        // Analyze reels
-        const reelErrors = await analyzeReels(reels, job.postPrompt);
+        const reelErrors = await analyzeReels(reels, resolvedAvatarPath);
         errors.push(...reelErrors);
 
-        // Analyze posts
-        const postErrors = await analyzePosts(allPosts, job.postPrompt);
+        const postErrors = await analyzePosts(allPosts, resolvedAvatarPath);
         errors.push(...postErrors);
 
-        // Analyze stories
-        const storyErrors = await analyzeStories(allStories, job.postPrompt);
+        const storyErrors = await analyzeStories(allStories, resolvedAvatarPath);
         errors.push(...storyErrors);
 
         if (errors.length > 0) {
