@@ -9,3 +9,4 @@ dev.db*
 prisma/dev.db*
 data
 dist
+test
