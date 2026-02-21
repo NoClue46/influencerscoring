@@ -32,7 +32,7 @@ export const perItemAnalysisSchema = z.object({
     has_blogger_face: z.boolean().describe('Whether the blogger face from the avatar was detected in the content'),
     face_confidence: z.number().describe('Confidence 0-100 of face detection'),
     analysis_type: z.enum(['personality_and_content', 'content']).describe('personality_and_content if face detected, content otherwise'),
-    personality: personalityMetricsSchema.optional().describe('Filled when has_blogger_face=true'),
+    personality: personalityMetricsSchema.nullable().describe('Filled when has_blogger_face=true, null otherwise'),
     content: contentMetricsSchema.describe('Always filled'),
 });
 
@@ -102,7 +102,7 @@ Analyze CONTENT metrics based on the content frames and any transcription provid
 
 ## Important
 
-* If face detected, fill BOTH personality and content. If no face, fill only content.
+* If face detected, fill BOTH personality and content. If no face, set personality to null and fill only content.
 * Output structured JSON matching the schema
 * Do not ask questions — decide autonomously
 `;
