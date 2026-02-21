@@ -18,11 +18,11 @@ echo "Stopping old container..."
 sudo docker stop "$CONTAINER_NAME" 2>/dev/null || true
 sudo docker rm "$CONTAINER_NAME" 2>/dev/null || true
 
-echo "Applying Drizzle schema..."
+echo "Applying Drizzle migrations..."
 sudo docker run --rm \
   -e DB_PATH="file:/app/db/prod.db" \
   -v "$DB_PATH:/app/db" \
-  "$IMAGE_NAME" bunx drizzle-kit push --force
+  "$IMAGE_NAME" bunx drizzle-kit migrate
 
 echo "Starting new container..."
 sudo docker run -d \
