@@ -23,7 +23,7 @@ export async function analyzeComment(comment: { id: number; text: string }): Pro
     console.log(`[analyze] Processing comment ${comment.id}`);
 
     const { output } = await generateText({
-        model: openai('gpt-5-mini'),
+        model: openai('gpt-5-nano'),
         output: Output.object({ schema: commentAnalysisSchema }),
         prompt: `${COMMENT_ANALYSIS_PROMPT}\n\nComment:\n${comment.text}`,
     });

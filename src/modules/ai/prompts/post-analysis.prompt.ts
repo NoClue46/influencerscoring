@@ -9,23 +9,23 @@ const metricSchema = z.object({
 export const personalityMetricsSchema = z.object({
     talking_head: metricSchema,
     structured_thinking: metricSchema,
-    knowledge_depth: metricSchema,
     intelligence: metricSchema,
     personal_values: metricSchema,
     enthusiasm: metricSchema,
     charisma: metricSchema,
+    age_over_30: metricSchema,
+    income_level: metricSchema,
+    beauty_alignment: metricSchema,
+    sales_authenticity: metricSchema,
 });
 
 export const contentMetricsSchema = z.object({
-    income_level: metricSchema,
-    beauty_alignment: metricSchema,
     low_end_ads_absence: metricSchema,
     pillow_ads_constraint: metricSchema,
     ads_focus_consistency: metricSchema,
-    sales_authenticity: metricSchema,
     frequency_of_advertising: metricSchema,
-    age_over_30: metricSchema,
     expert_status: metricSchema,
+    knowledge_depth: metricSchema
 });
 
 export const perItemAnalysisSchema = z.object({
