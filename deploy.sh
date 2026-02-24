@@ -5,8 +5,8 @@ IMAGE_NAME="influencer-scoring"
 CONTAINER_NAME="influencer-scoring"
 
 # Пути для volumes (можно переопределить через env)
-DATA_PATH="${DATA_PATH:-/home/ai-user/inf/app/data}"
-DB_PATH="${DB_PATH:-/home/ai-user/inf/app}"
+DATA_PATH="${DATA_PATH:-/home/ai-user/inf/data}"
+DB_PATH="${DB_PATH:-/home/ai-user/inf/db}"
 
 echo "Pulling latest changes..."
 # git pull
