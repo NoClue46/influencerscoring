@@ -20,7 +20,8 @@ export async function startCronJobs(): Promise<void> {
     framingJob.start()
     speechToTextJob.start()
     analyzeJob.start()
-    cleanupJob.start()
+    // TODO: temporarily disabled
+    // cleanupJob.start()
     storiesEnrichmentJob.start()
 }
 
