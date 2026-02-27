@@ -5,6 +5,7 @@ import { framingJob } from '@/modules/pipeline/application/stages/framing.job.js
 import { speechToTextJob } from '@/modules/pipeline/application/stages/speech-to-text.job.js';
 import { analyzeJob } from '@/modules/pipeline/application/stages/analyze.job.js';
 import { cleanupJob } from '@/modules/pipeline/application/stages/cleanup.job.js';
+import { storiesEnrichmentJob } from '@/modules/pipeline/application/stages/stories-enrichment.job.js';
 import { recoverStuckJobs } from '@/modules/pipeline/application/orchestrator/recover-stuck-jobs.js';
 
 export async function startCronJobs(): Promise<void> {
@@ -20,6 +21,7 @@ export async function startCronJobs(): Promise<void> {
     speechToTextJob.start()
     analyzeJob.start()
     cleanupJob.start()
+    storiesEnrichmentJob.start()
 }
 
 export function stopCronJobs(): void {
@@ -30,4 +32,5 @@ export function stopCronJobs(): void {
     speechToTextJob.stop()
     analyzeJob.stop()
     cleanupJob.stop()
+    storiesEnrichmentJob.stop()
 }

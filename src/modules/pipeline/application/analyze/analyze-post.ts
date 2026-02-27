@@ -23,6 +23,9 @@ export async function analyzePosts(
             console.log(`[analyze] Skipping post ${post.id} - not downloaded`);
             continue;
         }
+        if (post.analyzeRawText) {
+            continue;
+        }
 
         try {
             console.log(`[analyze] Processing post ${post.id}`);

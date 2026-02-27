@@ -27,6 +27,9 @@ export const speechToTextJob = new CronJob('*/5 * * * * *', () =>
                 await db.update(reelsUrls).set({ transcription: '[NOT_DOWNLOADED]' }).where(eq(reelsUrls.id, reel.id));
                 continue;
             }
+            if (reel.transcription) {
+                continue;
+            }
 
             try {
                 console.log(`[speechToText] Processing reel ${reel.id}`);
@@ -45,6 +48,9 @@ export const speechToTextJob = new CronJob('*/5 * * * * *', () =>
             if (!story.filepath) {
                 console.log(`[speechToText] Skipping story ${story.id} - not downloaded (${story.reason || 'no reason'})`);
                 await db.update(stories).set({ transcription: '[NOT_DOWNLOADED]' }).where(eq(stories.id, story.id));
+                continue;
+            }
+            if (story.transcription) {
                 continue;
             }
 

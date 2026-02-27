@@ -4,6 +4,7 @@ import { reelsUrls, stories } from '@/infra/db/schema.js';
 import { eq, and, isNotNull } from 'drizzle-orm';
 import { extractFrames } from '@/modules/media/infra/ffmpeg/extract-frames.js';
 import path from 'path';
+import fs from 'fs';
 import { withJobTransition } from '@/modules/pipeline/application/orchestrator/with-job-transition.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
 
@@ -25,6 +26,10 @@ export const framingJob = new CronJob('*/5 * * * * *', () =>
 
         if (reels.length > 0) {
             for (const reel of reels) {
+                if (!fs.existsSync(reel.filepath!)) {
+                    console.log(`[framing] Skipping reel ${reel.id} - file not found`);
+                    continue;
+                }
                 const framesDir = path.join(path.dirname(reel.filepath!), 'frames');
                 await extractFrames(reel.filepath!, framesDir);
             }
@@ -33,6 +38,10 @@ export const framingJob = new CronJob('*/5 * * * * *', () =>
 
         if (videoStories.length > 0) {
             for (const story of videoStories) {
+                if (!fs.existsSync(story.filepath!)) {
+                    console.log(`[framing] Skipping story ${story.id} - file not found`);
+                    continue;
+                }
                 const framesDir = path.join(path.dirname(story.filepath!), 'frames');
                 await extractFrames(story.filepath!, framesDir);
             }

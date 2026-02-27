@@ -25,6 +25,9 @@ export async function analyzeReels(
             console.log(`[analyze] Skipping reel ${reel.id} - not downloaded`);
             continue;
         }
+        if (reel.analyzeRawText) {
+            continue;
+        }
 
         try {
             console.log(`[analyze] Processing reel ${reel.id}`);

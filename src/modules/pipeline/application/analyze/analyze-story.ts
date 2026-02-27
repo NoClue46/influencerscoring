@@ -21,6 +21,9 @@ export async function analyzeStories(
             console.log(`[analyze] Skipping story ${story.id} - not downloaded`);
             continue;
         }
+        if (story.analyzeRawText) {
+            continue;
+        }
 
         try {
             console.log(`[analyze] Processing story ${story.id}`);
