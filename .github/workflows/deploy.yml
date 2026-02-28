@@ -1,0 +1,35 @@
+name: Deploy to VPS
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd ${{ vars.DEPLOY_PATH }}
+            git pull origin main
+            docker build -t influencer-scoring .
+            docker stop influencer-scoring 2>/dev/null || true
+            docker rm influencer-scoring 2>/dev/null || true
+            docker run --rm \
+              -e DB_PATH="file:/app/db/prod.db" \
+              -v "${{ vars.DEPLOY_DB_PATH }}:/app/db" \
+              influencer-scoring bunx drizzle-kit migrate
+            docker run -d \
+              --name influencer-scoring \
+              --restart unless-stopped \
+              -p 4141:4141 \
+              --env-file .env \
+              -e DB_PATH="file:/app/db/prod.db" \
+              -v "${{ vars.DEPLOY_DATA_PATH }}:/app/data" \
+              -v "${{ vars.DEPLOY_DB_PATH }}:/app/db" \
+              influencer-scoring
+            docker ps | grep influencer-scoring
