@@ -29,7 +29,6 @@ export async function fetchStoriesFromHikerApi(username: string, count?: number)
                 "x-access-key": process.env.HIKER_API_KEY ?? "",
             },
         });
-
         if (!response.ok) {
             throw new Error(`Failed to fetch stories from HikerAPI: ${response.statusText}`);
         }
