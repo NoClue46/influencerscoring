@@ -5,6 +5,7 @@ import { eq, count } from 'drizzle-orm';
 import { fetchPosts, fetchReels, fetchStories, fetchComments } from '@/modules/instagram/infra/scrape-creators/index.js';
 import { withJobTransition } from '@/modules/pipeline/application/orchestrator/with-job-transition.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
+import { INITIAL_STORIES_COUNT } from '@/shared/config/limits.js';
 
 export const fetchJob = new CronJob('*/5 * * * * *', () =>
     withJobTransition({
@@ -39,7 +40,7 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
         const [reels, fetchedPosts, fetchedStories] = await Promise.all([
             remainingReels > 0 ? fetchReels(job.username, job.postNumber, existingReelUrls) : [],
             remainingPosts > 0 ? fetchPosts(job.username, job.postNumber, existingPostUrls) : [],
-            fetchStories(job.username, job.postNumber)
+            fetchStories(job.username, INITIAL_STORIES_COUNT)
         ]);
 
         // Filter out already existing items
