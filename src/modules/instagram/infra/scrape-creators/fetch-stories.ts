@@ -8,6 +8,7 @@ export async function fetchStories(handle: string, count: number = 10) {
         const ids = await fetchHighlightsList(handle, count);
 
         if (ids.length === 0) {
+            console.warn(`[stories] ${handle}: no highlights returned from API`);
             return [];
         }
 
@@ -21,10 +22,14 @@ export async function fetchStories(handle: string, count: number = 10) {
         console.info("fetched ", ids.length, " highlights")
 
         for (const id of ids) {
-            console.info("fetching highlight detail for: ", id)
-            const items = await fetchHighlightDetail(id);
-            if (items.length > 0) {
-                highlightsWithStories.push(items);
+            try {
+                console.info("fetching highlight detail for: ", id)
+                const items = await fetchHighlightDetail(id);
+                if (items.length > 0) {
+                    highlightsWithStories.push(items);
+                }
+            } catch (error) {
+                console.error(`failed to fetch highlight detail for ${id}: `, error);
             }
             if (highlightsWithStories.length > 100) {
                 break;
@@ -87,6 +92,7 @@ export async function fetchStories(handle: string, count: number = 10) {
             }
         }
 
+        console.info(`[stories] ${handle}: ${ids.length} highlights found, ${highlightsWithStories.length} with items, ${result.length} stories selected`);
         return result.slice(0, count); // Ensure exactly count stories
     } catch (error) {
         console.error(`failed to fetch ${handle} stories: `, error);
