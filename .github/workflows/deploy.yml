@@ -14,7 +14,12 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
             set -e
+            echo "=== DEBUG ==="
+            echo "Current dir before cd: $(pwd)"
+            echo "DEPLOY_PATH value: '${{ vars.DEPLOY_PATH }}'"
+            echo "============="
             cd ${{ vars.DEPLOY_PATH }}
+            echo "Current dir after cd: $(pwd)"
             git pull origin main
             docker build -t influencer-scoring .
             docker stop influencer-scoring 2>/dev/null || true
