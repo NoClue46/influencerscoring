@@ -11,14 +11,14 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT || 22 }}
+          port: 22
           script: |
             set -e
             echo "=== DEBUG ==="
             echo "Current dir before cd: $(pwd)"
-            echo "DEPLOY_PATH value: '${{ vars.DEPLOY_PATH }}'"
+            echo "DEPLOY_PATH value: '${{ secrets.DEPLOY_PATH }}'"
             echo "============="
-            cd ${{ vars.DEPLOY_PATH }}
+            cd ${{ secrets.DEPLOY_PATH }}
             echo "Current dir after cd: $(pwd)"
             git pull origin main
             docker build -t influencer-scoring .
@@ -26,7 +26,7 @@ jobs:
             docker rm influencer-scoring 2>/dev/null || true
             docker run --rm \
               -e DB_PATH="file:/app/db/prod.db" \
-              -v "${{ vars.DEPLOY_DB_PATH }}:/app/db" \
+              -v "${{ secrets.DEPLOY_DB_PATH }}:/app/db" \
               influencer-scoring bunx drizzle-kit migrate
             docker run -d \
               --name influencer-scoring \
@@ -34,7 +34,7 @@ jobs:
               -p 4141:4141 \
               --env-file .env \
               -e DB_PATH="file:/app/db/prod.db" \
-              -v "${{ vars.DEPLOY_DATA_PATH }}:/app/data" \
-              -v "${{ vars.DEPLOY_DB_PATH }}:/app/db" \
+              -v "${{ secrets.DEPLOY_DATA_PATH }}:/app/data" \
+              -v "${{ secrets.DEPLOY_DB_PATH }}:/app/db" \
               influencer-scoring
             docker ps | grep influencer-scoring
