@@ -8,6 +8,23 @@ import fs from 'fs';
 import { withJobTransition } from '@/modules/pipeline/application/orchestrator/with-job-transition.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
 
+async function extractFramesForItems(items: { id: string; filepath: string | null }[], label: string) {
+    let processed = 0;
+    for (const item of items) {
+        if (!fs.existsSync(item.filepath!)) {
+            console.log(`[framing] Skipping ${label} ${item.id} - file not found`);
+            continue;
+        }
+        const framesDir = path.join(path.dirname(item.filepath!), 'frames');
+        if (fs.existsSync(framesDir) && fs.readdirSync(framesDir).length > 0) {
+            continue;
+        }
+        await extractFrames(item.filepath!, framesDir);
+        processed++;
+    }
+    console.log(`[framing] Extracted frames for ${processed}/${items.length} ${label}`);
+}
+
 export const framingJob = new CronJob('*/5 * * * * *', () =>
     withJobTransition({
         fromStatus: JOB_STATUS.DOWNLOADING_FINISHED,
@@ -24,28 +41,7 @@ export const framingJob = new CronJob('*/5 * * * * *', () =>
             )
         ]);
 
-        if (reels.length > 0) {
-            for (const reel of reels) {
-                if (!fs.existsSync(reel.filepath!)) {
-                    console.log(`[framing] Skipping reel ${reel.id} - file not found`);
-                    continue;
-                }
-                const framesDir = path.join(path.dirname(reel.filepath!), 'frames');
-                await extractFrames(reel.filepath!, framesDir);
-            }
-            console.log(`[framing] Extracted frames for ${reels.length} reels`);
-        }
-
-        if (videoStories.length > 0) {
-            for (const story of videoStories) {
-                if (!fs.existsSync(story.filepath!)) {
-                    console.log(`[framing] Skipping story ${story.id} - file not found`);
-                    continue;
-                }
-                const framesDir = path.join(path.dirname(story.filepath!), 'frames');
-                await extractFrames(story.filepath!, framesDir);
-            }
-            console.log(`[framing] Extracted frames for ${videoStories.length} video stories`);
-        }
+        if (reels.length > 0) await extractFramesForItems(reels, 'reels');
+        if (videoStories.length > 0) await extractFramesForItems(videoStories, 'video stories');
     })
 );

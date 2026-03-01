@@ -5,6 +5,7 @@ import { eq, count } from 'drizzle-orm';
 import { fetchPosts, fetchReels, fetchStories, fetchComments } from '@/modules/instagram/infra/scrape-creators/index.js';
 import { withJobTransition } from '@/modules/pipeline/application/orchestrator/with-job-transition.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
+import { STORY_SOURCE } from '@/shared/types/story-source.js';
 import { INITIAL_STORIES_COUNT } from '@/shared/config/limits.js';
 
 export const fetchJob = new CronJob('*/5 * * * * *', () =>
@@ -69,7 +70,8 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
                 jobId: job.id,
                 storyId: s.id,
                 downloadUrl: s.downloadUrl,
-                isVideo: s.isVideo
+                isVideo: s.isVideo,
+                source: STORY_SOURCE.HIGHLIGHTS,
             }))) : Promise.resolve()
         ]);
 

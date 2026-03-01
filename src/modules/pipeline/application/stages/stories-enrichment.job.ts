@@ -1,66 +1,79 @@
 import { CronJob } from 'cron';
 import { db } from '@/infra/db/index.js';
 import { jobs, stories } from '@/infra/db/schema.js';
-import { eq, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { fetchStoriesFromHikerApi } from '@/modules/instagram/infra/hiker-api/fetch-stories.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
+import { STORY_SOURCE } from '@/shared/types/story-source.js';
 
-const MIN_STORIES = 20;
+const MIN_HIKERAPI_STORIES = 20;
 
 export const storiesEnrichmentJob = new CronJob('0 */30 * * * *', async () => {
-    const jobsWithFewStories = await db
+    const completedJobs = await db
         .select({
             id: jobs.id,
             username: jobs.username,
-            storyCount: sql<number>`count(${stories.id})`.as('story_count'),
         })
         .from(jobs)
-        .leftJoin(stories, eq(stories.jobId, jobs.id))
-        .where(eq(jobs.status, JOB_STATUS.COMPLETED))
-        .groupBy(jobs.id)
-        .having(sql`count(${stories.id}) < ${MIN_STORIES}`);
+        .where(and(
+            eq(jobs.status, JOB_STATUS.COMPLETED),
+            eq(jobs.storiesEnriched, false),
+        ));
 
-    if (jobsWithFewStories.length === 0) return;
+    if (completedJobs.length === 0) return;
 
-    console.log(`[stories-enrichment] Found ${jobsWithFewStories.length} jobs with < ${MIN_STORIES} stories`);
+    console.log(`[stories-enrichment] Found ${completedJobs.length} jobs to enrich`);
 
-    for (const job of jobsWithFewStories) {
+    for (const job of completedJobs) {
         try {
-            const newStories = await fetchStoriesFromHikerApi(job.username);
+            // Single query: get all storyIds + source for dedup and count
+            const existingStories = await db
+                .select({ storyId: stories.storyId, source: stories.source })
+                .from(stories)
+                .where(eq(stories.jobId, job.id));
+
+            const existingStoryIds = new Set(existingStories.map(s => s.storyId));
+            const hikerapiCount = existingStories.filter(s => s.source === STORY_SOURCE.HIKERAPI).length;
+
+            if (hikerapiCount >= MIN_HIKERAPI_STORIES) {
+                await db.update(jobs).set({ storiesEnriched: true }).where(eq(jobs.id, job.id));
+                console.log(`[stories-enrichment] ${job.username}: already has ${hikerapiCount} hikerapi stories, marking enriched`);
+                continue;
+            }
+
+            const newStories = await fetchStoriesFromHikerApi(job.username, MIN_HIKERAPI_STORIES);
 
             if (newStories.length === 0) {
                 console.log(`[stories-enrichment] No stories from HikerAPI for ${job.username}`);
                 continue;
             }
 
-            const existingStoryIds = (await db
-                .select({ storyId: stories.storyId })
-                .from(stories)
-                .where(eq(stories.jobId, job.id))
-            ).map(s => s.storyId);
+            const uniqueStories = newStories.filter(s => !existingStoryIds.has(s.id));
 
-            const uniqueStories = newStories.filter(s => !existingStoryIds.includes(s.id));
-
-            if (uniqueStories.length === 0) {
-                console.log(`[stories-enrichment] No new stories for ${job.username} (all ${newStories.length} already exist)`);
-                continue;
+            if (uniqueStories.length > 0) {
+                await db.insert(stories).values(
+                    uniqueStories.map(s => ({
+                        storyId: s.id,
+                        downloadUrl: s.downloadUrl,
+                        isVideo: s.isVideo,
+                        jobId: job.id,
+                        source: STORY_SOURCE.HIKERAPI,
+                    }))
+                );
             }
 
-            await db.insert(stories).values(
-                uniqueStories.map(s => ({
-                    storyId: s.id,
-                    downloadUrl: s.downloadUrl,
-                    isVideo: s.isVideo,
-                    jobId: job.id,
-                }))
-            );
+            const totalHikerapi = hikerapiCount + uniqueStories.length;
+            console.log(`[stories-enrichment] ${job.username}: added ${uniqueStories.length} new hikerapi stories (total hikerapi: ${totalHikerapi}/${MIN_HIKERAPI_STORIES})`);
 
-            await db.update(jobs).set({
-                status: JOB_STATUS.FETCHING_FINISHED,
-                attempts: 0,
-            }).where(eq(jobs.id, job.id));
+            if (totalHikerapi >= MIN_HIKERAPI_STORIES) {
+                await db.update(jobs).set({
+                    storiesEnriched: true,
+                    status: JOB_STATUS.FETCHING_FINISHED,
+                    attempts: 0,
+                }).where(eq(jobs.id, job.id));
 
-            console.log(`[stories-enrichment] Added ${uniqueStories.length} stories for ${job.username}, reset to fetching_finished`);
+                console.log(`[stories-enrichment] ${job.username}: reached ${totalHikerapi} hikerapi stories, restarting pipeline`);
+            }
         } catch (error) {
             console.error(`[stories-enrichment] Failed for ${job.username}:`, error);
         }

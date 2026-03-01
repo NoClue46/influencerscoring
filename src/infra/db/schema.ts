@@ -1,6 +1,7 @@
 import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
+import { STORY_SOURCE } from "@/shared/types/story-source.js";
 
 export const jobs = sqliteTable("jobs", {
   id: text("id").primaryKey().$defaultFn(() => createId()),
@@ -26,6 +27,7 @@ export const jobs = sqliteTable("jobs", {
   avgIncomeLevel: real("avg_income_level"),
   avgAgeScore: real("avg_age_score"),
   isFemale: integer("is_female", { mode: "boolean" }),
+  storiesEnriched: integer("stories_enriched", { mode: "boolean" }).default(false).notNull(),
 });
 
 export const posts = sqliteTable("posts", {
@@ -67,6 +69,7 @@ export const stories = sqliteTable("stories", {
   jobId: text("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
   analyzeRawText: text("analuze_raw_text"),
   hasBloggerFace: integer("has_blogger_face", { mode: "boolean" }).default(false).notNull(),
+  source: text("source").default(STORY_SOURCE.HIGHLIGHTS).notNull(),
 });
 
 export const comments = sqliteTable("comments", {

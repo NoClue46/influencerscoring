@@ -15,6 +15,13 @@
       "when": 1772377980451,
       "tag": "0001_illegal_retro_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1772379864666,
+      "tag": "0002_sweet_earthquake",
+      "breakpoints": true
     }
   ]
 }
