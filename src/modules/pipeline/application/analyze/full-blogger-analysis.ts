@@ -218,6 +218,7 @@ ${DEFAULT_BLOGGER_PROMPT}`;
         score: finalScore,
         status: JOB_STATUS.COMPLETED,
         redflag: redflagReason,
+        isFemale: genderCheck.isFemale,
     }).where(eq(jobs.id, job.id));
 
     console.log(`[analyze] Completed full analysis for job ${job.id}`);

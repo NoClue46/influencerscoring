@@ -139,6 +139,15 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                     color: #6b7280;
                     background: rgba(107, 114, 128, 0.12);
                 ">🔒 Private Account</span>` : ''}
+                ${job.isFemale !== null && job.isFemale !== undefined ? html`<span style="
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 999px;
+                    font-weight: 600;
+                    color: ${job.isFemale ? '#d63384' : '#0d6efd'};
+                    background: ${job.isFemale ? 'rgba(214, 51, 132, 0.12)' : 'rgba(13, 110, 253, 0.12)'};
+                ">${job.isFemale ? '♀ Female' : '♂ Male'}</span>` : ''}
             </div>
 
             ${job.analyzeRawText ? html`

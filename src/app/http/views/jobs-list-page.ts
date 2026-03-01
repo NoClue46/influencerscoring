@@ -31,6 +31,8 @@ export function renderJobsListPage(jobs: Job[]) {
             }
         }
 
+        const genderDisplay = job.isFemale === null || job.isFemale === undefined ? '-' : job.isFemale ? '♀' : '♂';
+
         return html`
             <tr>
                 <td><a href="/jobs/${job.id}">${job.username}</a></td>
@@ -48,10 +50,11 @@ export function renderJobsListPage(jobs: Job[]) {
                     ">${job.status.replace(/_/g, ' ')}</span>
                 </td>
                 <td>${job.score ?? '-'}</td>
+                <td>${genderDisplay}</td>
                 <td title="${recommendationTitle}">${recommendation}</td>
             </tr>
         `;
-    }) : html`<tr><td colspan="4" style="text-align: center;">No Jobs</td></tr>`;
+    }) : html`<tr><td colspan="5" style="text-align: center;">No Jobs</td></tr>`;
 
     return html`
         <div style="width: 90%; max-width: 1200px; margin: 2rem auto;">
@@ -69,6 +72,7 @@ export function renderJobsListPage(jobs: Job[]) {
                             <th>Username</th>
                             <th>Status</th>
                             <th>Score</th>
+                            <th>Gender</th>
                             <th>Recommendation</th>
                         </tr>
                     </thead>
