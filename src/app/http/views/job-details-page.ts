@@ -167,7 +167,17 @@ export function renderJobDetailsPage(job: JobWithRelations) {
         </tr>
     `) : html`<tr><td colspan="2" style="text-align: center;">No posts yet</td></tr>`;
 
-    const storiesHtml = job.stories.length > 0 ? job.stories.map((story) => html`
+    const highlights = job.stories.filter(s => s.source === 'highlights');
+    const hikerStories = job.stories.filter(s => s.source === 'hikerapi');
+
+    const highlightsHtml = highlights.length > 0 ? highlights.map((story) => html`
+        <tr>
+            <td style="${story.reason ? 'background: rgba(220, 53, 69, 0.08);' : ''}"><a href="${story.downloadUrl}" target="_blank">${story.storyId}</a></td>
+            <td style="${story.reason ? 'background: rgba(220, 53, 69, 0.08);' : ''}">${story.reason ?? '-'}</td>
+        </tr>
+    `) : html`<tr><td colspan="2" style="text-align: center;">No highlights yet</td></tr>`;
+
+    const hikerStoriesHtml = hikerStories.length > 0 ? hikerStories.map((story) => html`
         <tr>
             <td style="${story.reason ? 'background: rgba(220, 53, 69, 0.08);' : ''}"><a href="${story.downloadUrl}" target="_blank">${story.storyId}</a></td>
             <td style="${story.reason ? 'background: rgba(220, 53, 69, 0.08);' : ''}">${story.reason ?? '-'}</td>
@@ -280,7 +290,7 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                 </table>
             </figure>
 
-            <h2 style="margin-top: 2rem;">Stories (${job.stories.length})</h2>
+            <h2 style="margin-top: 2rem;">Highlights (${highlights.length})</h2>
             <figure>
                 <table>
                     <thead>
@@ -290,7 +300,22 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                         </tr>
                     </thead>
                     <tbody>
-                        ${storiesHtml}
+                        ${highlightsHtml}
+                    </tbody>
+                </table>
+            </figure>
+
+            <h2 style="margin-top: 2rem;">Stories (${hikerStories.length})</h2>
+            <figure>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>URL</th>
+                            <th>Skip Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${hikerStoriesHtml}
                     </tbody>
                 </table>
             </figure>
