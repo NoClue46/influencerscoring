@@ -6,7 +6,7 @@ import { fetchPosts, fetchReels, fetchStories, fetchComments } from '@/modules/i
 import { withJobTransition } from '@/modules/pipeline/application/orchestrator/with-job-transition.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
 import { STORY_SOURCE } from '@/shared/types/story-source.js';
-import { INITIAL_STORIES_COUNT } from '@/shared/config/limits.js';
+
 
 export const fetchJob = new CronJob('*/5 * * * * *', () =>
     withJobTransition({
@@ -41,7 +41,7 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
         const [reels, fetchedPosts, fetchedStories] = await Promise.all([
             remainingReels > 0 ? fetchReels(job.username, job.postNumber, existingReelUrls) : [],
             remainingPosts > 0 ? fetchPosts(job.username, job.postNumber, existingPostUrls) : [],
-            fetchStories(job.username, INITIAL_STORIES_COUNT)
+            fetchStories(job.username, job.postNumber)
         ]);
 
         // Filter out already existing items
