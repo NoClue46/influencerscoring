@@ -34,8 +34,8 @@ export function renderJobsListPage(jobs: Job[]) {
         const genderDisplay = job.isFemale === null || job.isFemale === undefined ? '-' : job.isFemale ? '♀' : '♂';
 
         return html`
-            <tr>
-                <td><a href="/jobs/${job.id}">${job.username}</a></td>
+            <tr style="cursor: pointer;" onclick="window.location='/jobs/${job.id}'">
+                <td>${job.username}</td>
                 <td>
                     <span style="
                         display: inline-flex;
@@ -59,13 +59,17 @@ export function renderJobsListPage(jobs: Job[]) {
     return html`
         <div style="width: 90%; max-width: 1200px; margin: 2rem auto;">
             <form action="/" method="post" x-data style="width: 100%; height: auto; margin: 0;">
-                <h2>Create Job</h2>
-                <input type="text" name="username" placeholder="cristiano" required />
-                <button type="submit" @click="$el.setAttribute('aria-busy', 'true')">Create Job</button>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <input type="text" name="username" placeholder="cristiano" required style="flex: 1; margin-bottom: 0;" />
+                    <button type="submit" @click="$el.setAttribute('aria-busy', 'true')" style="width: auto; margin-bottom: 0;">Create Job</button>
+                </div>
             </form>
 
             <h2 style="margin-top: 3rem;">All Jobs</h2>
             <figure>
+                <style>
+                    table tbody tr:nth-child(even) { background: rgba(0,0,0,0.04); }
+                </style>
                 <table>
                     <thead>
                         <tr>

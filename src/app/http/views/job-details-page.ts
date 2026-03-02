@@ -2,6 +2,84 @@ import { html } from 'hono/html';
 import type { Job, Reels, Post, Story, Comment } from '@/infra/db/types.js';
 import { JOB_STATUS } from '@/shared/types/job-status.js';
 
+function snakeToTitle(s: string): string {
+    return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function scoreColor(param: string, score: number): string {
+    if (param === 'frequency_of_advertising') {
+        return score < 95 ? '#198754' : '#dc3545';
+    }
+    return score >= 60 ? '#198754' : '#dc3545';
+}
+
+function renderAnalyzeTable(rawText: string) {
+    try {
+        const data = JSON.parse(rawText);
+        if (typeof data !== 'object' || data === null) throw new Error('not object');
+        const keys = Object.keys(data).filter(k => data[k] && typeof data[k] === 'object' && 'Score' in data[k]);
+        if (keys.length === 0) throw new Error('no metrics');
+        return html`
+            <div style="overflow-x: auto;">
+                <table style="margin-bottom: 1rem;">
+                    <thead><tr><th></th>${keys.map(k => html`<th>${snakeToTitle(k)}</th>`)}</tr></thead>
+                    <tbody>
+                        <tr><td><strong>Score</strong></td>${keys.map(k => html`<td style="color: ${scoreColor(k, data[k].Score)}; font-weight: 600;">${data[k].Score}</td>`)}</tr>
+                        <tr><td><strong>Confidence</strong></td>${keys.map(k => html`<td>${data[k].Confidence ?? '-'}</td>`)}</tr>
+                    </tbody>
+                </table>
+            </div>
+            <details style="margin-top: 0.75rem; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; padding: 0;">
+                <summary style="cursor: pointer; padding: 0.5rem 0.75rem; font-size: 0.85rem; color: var(--pico-muted-color); font-weight: 500;">Raw JSON</summary>
+                <pre style="white-space: pre-wrap; margin: 0; padding: 0.75rem; border-top: 1px solid var(--pico-muted-border-color); font-size: 0.8rem; max-height: 400px; overflow-y: auto;">${rawText}</pre>
+            </details>`;
+    } catch {
+        return html`<pre style="white-space: pre-wrap; margin: 0;">${rawText}</pre>`;
+    }
+}
+
+const RISK_COLORS: Record<string, string> = { low: '#198754', medium: '#e67e22', high: '#dc3545' };
+
+function renderNicknameTable(rawText: string) {
+    try {
+        const data = JSON.parse(rawText);
+        if (typeof data !== 'object' || data === null) throw new Error('not object');
+        const riskColor = RISK_COLORS[data.risk_level] ?? 'inherit';
+        return html`
+            <div style="overflow-x: auto;">
+                <table style="margin-bottom: 1rem;">
+                    <thead><tr><th>Reputation Score</th><th>Confidence</th><th>Estimated Age</th><th>Risk Level</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: 600;">${data.reputation_score ?? '-'}</td>
+                            <td>${data.confidence ?? '-'}</td>
+                            <td>${data.estimated_age ?? '-'}</td>
+                            <td style="color: ${riskColor}; font-weight: 600;">${data.risk_level ?? '-'}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            ${data.summary ? html`<p style="margin: 0 0 1rem;"><strong>Summary:</strong> ${data.summary}</p>` : ''}
+            ${data.negative_findings?.length ? html`
+                <h4 style="margin: 0.5rem 0;">Negative Findings</h4>
+                <ul>${data.negative_findings.map((f: { issue: string; source?: string; severity?: string }) => html`<li><strong>${f.issue}</strong>${f.source ? ` — ${f.source}` : ''}${f.severity ? html` <span style="color: ${RISK_COLORS[f.severity] ?? 'inherit'};">(${f.severity})</span>` : ''}</li>`)}</ul>
+            ` : ''}
+            ${data.sources?.length ? html`
+                <h4 style="margin: 0.5rem 0;">Sources</h4>
+                <ul>${data.sources.map((s: string) => {
+                    const m = s.match(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/);
+                    return m ? html`<li><a href="${m[2]}" target="_blank">${m[1]}</a></li>` : html`<li>${s}</li>`;
+                })}</ul>
+            ` : ''}
+            <details style="margin-top: 0.75rem; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; padding: 0;">
+                <summary style="cursor: pointer; padding: 0.5rem 0.75rem; font-size: 0.85rem; color: var(--pico-muted-color); font-weight: 500;">Raw JSON</summary>
+                <pre style="white-space: pre-wrap; margin: 0; padding: 0.75rem; border-top: 1px solid var(--pico-muted-border-color); font-size: 0.8rem; max-height: 400px; overflow-y: auto;">${rawText}</pre>
+            </details>`;
+    } catch {
+        return html`<pre style="white-space: pre-wrap; margin: 0;">${rawText}</pre>`;
+    }
+}
+
 export type JobWithRelations = Job & {
     reels: (Reels & { comments: Comment[] })[];
     posts: (Post & { comments: Comment[] })[];
@@ -33,7 +111,7 @@ export function renderJobDetailsPage(job: JobWithRelations) {
 
     const reelsHtml = job.reels.length > 0 ? job.reels.map((reel) => html`
         <tr>
-            <td colspan="3">
+            <td colspan="2" style="${reel.reason ? 'background: rgba(220, 53, 69, 0.08);' : ''}">
                 <details>
                     <summary style="cursor: pointer; display: flex; gap: 1rem; padding: 0.5rem 0;">
                         <span style="flex: 2;"><a href="${reel.reelsUrl}" target="_blank" onclick="event.stopPropagation();">${reel.reelsUrl}</a></span>
@@ -58,11 +136,11 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                 </details>
             </td>
         </tr>
-    `) : html`<tr><td colspan="3" style="text-align: center;">No reels yet</td></tr>`;
+    `) : html`<tr><td colspan="2" style="text-align: center;">No reels yet</td></tr>`;
 
     const postsHtml = job.posts.length > 0 ? job.posts.map((post) => html`
         <tr>
-            <td colspan="3">
+            <td colspan="2" style="${post.reason ? 'background: rgba(220, 53, 69, 0.08);' : ''}">
                 <details>
                     <summary style="cursor: pointer; display: flex; gap: 1rem; padding: 0.5rem 0;">
                         <span style="flex: 2;"><a href="${post.postUrl}" target="_blank" onclick="event.stopPropagation();">${post.postUrl}</a></span>
@@ -87,28 +165,21 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                 </details>
             </td>
         </tr>
-    `) : html`<tr><td colspan="3" style="text-align: center;">No posts yet</td></tr>`;
+    `) : html`<tr><td colspan="2" style="text-align: center;">No posts yet</td></tr>`;
 
     const storiesHtml = job.stories.length > 0 ? job.stories.map((story) => html`
         <tr>
-            <td><a href="${story.downloadUrl}" target="_blank">${story.storyId}</a></td>
-            <td>${story.reason ?? '-'}</td>
-            <td>${story.analyzeRawText ? html`
-                <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="document.getElementById('modal-story-${story.id}').showModal()">Show</button>
-                <dialog id="modal-story-${story.id}" style="max-width: 600px; padding: 1.5rem; border-radius: 8px;">
-                    <pre style="white-space: pre-wrap; margin: 0 0 1rem;">${story.analyzeRawText}</pre>
-                    <button style="padding: 0.25rem 0.5rem; font-size: 0.8rem;" onclick="this.closest('dialog').close()">Close</button>
-                </dialog>
-            ` : '-'}</td>
+            <td style="${story.reason ? 'background: rgba(220, 53, 69, 0.08);' : ''}"><a href="${story.downloadUrl}" target="_blank">${story.storyId}</a></td>
+            <td style="${story.reason ? 'background: rgba(220, 53, 69, 0.08);' : ''}">${story.reason ?? '-'}</td>
         </tr>
-    `) : html`<tr><td colspan="4" style="text-align: center;">No stories yet</td></tr>`;
+    `) : html`<tr><td colspan="2" style="text-align: center;">No stories yet</td></tr>`;
 
     return html`
         <div style="width: 90%; max-width: 1200px; margin: 2rem auto;">
             <a href="/" role="button" style="width: auto; display: inline-block; margin-bottom: 1rem; padding: 0.5rem 0.5rem;">← Back</a>
 
             <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
-                <h1 style="margin: 0;">Job: @${job.username}</h1>
+                <h1 style="margin: 0;">@${job.username}</h1>
                 <span style="font-size: 1rem; color: var(--pico-muted-color);">${job.followers.toLocaleString()} followers</span>
                 <span style="
                     display: inline-flex;
@@ -153,14 +224,14 @@ export function renderJobDetailsPage(job: JobWithRelations) {
             ${job.analyzeRawText ? html`
             <article>
                 <header><strong>Analyze Result</strong></header>
-                <pre style="white-space: pre-wrap; margin: 0;">${job.analyzeRawText}</pre>
+                ${renderAnalyzeTable(job.analyzeRawText)}
             </article>
             ` : ''}
 
             ${job.nicknameAnalyseRawText ? html`
             <article>
                 <header><strong>Nickname Analysis</strong></header>
-                <pre style="white-space: pre-wrap; margin: 0;">${job.nicknameAnalyseRawText}</pre>
+                ${renderNicknameTable(job.nicknameAnalyseRawText)}
             </article>
             ` : ''}
 
@@ -176,9 +247,12 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                 <table>
                     <thead>
                         <tr>
-                            <th>URL</th>
-                            <th>Skip Reason</th>
-                            <th>Analysis</th>
+                            <th colspan="2" style="padding: 0;">
+                                <div style="display: flex; gap: 1rem; padding: 0.5rem var(--pico-spacing, 1rem);">
+                                    <span style="flex: 2;">URL</span>
+                                    <span style="flex: 1;">Skip Reason</span>
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -192,9 +266,12 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                 <table>
                     <thead>
                         <tr>
-                            <th>URL</th>
-                            <th>Skip Reason</th>
-                            <th>Analysis</th>
+                            <th colspan="2" style="padding: 0;">
+                                <div style="display: flex; gap: 1rem; padding: 0.5rem var(--pico-spacing, 1rem);">
+                                    <span style="flex: 2;">URL</span>
+                                    <span style="flex: 1;">Skip Reason</span>
+                                </div>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -210,7 +287,6 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                         <tr>
                             <th>URL</th>
                             <th>Skip Reason</th>
-                            <th>Analysis</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -219,28 +295,21 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                 </table>
             </figure>
 
-            <article>
-                <header><strong>Post Prompt</strong></header>
-                <div>
-                    <p>${job.postPrompt}</p>
+            <details style="margin-top: 0.75rem; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; padding: 0;">
+                <summary style="cursor: pointer; padding: 0.5rem 0.75rem; font-size: 0.85rem; color: var(--pico-muted-color); font-weight: 500;">Post Prompt</summary>
+                <div style="padding: 0.75rem; border-top: 1px solid var(--pico-muted-border-color); font-size: 0.8rem; max-height: 400px; overflow-y: auto;">
+                    <p style="margin: 0; white-space: pre-wrap;">${job.postPrompt}</p>
+                    ${job.reason ? html`<p style="margin: 0.5rem 0 0;"><strong>Reason:</strong> <span style="color: #dc3545;">${job.reason}</span></p>` : ''}
                 </div>
-                <table>
-                    <tbody>
-                        ${job.reason ? html`
-                        <tr>
-                            <td><strong>Reason</strong></td>
-                            <td style="color: #dc3545;">${job.reason}</td>
-                        </tr>
-                        ` : ''}
-                    </tbody>
-                </table>
-            </article>
+            </details>
 
             ${job.bloggerPrompt ? html`
-            <article>
-                <header><strong>Blogger Prompt</strong></header>
-                <p>${job.bloggerPrompt}</p>
-            </article>
+            <details style="margin-top: 0.75rem; border: 1px solid var(--pico-muted-border-color); border-radius: 4px; padding: 0;">
+                <summary style="cursor: pointer; padding: 0.5rem 0.75rem; font-size: 0.85rem; color: var(--pico-muted-color); font-weight: 500;">Blogger Prompt</summary>
+                <div style="padding: 0.75rem; border-top: 1px solid var(--pico-muted-border-color); font-size: 0.8rem; max-height: 400px; overflow-y: auto;">
+                    <p style="margin: 0; white-space: pre-wrap;">${job.bloggerPrompt}</p>
+                </div>
+            </details>
             ` : ''}
         </div>
     `;
