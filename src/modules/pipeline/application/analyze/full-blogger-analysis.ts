@@ -122,12 +122,16 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
     console.log(`[analyze] Starting full analysis aggregation for job ${job.id}`);
 
     const [analyzedReels, analyzedPosts, analyzedStories] = await Promise.all([
-        db.select().from(reelsUrls).where(
-            eq(reelsUrls.jobId, job.id)
-        ).orderBy(asc(reelsUrls.id)),
-        db.select().from(posts).where(
-            eq(posts.jobId, job.id)
-        ).orderBy(asc(posts.id)),
+        db.query.reelsUrls.findMany({
+            where: eq(reelsUrls.jobId, job.id),
+            orderBy: asc(reelsUrls.id),
+            with: { comments: true },
+        }),
+        db.query.posts.findMany({
+            where: eq(posts.jobId, job.id),
+            orderBy: asc(posts.id),
+            with: { comments: true },
+        }),
         db.select().from(stories).where(
             eq(stories.jobId, job.id)
         ).orderBy(asc(stories.id)),
@@ -174,6 +178,21 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
         })
         .join('\n\n');
 
+    // Build comment analyses section
+    const commentEntries: string[] = [];
+    for (const item of [...analyzedReels, ...analyzedPosts]) {
+        const analyzedComments = item.comments.filter(c => c.analyseRawText !== null);
+        if (analyzedComments.length === 0) continue;
+
+        const itemLabel = 'url' in item ? `Reel ${item.id}` : `Post ${item.id}`;
+        const commentJsons = analyzedComments.map(c => c.analyseRawText!).join(',\n');
+        commentEntries.push(`${itemLabel}:\n[${commentJsons}]`);
+    }
+
+    const commentSection = commentEntries.length > 0
+        ? commentEntries.join('\n\n')
+        : '(No analyzed comments available)';
+
     const aggregatedPrompt = `=== PERSONALITY ANALYSES (${faceItems.length} items with blogger face) ===
 
 ${personalitySection}
@@ -181,6 +200,10 @@ ${personalitySection}
 === CONTENT ANALYSES (${contentItems.length} total items) ===
 
 ${contentSection}
+
+=== COMMENT ANALYSES (${commentEntries.length} items with comments) ===
+
+${commentSection}
 
 === TASK ===
 ${DEFAULT_BLOGGER_PROMPT}`;

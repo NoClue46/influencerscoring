@@ -2,12 +2,14 @@ export const DEFAULT_BLOGGER_PROMPT = `
 ### Task
 
 Analyze the provided per-item analyses and evaluate the blogger across ALL 16 parameters listed below.
-You receive TWO sections of data:
+You receive THREE sections of data:
 
 1. **PERSONALITY ANALYSES** — per-item analyses from content where the blogger's face was detected. Use these to evaluate personality metrics.
 2. **CONTENT ANALYSES** — per-item analyses from ALL content items. Use these to evaluate content metrics.
+3. **COMMENT ANALYSES** — per-post/reel aggregated comment analyses (fakeness_score, overall_score, comment_types, interpretation). Use these as additional context when evaluating metrics, especially: sales_authenticity (do comments confirm genuine product experience?), frequency_of_advertising (do comment patterns reveal ad fatigue?), and audience engagement quality indicators for personality metrics.
 
 If the PERSONALITY ANALYSES section is empty (no items with blogger face), assign low scores with low confidence to personality metrics.
+If the COMMENT ANALYSES section is empty, evaluate metrics based on content and personality data only.
 
 ### Scoring Rules
 
