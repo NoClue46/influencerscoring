@@ -4,15 +4,12 @@ import type { Reels, Comment } from '@/infra/db/types.js';
 import { eq } from 'drizzle-orm';
 import { generateText, Output } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { analyzeComment } from '@/modules/ai/application/analyze-comment.js';
+import { analyzeItemComments } from '@/modules/ai/application/analyze-item-comments.js';
 import { selectFrames } from '@/modules/media/domain/select-frames.js';
 import { perItemAnalysisSchema, POST_ANALYSIS_PROMPT } from '@/modules/ai/prompts/post-analysis.prompt.js';
-import { chunk } from '@/shared/utils/async.js';
 import { encodeImageToDataUri } from '@/modules/ai/infra/encode-image.js';
 import fs from 'fs';
 import path from 'path';
-
-const COMMENT_ANALYSIS_CHUNK_SIZE = 5;
 
 export async function analyzeReels(
     reels: (Reels & { comments: Comment[] })[],
@@ -21,76 +18,73 @@ export async function analyzeReels(
     const errors: string[] = [];
 
     for (const reel of reels) {
-        if (!reel.filepath) {
-            console.log(`[analyze] Skipping reel ${reel.id} - not downloaded`);
-            continue;
-        }
-        if (reel.analyzeRawText) {
+        const hasContentAnalysis = reel.analyzeRawText !== null;
+        const hasCommentsAnalysis = reel.commentsAnalysisRawText !== null;
+
+        if (hasContentAnalysis && hasCommentsAnalysis) {
             continue;
         }
 
         try {
             console.log(`[analyze] Processing reel ${reel.id}`);
 
-            const framesDir = path.join(path.dirname(reel.filepath), 'frames');
+            const updatePayload: {
+                hasBloggerFace?: boolean;
+                analyzeRawText?: string;
+                commentsAnalysisRawText?: string | null;
+            } = {};
 
-            const allFrames = fs.readdirSync(framesDir)
-                .filter(f => f.endsWith('.jpg'))
-                .sort()
-                .map(f => path.join(framesDir, f));
+            if (!hasContentAnalysis) {
+                if (!reel.filepath) {
+                    console.log(`[analyze] Skipping reel ${reel.id} - not downloaded`);
+                    continue;
+                }
 
-            const selectedFrames = selectFrames(allFrames, 10);
+                const framesDir = path.join(path.dirname(reel.filepath), 'frames');
 
-            const promptWithTranscription = reel.transcription
-                ? `${POST_ANALYSIS_PROMPT}\n\nTranscription:\n${reel.transcription}`
-                : POST_ANALYSIS_PROMPT;
+                const allFrames = fs.readdirSync(framesDir)
+                    .filter(f => f.endsWith('.jpg'))
+                    .sort()
+                    .map(f => path.join(framesDir, f));
 
-            const imageContent: Array<{ type: 'image'; image: string }> = [];
+                const selectedFrames = selectFrames(allFrames, 10);
 
-            // Avatar first
-            if (avatarPath && fs.existsSync(avatarPath)) {
-                imageContent.push({ type: 'image', image: encodeImageToDataUri(avatarPath) });
-            }
+                const promptWithTranscription = reel.transcription
+                    ? `${POST_ANALYSIS_PROMPT}\n\nTranscription:\n${reel.transcription}`
+                    : POST_ANALYSIS_PROMPT;
 
-            // Content frames
-            for (const frame of selectedFrames) {
-                imageContent.push({ type: 'image', image: encodeImageToDataUri(frame) });
-            }
+                const imageContent: Array<{ type: 'image'; image: string }> = [];
 
-            const { output } = await generateText({
-                model: openai('gpt-5-mini'),
-                output: Output.object({ schema: perItemAnalysisSchema }),
-                messages: [{
-                    role: 'user',
-                    content: [
-                        ...imageContent,
-                        { type: 'text', text: promptWithTranscription },
-                    ],
-                }],
-            });
+                if (avatarPath && fs.existsSync(avatarPath)) {
+                    imageContent.push({ type: 'image', image: encodeImageToDataUri(avatarPath) });
+                }
 
-            await db.update(reelsUrls).set({
-                hasBloggerFace: output.has_blogger_face,
-                analyzeRawText: JSON.stringify(output),
-            }).where(eq(reelsUrls.id, reel.id));
+                for (const frame of selectedFrames) {
+                    imageContent.push({ type: 'image', image: encodeImageToDataUri(frame) });
+                }
 
-            // Analyze reel comments
-            for (const commentsBatch of chunk(reel.comments, COMMENT_ANALYSIS_CHUNK_SIZE)) {
-                const results = await Promise.allSettled(commentsBatch.map((comment) => analyzeComment(comment)));
-
-                results.forEach((result, index) => {
-                    if (result.status === 'fulfilled') {
-                        return;
-                    }
-
-                    const comment = commentsBatch[index];
-                    const message = result.reason instanceof Error
-                        ? result.reason.message
-                        : String(result.reason);
-
-                    console.error(`[analyze] Failed for comment ${comment.id}:`, message);
-                    errors.push(`Comment ${comment.id}: ${message}`);
+                const { output } = await generateText({
+                    model: openai('gpt-5-mini'),
+                    output: Output.object({ schema: perItemAnalysisSchema }),
+                    messages: [{
+                        role: 'user',
+                        content: [
+                            ...imageContent,
+                            { type: 'text', text: promptWithTranscription },
+                        ],
+                    }],
                 });
+
+                updatePayload.hasBloggerFace = output.has_blogger_face;
+                updatePayload.analyzeRawText = JSON.stringify(output);
+            }
+
+            if (!hasCommentsAnalysis) {
+                updatePayload.commentsAnalysisRawText = await analyzeItemComments(reel.comments);
+            }
+
+            if (Object.keys(updatePayload).length > 0) {
+                await db.update(reelsUrls).set(updatePayload).where(eq(reelsUrls.id, reel.id));
             }
 
             console.log(`[analyze] Completed reel ${reel.id}`);

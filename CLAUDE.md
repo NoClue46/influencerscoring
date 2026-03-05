@@ -23,7 +23,8 @@ Instagram influencer analysis pipeline with job-based processing. Accepts userna
 **UI**: Server-side rendered HTML via Hono `html` tagged templates, PicoCSS + Alpine.js (no SPA)
 
 **AI Models**:
-- `gpt-5-mini` (Vercel AI SDK) — per-item analysis, comment analysis, gender check, full blogger analysis
+- `gpt-5-mini` (Vercel AI SDK) — per-item analysis, gender check, full blogger analysis
+- `gpt-5-nano` (Vercel AI SDK) — aggregated post/reel comment analysis
 - `gpt-5` (Vercel AI SDK + webSearch tool) — nickname reputation + age research
 - `gpt-5-mini` (raw OpenAI SDK) — vision analysis in redflag stage, template comment check
 - `whisper-1` — audio transcription
@@ -37,7 +38,7 @@ All cron jobs run every 5s. Orchestrated via `withJobTransition()` — finds job
 3. **download** (`fetching_finished` → `downloading_*`) — Downloads media to `data/{username}/{jobId}/{itemId}/`. Avatar → `avatar.jpg`. 200MB max, chunks of 2 parallel, 3 retries.
 4. **framing** (`downloading_finished` → `framing_*`) — `ffmpeg -vf fps=1` on reels + video stories → `frames/frame_%04d.jpg`
 5. **speech-to-text** (`framing_finished` → `speech_to_text_*`) — ffmpeg audio extraction → Whisper transcription for reels + video stories
-6. **analyze** (`speech_to_text_finished` → `analyzing_*` → `completed`) — Per-item: avatar + content → structured analysis (face detection, personality, content). Comments analyzed in batches of 5. Full blogger analysis: aggregates all items → 16 metrics. Female avatar → `expert_status=100`. Score = weighted sum of 6 personality metrics.
+6. **analyze** (`speech_to_text_finished` → `analyzing_*` → `completed`) — Per-item: avatar + content → structured analysis (face detection, personality, content). Comments for each post/reel are analyzed in one aggregated request and stored on the item. Full blogger analysis: aggregates all items → 16 metrics. Female avatar → `expert_status=100`. Score = weighted sum of 6 personality metrics.
 7. **cleanup** (every 10min) — Deletes `data/` directories for completed/failed jobs
 
 **Startup recovery**: `recoverStuckJobs()` resets `*_started` → previous `*_finished` status.

@@ -125,12 +125,10 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
         db.query.reelsUrls.findMany({
             where: eq(reelsUrls.jobId, job.id),
             orderBy: asc(reelsUrls.id),
-            with: { comments: true },
         }),
         db.query.posts.findMany({
             where: eq(posts.jobId, job.id),
             orderBy: asc(posts.id),
-            with: { comments: true },
         }),
         db.select().from(stories).where(
             eq(stories.jobId, job.id)
@@ -181,12 +179,10 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
     // Build comment analyses section
     const commentEntries: string[] = [];
     for (const item of [...analyzedReels, ...analyzedPosts]) {
-        const analyzedComments = item.comments.filter(c => c.analyseRawText !== null);
-        if (analyzedComments.length === 0) continue;
+        if (!item.commentsAnalysisRawText) continue;
 
-        const itemLabel = 'url' in item ? `Reel ${item.id}` : `Post ${item.id}`;
-        const commentJsons = analyzedComments.map(c => c.analyseRawText!).join(',\n');
-        commentEntries.push(`${itemLabel}:\n[${commentJsons}]`);
+        const itemLabel = 'reelsUrl' in item ? `Reel ${item.id}` : `Post ${item.id}`;
+        commentEntries.push(`${itemLabel}:\n${item.commentsAnalysisRawText}`);
     }
 
     const commentSection = commentEntries.length > 0

@@ -4,13 +4,10 @@ import type { Post, Comment } from '@/infra/db/types.js';
 import { eq } from 'drizzle-orm';
 import { generateText, Output } from 'ai';
 import { openai } from '@ai-sdk/openai';
-import { analyzeComment } from '@/modules/ai/application/analyze-comment.js';
+import { analyzeItemComments } from '@/modules/ai/application/analyze-item-comments.js';
 import { perItemAnalysisSchema, POST_ANALYSIS_PROMPT } from '@/modules/ai/prompts/post-analysis.prompt.js';
 import { encodeImageToDataUri } from '@/modules/ai/infra/encode-image.js';
-import { chunk } from '@/shared/utils/async.js';
 import fs from 'fs';
-
-const COMMENT_ANALYSIS_CHUNK_SIZE = 5;
 
 export async function analyzePosts(
     allPosts: (Post & { comments: Comment[] })[],
@@ -19,61 +16,58 @@ export async function analyzePosts(
     const errors: string[] = [];
 
     for (const post of allPosts) {
-        if (!post.filepath) {
-            console.log(`[analyze] Skipping post ${post.id} - not downloaded`);
-            continue;
-        }
-        if (post.analyzeRawText) {
+        const hasContentAnalysis = post.analyzeRawText !== null;
+        const hasCommentsAnalysis = post.commentsAnalysisRawText !== null;
+
+        if (hasContentAnalysis && hasCommentsAnalysis) {
             continue;
         }
 
         try {
             console.log(`[analyze] Processing post ${post.id}`);
 
-            const imageContent: Array<{ type: 'image'; image: string }> = [];
+            const updatePayload: {
+                hasBloggerFace?: boolean;
+                analyzeRawText?: string;
+                commentsAnalysisRawText?: string | null;
+            } = {};
 
-            // Avatar first
-            if (avatarPath && fs.existsSync(avatarPath)) {
-                imageContent.push({ type: 'image', image: encodeImageToDataUri(avatarPath) });
+            if (!hasContentAnalysis) {
+                if (!post.filepath) {
+                    console.log(`[analyze] Skipping post ${post.id} - not downloaded`);
+                    continue;
+                }
+
+                const imageContent: Array<{ type: 'image'; image: string }> = [];
+
+                if (avatarPath && fs.existsSync(avatarPath)) {
+                    imageContent.push({ type: 'image', image: encodeImageToDataUri(avatarPath) });
+                }
+
+                imageContent.push({ type: 'image', image: encodeImageToDataUri(post.filepath) });
+
+                const { output } = await generateText({
+                    model: openai('gpt-5-mini'),
+                    output: Output.object({ schema: perItemAnalysisSchema }),
+                    messages: [{
+                        role: 'user',
+                        content: [
+                            ...imageContent,
+                            { type: 'text', text: POST_ANALYSIS_PROMPT },
+                        ],
+                    }],
+                });
+
+                updatePayload.hasBloggerFace = output.has_blogger_face;
+                updatePayload.analyzeRawText = JSON.stringify(output);
             }
 
-            // Content image
-            imageContent.push({ type: 'image', image: encodeImageToDataUri(post.filepath) });
+            if (!hasCommentsAnalysis) {
+                updatePayload.commentsAnalysisRawText = await analyzeItemComments(post.comments);
+            }
 
-            const { output } = await generateText({
-                model: openai('gpt-5-mini'),
-                output: Output.object({ schema: perItemAnalysisSchema }),
-                messages: [{
-                    role: 'user',
-                    content: [
-                        ...imageContent,
-                        { type: 'text', text: POST_ANALYSIS_PROMPT },
-                    ],
-                }],
-            });
-
-            await db.update(posts).set({
-                hasBloggerFace: output.has_blogger_face,
-                analyzeRawText: JSON.stringify(output),
-            }).where(eq(posts.id, post.id));
-
-            // Analyze post comments
-            for (const commentsBatch of chunk(post.comments, COMMENT_ANALYSIS_CHUNK_SIZE)) {
-                const results = await Promise.allSettled(commentsBatch.map((comment) => analyzeComment(comment)));
-
-                results.forEach((result, index) => {
-                    if (result.status === 'fulfilled') {
-                        return;
-                    }
-
-                    const comment = commentsBatch[index];
-                    const message = result.reason instanceof Error
-                        ? result.reason.message
-                        : String(result.reason);
-
-                    console.error(`[analyze] Failed for comment ${comment.id}:`, message);
-                    errors.push(`Comment ${comment.id}: ${message}`);
-                });
+            if (Object.keys(updatePayload).length > 0) {
+                await db.update(posts).set(updatePayload).where(eq(posts.id, post.id));
             }
 
             console.log(`[analyze] Completed post ${post.id}`);

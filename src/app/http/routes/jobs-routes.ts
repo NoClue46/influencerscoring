@@ -41,7 +41,10 @@ export function registerJobsRoutes(app: Hono): void {
     });
 
     app.get('/', async (c: Context) => {
-        const allJobs = await db.select().from(jobs).orderBy(desc(jobs.id));
+        const allJobs = await db
+            .select()
+            .from(jobs)
+            .orderBy(desc(jobs.createdAt), desc(jobs.id));
 
         return c.html(layout(renderJobsListPage(allJobs)));
     });

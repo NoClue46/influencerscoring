@@ -125,11 +125,14 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                             <h4 style="margin-top: 0;">Analysis</h4>
                             <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${reel.analyzeRawText}</pre>
                         ` : ''}
+                        ${reel.commentsAnalysisRawText ? html`
+                            <h4>Comments Analysis</h4>
+                            <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${reel.commentsAnalysisRawText}</pre>
+                        ` : ''}
                         <h4>Comments (${reel.comments.length})</h4>
                         ${reel.comments.length > 0 ? reel.comments.map((c) => html`
                             <article style="margin-bottom: 0.5rem; padding: 0.5rem; border-left: 2px solid var(--pico-primary);">
                                 <p style="margin: 0;"><b>Text:</b> ${c.text}</p>
-                                ${c.analyseRawText ? html`<p style="margin: 0.25rem 0 0;"><b>Analysis:</b> ${c.analyseRawText}</p>` : ''}
                             </article>
                         `) : html`<p>No comments</p>`}
                     </div>
@@ -154,11 +157,14 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                             <h4 style="margin-top: 0;">Analysis</h4>
                             <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${post.analyzeRawText}</pre>
                         ` : ''}
+                        ${post.commentsAnalysisRawText ? html`
+                            <h4>Comments Analysis</h4>
+                            <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${post.commentsAnalysisRawText}</pre>
+                        ` : ''}
                         <h4>Comments (${post.comments.length})</h4>
                         ${post.comments.length > 0 ? post.comments.map((c) => html`
                             <article style="margin-bottom: 0.5rem; padding: 0.5rem; border-left: 2px solid var(--pico-primary);">
                                 <p style="margin: 0;"><b>Text:</b> ${c.text}</p>
-                                ${c.analyseRawText ? html`<p style="margin: 0.25rem 0 0;"><b>Analysis:</b> ${c.analyseRawText}</p>` : ''}
                             </article>
                         `) : html`<p>No comments</p>`}
                     </div>
