@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { serve } from '@hono/node-server';
 import { createServerApp } from '@/app/server.js';
-import { startCronJobs, stopCronJobs } from '@/modules/pipeline/application/stages/index.js';
+import { startCronJobs, stopCronJobs } from '@/pipeline/stages/index.js';
 
 const app = createServerApp();
 const server = serve({ fetch: app.fetch, port: 4141 });

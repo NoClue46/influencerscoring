@@ -52,27 +52,40 @@ src/
   app/
     bootstrap.ts                          # Entry point, starts server + cron jobs
     server.ts                             # Hono app with logger middleware
-    http/routes/jobs-routes.ts            # POST / (create), GET / (list), GET /jobs/:id (detail)
-    http/views/                           # SSR HTML views (layout, jobs-list, job-details)
-  infra/
-    db/schema.ts                          # Drizzle schema: jobs, posts, reels_urls, stories, comments + relations
-    db/index.ts                           # Drizzle client (bun:sqlite)
-    db/types.ts                           # Inferred TS types (Job, Post, Reels, Story, Comment)
-    storage/files/paths.ts                # getJobBasePath, getAvatarPath, getItemPath
-    storage/files/download-file.ts        # downloadFile() with maxSize HEAD check
-  modules/
-    ai/application/                       # analyze-comment, analyze-nickname-reputation, check-gender-from-avatar
-    ai/infra/openai-gateway.ts            # Raw OpenAI SDK: askOpenai (vision), askOpenaiText, transcribeAudio
-    ai/prompts/                           # All prompt templates + Zod schemas
-    instagram/infra/scrape-creators/      # ScrapeCreators API: fetch-profile, fetch-posts, fetch-reels, fetch-stories, fetch-comments
-    media/infra/ffmpeg/                   # extract-frames, extract-audio
-    pipeline/application/stages/          # All CronJob stage files
-    pipeline/application/analyze/         # analyze-post, analyze-reel, analyze-story, full-blogger-analysis
-    pipeline/application/orchestrator/    # withJobTransition, recoverStuckJobs
+    routes/jobs-routes.ts                 # POST / (create), GET / (list), GET /jobs/:id (detail)
+    views/                                # SSR HTML views (layout, jobs-list, job-details)
+  db/
+    schema.ts                             # Drizzle schema: jobs, posts, reels_urls, stories, comments + relations
+    index.ts                              # Drizzle client (bun:sqlite)
+    types.ts                              # Inferred TS types (Job, Post, Reels, Story, Comment)
+  storage/
+    paths.ts                              # getJobBasePath, getAvatarPath, getItemPath
+    download-file.ts                      # downloadFile() with maxSize HEAD check
+    avatar.ts                             # downloadAvatar()
+  ai/
+    openai-gateway.ts                     # Raw OpenAI SDK: askOpenai (vision), askOpenaiText, transcribeAudio
+    encode-image.ts                       # encodeImageToDataUri
+    check-gender-from-avatar.ts           # Gender check from avatar
+    analyze-nickname-reputation.ts        # Nickname reputation analysis
+    analyze-item-comments.ts              # Aggregated comment analysis
+    prompts/                              # All prompt templates + Zod schemas
+  instagram/
+    scrape-creators/                      # ScrapeCreators API: fetch-profile, fetch-posts, fetch-reels, fetch-stories, fetch-comments
+    hiker-api/fetch-stories.ts            # HikerAPI stories fetch
+  media/
+    select-frames.ts                      # Frame selection logic
+    extract-frames.ts                     # ffmpeg frame extraction
+    extract-audio.ts                      # ffmpeg audio extraction
+  pipeline/
+    with-job-transition.ts                # withJobTransition orchestrator
+    recover-stuck-jobs.ts                 # recoverStuckJobs
+    stages/                               # All CronJob stage files
+    analyze/                              # analyze-post, analyze-reel, analyze-story, full-blogger-analysis
   shared/
-    config/limits.ts                      # MAX_ATTEMPTS=4, MAX_FILE_SIZE=200MB
-    types/job-status.ts                   # JOB_STATUS const + JobStatus type
-    utils/async.ts                        # sleep, chunk, withRetry
+    limits.ts                             # MAX_ATTEMPTS=4, MAX_FILE_SIZE=200MB
+    job-status.ts                         # JOB_STATUS const + JobStatus type
+    story-source.ts                       # STORY_SOURCE const
+    async.ts                              # sleep, chunk, withRetry
 ```
 
 ### DB Schema Notes

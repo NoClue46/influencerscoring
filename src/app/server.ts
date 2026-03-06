@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
-import { registerJobsRoutes } from '@/app/http/routes/jobs-routes.js';
+import { registerJobsRoutes } from '@/app/routes/jobs-routes.js';
 
 export function createServerApp(): Hono {
     const app = new Hono();
