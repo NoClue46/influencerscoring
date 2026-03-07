@@ -210,27 +210,23 @@ ${DEFAULT_BLOGGER_PROMPT}`;
         prompt: aggregatedPrompt,
     });
 
-    // Override frequency_of_advertising with avg fakeness_score
-    const fakenessScores: number[] = [];
+    // Override frequency_of_advertising with caption link detection
+    const adScores: number[] = [];
     for (const item of [...analyzedReels, ...analyzedPosts]) {
-        if (!item.commentsAnalysisRawText) continue;
-        try {
-            const parsed = JSON.parse(item.commentsAnalysisRawText);
-            if (typeof parsed.fakeness_score === 'number') {
-                fakenessScores.push(parsed.fakeness_score);
-            }
-        } catch {}
+        const caption = item.caption ?? '';
+        const hasLink = /https?:\/\/[^\s]+/.test(caption);
+        adScores.push(hasLink ? 100 : 0);
     }
 
-    if (fakenessScores.length > 0) {
-        const avgFakeness = Math.round(
-            fakenessScores.reduce((sum, s) => sum + s, 0) / fakenessScores.length
+    if (adScores.length > 0) {
+        const avgAdScore = Math.round(
+            adScores.reduce((sum, s) => sum + s, 0) / adScores.length
         );
         finalAnalysis = {
             ...finalAnalysis,
             frequency_of_advertising: {
                 ...finalAnalysis.frequency_of_advertising,
-                Score: avgFakeness,
+                Score: avgAdScore,
             },
         };
     }

@@ -11,6 +11,7 @@ export async function fetchPosts(handle: string, count: number = 12, ignoreUrls:
             isVideo: boolean;
             commentCount: number;
             viewCount: number;
+            caption: string;
         }[] = [];
         let cursor: string | null = null;
         const processedCodes = new Set<string>();
@@ -69,6 +70,7 @@ export async function fetchPosts(handle: string, count: number = 12, ignoreUrls:
                     isVideo: false,
                     commentCount: node.edge_media_to_comment?.count ?? 0,
                     viewCount: node.video_view_count ?? 0,
+                    caption: node.edge_media_to_caption?.edges?.[0]?.node?.text ?? '',
                 });
             }
 

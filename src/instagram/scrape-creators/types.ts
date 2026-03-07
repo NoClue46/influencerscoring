@@ -24,6 +24,7 @@ export interface PostResponse {
             edge_media_to_parent_comment?: {
                 count: number;
             };
+            edge_media_to_caption?: { edges: { node: { text: string } }[] };
         };
     };
 }
@@ -37,6 +38,7 @@ export interface PostNode {
     video_url?: string;
     video_view_count?: number;
     edge_media_to_comment?: { count: number };
+    edge_media_to_caption?: { edges: { node: { text: string } }[] };
 }
 
 export interface PostsListResponse {

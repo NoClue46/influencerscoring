@@ -44,6 +44,7 @@ export const posts = sqliteTable("posts", {
   hasBloggerFace: integer("has_blogger_face", { mode: "boolean" }).default(false).notNull(),
   commentCount: integer("comment_count").default(0),
   commentEr: real("comment_er").default(0),
+  caption: text("caption"),
 });
 
 export const reelsUrls = sqliteTable("reels_urls", {
@@ -61,6 +62,7 @@ export const reelsUrls = sqliteTable("reels_urls", {
   hasBloggerFace: integer("has_blogger_face", { mode: "boolean" }).default(false).notNull(),
   commentCount: integer("comment_count").default(0),
   commentEr: real("comment_er").default(0),
+  caption: text("caption"),
 });
 
 export const stories = sqliteTable("stories", {

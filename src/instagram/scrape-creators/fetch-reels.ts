@@ -48,6 +48,7 @@ export async function fetchReels(handle: string, count: number = 12, ignoreUrls:
             downloadUrl: string;
             commentCount: number;
             viewCount: number;
+            caption: string;
         }[] = [];
 
         // 2. Fetch every reel detailed info
@@ -76,6 +77,7 @@ export async function fetchReels(handle: string, count: number = 12, ignoreUrls:
                     downloadUrl: json.data.xdt_shortcode_media.video_url,
                     commentCount: json.data.xdt_shortcode_media.edge_media_to_parent_comment?.count ?? 0,
                     viewCount: json.data.xdt_shortcode_media.video_view_count ?? 0,
+                    caption: json.data.xdt_shortcode_media.edge_media_to_caption?.edges?.[0]?.node?.text ?? '',
                 });
             }
         }
