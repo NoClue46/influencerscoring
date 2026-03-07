@@ -45,6 +45,23 @@ export const POST_ANALYSIS_PROMPT = `You are analyzing a single piece of content
 The FIRST image is the blogger's avatar/profile photo.
 The REMAINING images are content frames from the video/post/story.
 
+## Audio Metadata
+
+You may also receive:
+- Audio classification: speech, music, silence_or_noise, or unclear
+- Optional transcription text when any spoken or lyrical content was recovered
+
+Interpret audio classification as follows:
+- speech = any intelligible human speech or narration, including voice-over or speech over background music
+- music = song, singing, lyrics, or instrumental music without spoken commentary
+- silence_or_noise = no meaningful speech or music, only ambience/noise/silence
+- unclear = audio cannot be confidently classified
+
+Do NOT try to identify who the speaker is from audio alone.
+Audio classification affects only the talking_head metric:
+- If Audio classification is music or silence_or_noise, talking_head must be Score = 0
+- If Audio classification is speech or unclear, use visuals and transcription as usual
+
 ## Step 1: Face Detection
 
 Compare the face in image 1 (avatar) with faces visible in the remaining images.
@@ -59,6 +76,8 @@ Analyze PERSONALITY metrics based on the content frames and any transcription pr
 Also analyze ALL content metrics below (both sections must be filled).
 
 **talking_head** (0-100): Score = 100 if the blogger personally speaks on camera, looking directly into the lens, actively explaining and persuading ("talking head" format).
+
+Hard rule: if Audio classification is music or silence_or_noise, talking_head must be 0 regardless of visuals.
 
 This applies equally to Stories and Reels.
 

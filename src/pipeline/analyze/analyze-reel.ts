@@ -8,6 +8,7 @@ import { analyzeItemComments } from '@/ai/analyze-item-comments.js';
 import { selectFrames } from '@/media/select-frames.js';
 import { perItemAnalysisSchema, POST_ANALYSIS_PROMPT } from '@/ai/prompts/post-analysis.prompt.js';
 import { encodeImageToDataUri } from '@/ai/encode-image.js';
+import { applyTalkingHeadAudioOverride, buildPromptWithAudioContext } from '@/pipeline/analyze/audio-gating.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -49,9 +50,11 @@ export async function analyzeReels(
 
                 const selectedFrames = selectFrames(allFrames, 10);
 
-                const promptWithTranscription = reel.transcription
-                    ? `${POST_ANALYSIS_PROMPT}\n\nTranscription:\n${reel.transcription}`
-                    : POST_ANALYSIS_PROMPT;
+                const promptWithAudioContext = buildPromptWithAudioContext(POST_ANALYSIS_PROMPT, {
+                    transcription: reel.transcription,
+                    audioClassification: reel.audioClassification,
+                    audioClassificationConfidence: reel.audioClassificationConfidence,
+                });
 
                 const imageContent: Array<{ type: 'image'; image: string }> = [];
 
@@ -70,13 +73,19 @@ export async function analyzeReels(
                         role: 'user',
                         content: [
                             ...imageContent,
-                            { type: 'text', text: promptWithTranscription },
+                            { type: 'text', text: promptWithAudioContext },
                         ],
                     }],
                 });
 
-                updatePayload.hasBloggerFace = output.has_blogger_face;
-                updatePayload.analyzeRawText = JSON.stringify(output);
+                const finalOutput = applyTalkingHeadAudioOverride(
+                    output,
+                    reel.audioClassification,
+                    reel.audioClassificationConfidence,
+                );
+
+                updatePayload.hasBloggerFace = finalOutput.has_blogger_face;
+                updatePayload.analyzeRawText = JSON.stringify(finalOutput);
             }
 
             if (!hasCommentsAnalysis) {

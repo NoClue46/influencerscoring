@@ -7,6 +7,7 @@ import { openai } from '@ai-sdk/openai';
 import { selectFrames } from '@/media/select-frames.js';
 import { perItemAnalysisSchema, POST_ANALYSIS_PROMPT } from '@/ai/prompts/post-analysis.prompt.js';
 import { encodeImageToDataUri } from '@/ai/encode-image.js';
+import { applyTalkingHeadAudioOverride, buildPromptWithAudioContext } from '@/pipeline/analyze/audio-gating.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -50,9 +51,11 @@ export async function analyzeStories(
                 imageContent.push({ type: 'image', image: encodeImageToDataUri(story.filepath) });
             }
 
-            const promptWithTranscription = story.transcription
-                ? `${POST_ANALYSIS_PROMPT}\n\nTranscription:\n${story.transcription}`
-                : POST_ANALYSIS_PROMPT;
+            const promptWithAudioContext = buildPromptWithAudioContext(POST_ANALYSIS_PROMPT, {
+                transcription: story.transcription,
+                audioClassification: story.audioClassification,
+                audioClassificationConfidence: story.audioClassificationConfidence,
+            });
 
             const { output } = await generateText({
                 model: openai('gpt-5-mini'),
@@ -61,14 +64,20 @@ export async function analyzeStories(
                     role: 'user',
                     content: [
                         ...imageContent,
-                        { type: 'text', text: promptWithTranscription },
+                        { type: 'text', text: promptWithAudioContext },
                     ],
                 }],
             });
 
+            const finalOutput = applyTalkingHeadAudioOverride(
+                output,
+                story.audioClassification,
+                story.audioClassificationConfidence,
+            );
+
             await db.update(stories).set({
-                hasBloggerFace: output.has_blogger_face,
-                analyzeRawText: JSON.stringify(output),
+                hasBloggerFace: finalOutput.has_blogger_face,
+                analyzeRawText: JSON.stringify(finalOutput),
             }).where(eq(stories.id, story.id));
 
             console.log(`[analyze] Completed story ${story.id}`);

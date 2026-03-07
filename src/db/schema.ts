@@ -1,7 +1,7 @@
 import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { relations, sql } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
-import { STORY_SOURCE } from "@/shared/story-source.js";
+import { STORY_SOURCE } from "../shared/story-source";
 
 export const jobs = sqliteTable("jobs", {
   id: text("id").primaryKey().$defaultFn(() => createId()),
@@ -52,6 +52,8 @@ export const reelsUrls = sqliteTable("reels_urls", {
   filepath: text("file_path"),
   reason: text("reason"),
   transcription: text("transcription"),
+  audioClassification: text("audio_classification"),
+  audioClassificationConfidence: integer("audio_classification_confidence"),
   jobId: text("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
   analyzeRawText: text("analuze_raw_text"),
   commentsAnalysisRawText: text("comments_analysis_raw_text"),
@@ -67,6 +69,8 @@ export const stories = sqliteTable("stories", {
   filepath: text("filepath"),
   reason: text("reason"),
   transcription: text("transcription"),
+  audioClassification: text("audio_classification"),
+  audioClassificationConfidence: integer("audio_classification_confidence"),
   isVideo: integer("is_video", { mode: "boolean" }).default(false).notNull(),
   jobId: text("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
   analyzeRawText: text("analuze_raw_text"),
