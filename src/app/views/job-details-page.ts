@@ -251,10 +251,11 @@ export function renderJobDetailsPage(job: JobWithRelations) {
             </article>
             ` : ''}
 
-            ${job.avgIncomeLevel !== null ? html`
+            ${job.avgIncomeLevel !== null || job.avgCommentEr !== null ? html`
             <article>
                 <header><strong>Photo Analysis</strong></header>
-                <p style="margin: 0;">Avg Income Level: <strong>${job.avgIncomeLevel?.toFixed(1) ?? 'N/A'}</strong></p>
+                ${job.avgIncomeLevel !== null ? html`<p style="margin: 0;">Avg Income Level: <strong>${job.avgIncomeLevel?.toFixed(1) ?? 'N/A'}</strong></p>` : ''}
+                ${job.avgCommentEr !== null ? html`<p style="margin: 0;">Avg Comment ER: <strong>${((job.avgCommentEr ?? 0) * 100).toFixed(2)}%</strong></p>` : ''}
             </article>
             ` : ''}
 

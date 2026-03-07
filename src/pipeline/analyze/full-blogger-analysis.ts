@@ -210,6 +210,31 @@ ${DEFAULT_BLOGGER_PROMPT}`;
         prompt: aggregatedPrompt,
     });
 
+    // Override frequency_of_advertising with avg fakeness_score
+    const fakenessScores: number[] = [];
+    for (const item of [...analyzedReels, ...analyzedPosts]) {
+        if (!item.commentsAnalysisRawText) continue;
+        try {
+            const parsed = JSON.parse(item.commentsAnalysisRawText);
+            if (typeof parsed.fakeness_score === 'number') {
+                fakenessScores.push(parsed.fakeness_score);
+            }
+        } catch {}
+    }
+
+    if (fakenessScores.length > 0) {
+        const avgFakeness = Math.round(
+            fakenessScores.reduce((sum, s) => sum + s, 0) / fakenessScores.length
+        );
+        finalAnalysis = {
+            ...finalAnalysis,
+            frequency_of_advertising: {
+                ...finalAnalysis.frequency_of_advertising,
+                Score: avgFakeness,
+            },
+        };
+    }
+
     const genderCheck = await checkGenderFromAvatar(job.username, job.id);
 
     if (genderCheck.isFemale) {
@@ -231,10 +256,18 @@ ${DEFAULT_BLOGGER_PROMPT}`;
     console.log(`[analyze] Starting nickname analysis for job ${job.id}`);
     const { rawText: nicknameRawText } = await analyzeNicknameReputation(job.username);
 
+    const allCommentErs = [...analyzedReels, ...analyzedPosts]
+        .map(item => item.commentEr ?? 0)
+        .filter(er => er > 0);
+    const avgCommentEr = allCommentErs.length > 0
+        ? allCommentErs.reduce((sum, er) => sum + er, 0) / allCommentErs.length
+        : null;
+
     await db.update(jobs).set({
         analyzeRawText: JSON.stringify(finalAnalysis),
         nicknameAnalyseRawText: nicknameRawText,
         score: finalScore,
+        avgCommentEr,
         status: JOB_STATUS.COMPLETED,
         redflag: redflagReason,
         isFemale: genderCheck.isFemale,

@@ -36,6 +36,13 @@
       "when": 1772842857598,
       "tag": "0004_adorable_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1772889342248,
+      "tag": "0005_closed_echo",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+ALTER TABLE `jobs` ADD `avg_comment_er` real;

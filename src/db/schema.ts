@@ -27,6 +27,7 @@ export const jobs = sqliteTable("jobs", {
   avgIncomeLevel: real("avg_income_level"),
   avgAgeScore: real("avg_age_score"),
   isFemale: integer("is_female", { mode: "boolean" }),
+  avgCommentEr: real("avg_comment_er"),
   storiesEnriched: integer("stories_enriched", { mode: "boolean" }).default(false).notNull(),
 });
 
