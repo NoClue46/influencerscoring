@@ -1,4 +1,5 @@
 import type { HighlightsListResponse, HighlightDetailResponse } from '@/instagram/scrape-creators/types.js';
+import { chunk } from '@/shared/async.js';
 
 const BASE_URL = "https://api.scrapecreators.com/s";
 
@@ -21,15 +22,20 @@ export async function fetchStories(handle: string, count: number = 10) {
 
         console.info("fetched ", ids.length, " highlights")
 
-        for (const id of ids) {
-            try {
-                console.info("fetching highlight detail for: ", id)
-                const items = await fetchHighlightDetail(id);
-                if (items.length > 0) {
-                    highlightsWithStories.push(items);
+        const batches = chunk(ids, 2);
+        for (const batch of batches) {
+            const results = await Promise.allSettled(
+                batch.map(id => {
+                    console.info("fetching highlight detail for: ", id);
+                    return fetchHighlightDetail(id);
+                })
+            );
+            for (const result of results) {
+                if (result.status === 'fulfilled' && result.value.length > 0) {
+                    highlightsWithStories.push(result.value);
+                } else if (result.status === 'rejected') {
+                    console.error(`failed to fetch highlight detail: `, result.reason);
                 }
-            } catch (error) {
-                console.error(`failed to fetch highlight detail for ${id}: `, error);
             }
             if (highlightsWithStories.length > 100) {
                 break;

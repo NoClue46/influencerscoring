@@ -21,7 +21,7 @@ export async function withJobTransition(
     });
     if (!job) return;
 
-    console.log(`[${transition.jobName}] Started for job ${JSON.stringify(job)}`);
+    console.log(`[${transition.jobName}] Started for job ${job.id}`);
 
     try {
         await db.update(jobs).set({ status: transition.startedStatus }).where(eq(jobs.id, job.id));

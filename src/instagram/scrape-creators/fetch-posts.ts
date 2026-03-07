@@ -52,8 +52,8 @@ export async function fetchPosts(handle: string, count: number = 12, ignoreUrls:
                 // Skip videos and carousels (GraphSidecar), only photos
                 if (node.is_video || node.__typename === 'GraphSidecar') {
                     skippedCount++;
-                    if (skippedCount >= 100) {
-                        console.log(`[fetchPosts] skipped 100 posts, returning ${result.length} photos`);
+                    if (skippedCount >= 300) {
+                        console.log(`[fetchPosts] skipped 300 posts, returning ${result.length} photos`);
                         break;
                     }
                     continue;
@@ -74,7 +74,7 @@ export async function fetchPosts(handle: string, count: number = 12, ignoreUrls:
                 });
             }
 
-            if (skippedCount >= 100) break;
+            if (skippedCount >= 300) break;
 
             cursor = json.cursor ?? null;
             if (!cursor) break;

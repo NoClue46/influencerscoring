@@ -6,6 +6,7 @@ import { fetchPosts, fetchReels, fetchStories, fetchComments } from '@/instagram
 import { withJobTransition } from '@/pipeline/with-job-transition.js';
 import { JOB_STATUS } from '@/shared/job-status.js';
 import { STORY_SOURCE } from '@/shared/story-source.js';
+import { chunk } from '@/shared/async';
 
 
 export const fetchJob = new CronJob('*/5 * * * * *', () =>
@@ -16,18 +17,20 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
         jobName: 'fetch'
     }, async (job) => {
         // Check existing posts/reels from redflag check
-        const [existingPostsCount, existingReelsCount] = await Promise.all([
+        const [existingPostsCount, existingReelsCount, existingStoriesCount] = await Promise.all([
             db.select({ value: count() }).from(posts).where(eq(posts.jobId, job.id)),
-            db.select({ value: count() }).from(reelsUrls).where(eq(reelsUrls.jobId, job.id))
+            db.select({ value: count() }).from(reelsUrls).where(eq(reelsUrls.jobId, job.id)),
+            db.select({ value: count() }).from(stories).where(eq(stories.jobId, job.id))
         ]);
 
         const existingPosts = existingPostsCount[0].value;
         const existingReels = existingReelsCount[0].value;
+        const existingStories = existingStoriesCount[0].value;
 
         const remainingPosts = Math.max(0, job.postNumber - existingPosts);
         const remainingReels = Math.max(0, job.postNumber - existingReels);
 
-        console.log(`[fetch] Existing: ${existingPosts} posts, ${existingReels} reels. Fetching: ${remainingPosts} posts, ${remainingReels} reels`);
+        console.log(`[fetch] Existing: ${existingPosts} posts, ${existingReels} reels, ${existingStories} stories. Fetching: ${remainingPosts} posts, ${remainingReels} reels`);
 
         // Get existing URLs to avoid duplicates
         const [existingPostsList, existingReelsList] = await Promise.all([
@@ -41,7 +44,7 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
         const [reels, fetchedPosts, fetchedStories] = await Promise.all([
             remainingReels > 0 ? fetchReels(job.username, job.postNumber, existingReelUrls) : [],
             remainingPosts > 0 ? fetchPosts(job.username, job.postNumber, existingPostUrls) : [],
-            fetchStories(job.username, job.postNumber)
+            existingStories === 0 ? fetchStories(job.username, job.postNumber) : []
         ]);
 
         // Filter out already existing items
@@ -89,28 +92,30 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
             })
         ]);
 
-        for (const post of postsWithComments) {
-            if (post.comments.length > 0) continue;
-            const fetchedComments = await fetchComments(post.postUrl);
-            console.log(`[fetch] Post ${post.postUrl}: fetched ${fetchedComments.length} comments`);
-            if (fetchedComments.length > 0) {
-                await db.insert(comments).values(fetchedComments.map(c => ({
-                    postId: post.id,
-                    text: c.text
-                })));
-            }
+        for (const batch of chunk(postsWithComments, 3)) {
+            await Promise.all(batch.filter(post => post.comments.length === 0).map(async (post) => {
+                const fetchedComments = await fetchComments(post.postUrl);
+                console.log(`[fetch] Post ${post.postUrl}: fetched ${fetchedComments.length} comments`);
+                if (fetchedComments.length > 0) {
+                    await db.insert(comments).values(fetchedComments.map(c => ({
+                        postId: post.id,
+                        text: c.text
+                    })));
+                }
+            }));
         }
 
-        for (const reel of reelsWithComments) {
-            if (reel.comments.length > 0) continue;
-            const fetchedComments = await fetchComments(reel.reelsUrl);
-            console.log(`[fetch] Reel ${reel.reelsUrl}: fetched ${fetchedComments.length} comments`);
-            if (fetchedComments.length > 0) {
-                await db.insert(comments).values(fetchedComments.map(c => ({
-                    reelsId: reel.id,
-                    text: c.text
-                })));
-            }
+        for (const batch of chunk(reelsWithComments, 3)) {
+            await Promise.all(batch.filter(reel => reel.comments.length === 0).map(async (reel) => {
+                const fetchedComments = await fetchComments(reel.reelsUrl);
+                console.log(`[fetch] Reel ${reel.reelsUrl}: fetched ${fetchedComments.length} comments`);
+                if (fetchedComments.length > 0) {
+                    await db.insert(comments).values(fetchedComments.map(c => ({
+                        reelsId: reel.id,
+                        text: c.text
+                    })));
+                }
+            }));
         }
     })
 );

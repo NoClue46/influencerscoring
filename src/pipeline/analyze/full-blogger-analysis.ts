@@ -259,11 +259,26 @@ ${DEFAULT_BLOGGER_PROMPT}`;
         ? allCommentErs.reduce((sum, er) => sum + er, 0) / allCommentErs.length
         : null;
 
+    const fakenessScores: number[] = [];
+    for (const item of [...analyzedReels, ...analyzedPosts]) {
+        if (!item.commentsAnalysisRawText) continue;
+        try {
+            const parsed = JSON.parse(item.commentsAnalysisRawText);
+            if (typeof parsed.fakeness_score === 'number') {
+                fakenessScores.push(parsed.fakeness_score);
+            }
+        } catch {}
+    }
+    const avgFakenessScore = fakenessScores.length > 0
+        ? fakenessScores.reduce((sum, s) => sum + s, 0) / fakenessScores.length
+        : null;
+
     await db.update(jobs).set({
         analyzeRawText: JSON.stringify(finalAnalysis),
         nicknameAnalyseRawText: nicknameRawText,
         score: finalScore,
         avgCommentEr,
+        avgFakenessScore,
         status: JOB_STATUS.COMPLETED,
         redflag: redflagReason,
         isFemale: genderCheck.isFemale,

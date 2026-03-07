@@ -1,0 +1,1 @@
+ALTER TABLE `jobs` ADD `avg_fakeness_score` real;

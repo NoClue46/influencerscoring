@@ -13,7 +13,7 @@ function scoreColor(param: string, score: number): string {
     return score >= 60 ? '#198754' : '#dc3545';
 }
 
-function renderAnalyzeTable(rawText: string) {
+function renderAnalyzeTable(rawText: string, avgCommentEr: number | null = null, avgFakenessScore: number | null = null) {
     try {
         const data = JSON.parse(rawText);
         if (typeof data !== 'object' || data === null) throw new Error('not object');
@@ -22,10 +22,10 @@ function renderAnalyzeTable(rawText: string) {
         return html`
             <div style="overflow-x: auto;">
                 <table style="margin-bottom: 1rem;">
-                    <thead><tr><th></th>${keys.map(k => html`<th>${snakeToTitle(k)}</th>`)}</tr></thead>
+                    <thead><tr><th></th>${keys.map(k => html`<th>${snakeToTitle(k)}</th>`)}${avgCommentEr !== null ? html`<th>Avg Comment ER</th>` : ''}${avgFakenessScore !== null ? html`<th>Avg Fakeness</th>` : ''}</tr></thead>
                     <tbody>
-                        <tr><td><strong>Score</strong></td>${keys.map(k => html`<td style="color: ${scoreColor(k, data[k].Score)}; font-weight: 600;">${data[k].Score}</td>`)}</tr>
-                        <tr><td><strong>Confidence</strong></td>${keys.map(k => html`<td>${data[k].Confidence ?? '-'}</td>`)}</tr>
+                        <tr><td><strong>Score</strong></td>${keys.map(k => html`<td style="color: ${scoreColor(k, data[k].Score)}; font-weight: 600;">${data[k].Score}</td>`)}${avgCommentEr !== null ? html`<td style="font-weight: 600;">${(avgCommentEr * 100).toFixed(2)}%</td>` : ''}${avgFakenessScore !== null ? html`<td style="font-weight: 600;">${avgFakenessScore.toFixed(1)}</td>` : ''}</tr>
+                        <tr><td><strong>Confidence</strong></td>${keys.map(k => html`<td>${data[k].Confidence ?? '-'}</td>`)}${avgCommentEr !== null ? html`<td>-</td>` : ''}${avgFakenessScore !== null ? html`<td>-</td>` : ''}</tr>
                     </tbody>
                 </table>
             </div>
@@ -240,7 +240,7 @@ export function renderJobDetailsPage(job: JobWithRelations) {
             ${job.analyzeRawText ? html`
             <article>
                 <header><strong>Analyze Result</strong></header>
-                ${renderAnalyzeTable(job.analyzeRawText)}
+                ${renderAnalyzeTable(job.analyzeRawText, job.avgCommentEr, job.avgFakenessScore)}
             </article>
             ` : ''}
 
@@ -251,11 +251,10 @@ export function renderJobDetailsPage(job: JobWithRelations) {
             </article>
             ` : ''}
 
-            ${job.avgIncomeLevel !== null || job.avgCommentEr !== null ? html`
+            ${job.avgIncomeLevel !== null ? html`
             <article>
                 <header><strong>Photo Analysis</strong></header>
-                ${job.avgIncomeLevel !== null ? html`<p style="margin: 0;">Avg Income Level: <strong>${job.avgIncomeLevel?.toFixed(1) ?? 'N/A'}</strong></p>` : ''}
-                ${job.avgCommentEr !== null ? html`<p style="margin: 0;">Avg Comment ER: <strong>${((job.avgCommentEr ?? 0) * 100).toFixed(2)}%</strong></p>` : ''}
+                <p style="margin: 0;">Avg Income Level: <strong>${job.avgIncomeLevel?.toFixed(1) ?? 'N/A'}</strong></p>
             </article>
             ` : ''}
 

@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
 import fs from 'fs';
-import { zodResponseFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import { AUDIO_CLASSIFICATION, type AudioClassification } from '@/shared/audio-analysis.js';
 
@@ -47,9 +46,8 @@ const AUDIO_CLASSIFICATION_PROMPT = `Classify this audio track into exactly one 
 - silence_or_noise: no meaningful speech or music, only silence, ambience, or noise.
 - unclear: you cannot confidently distinguish the audio.
 
-Return JSON with:
-- classification: one of speech, music, silence_or_noise, unclear
-- confidence: integer 0-100`;
+Respond ONLY with a JSON object, no other text:
+{"classification": "speech|music|silence_or_noise|unclear", "confidence": 0-100}`;
 
 export async function askOpenai(
     localFilePaths: string[],
@@ -131,7 +129,7 @@ export async function classifyAudioContent(audioPath: string): Promise<AudioClas
     try {
         const audioBase64 = fs.readFileSync(audioPath).toString('base64');
 
-        const completion = await client.beta.chat.completions.parse({
+        const completion = await client.chat.completions.create({
             model: 'gpt-4o-audio-preview',
             messages: [{
                 role: 'user',
@@ -146,14 +144,14 @@ export async function classifyAudioContent(audioPath: string): Promise<AudioClas
                     },
                 ],
             }],
-            response_format: zodResponseFormat(audioClassificationSchema, 'audio_classification'),
         });
 
-        const parsed = completion.choices[0]?.message?.parsed;
-        if (!parsed) {
+        const content = completion.choices[0]?.message?.content;
+        if (!content) {
             throw new Error('Audio classification response was empty');
         }
 
+        const parsed = audioClassificationSchema.parse(JSON.parse(content));
         const result = {
             classification: parsed.classification,
             confidence: Math.round(parsed.confidence),
