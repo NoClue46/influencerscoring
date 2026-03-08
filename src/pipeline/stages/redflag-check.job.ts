@@ -4,6 +4,7 @@ import { jobs } from '@/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { fetchProfile } from '@/instagram/scrape-creators/index.js';
 import { analyzeNicknameReputation } from '@/ai/analyze-nickname-reputation.js';
+import { extractAgeFromBio } from '@/ai/extract-age-from-bio.js';
 import { withJobTransition } from '@/pipeline/with-job-transition.js';
 import { JOB_STATUS } from '@/shared/job-status.js';
 
@@ -48,18 +49,40 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
             return;
         }
 
-        console.log(`[redflag-check] Checking reputation for ${job.username}`);
-        const { reputationScore, estimatedAge, rawText: nicknameRawText } = await analyzeNicknameReputation(job.username);
-        console.log(`[redflag-check] Reputation score: ${reputationScore}, Estimated age: ${estimatedAge}`);
+        const biography = profile.biography ?? '';
+        console.log(`[redflag-check] Bio: "${biography.slice(0, 100)}"`);
 
-        if (estimatedAge !== null && estimatedAge < 35) {
-            console.log(`[redflag-check] REDFLAG: under_35_web (${estimatedAge})`);
+        const bioAge = await extractAgeFromBio(biography);
+        console.log(`[redflag-check] Bio age: ${bioAge}`);
+
+        if (bioAge !== null && bioAge < 35) {
+            console.log(`[redflag-check] REDFLAG: under_35_bio (${bioAge})`);
             await db.update(jobs).set({
                 status: JOB_STATUS.COMPLETED,
                 redflag: 'under_35',
                 followers,
                 avatarUrl,
-                nicknameAnalyseRawText: nicknameRawText
+                biography: biography || null,
+                bioEstimatedAge: bioAge,
+            }).where(eq(jobs.id, job.id));
+            return;
+        }
+
+        console.log(`[redflag-check] Checking reputation for ${job.username}`);
+        const { reputationScore, estimatedAge, rawText: nicknameRawText } = await analyzeNicknameReputation(job.username, biography || undefined);
+        const finalAge = bioAge ?? estimatedAge;
+        console.log(`[redflag-check] Reputation score: ${reputationScore}, Estimated age: ${estimatedAge}, Final age: ${finalAge}`);
+
+        if (finalAge !== null && finalAge < 35) {
+            console.log(`[redflag-check] REDFLAG: under_35 (${finalAge})`);
+            await db.update(jobs).set({
+                status: JOB_STATUS.COMPLETED,
+                redflag: 'under_35',
+                followers,
+                avatarUrl,
+                nicknameAnalyseRawText: nicknameRawText,
+                biography: biography || null,
+                bioEstimatedAge: bioAge,
             }).where(eq(jobs.id, job.id));
             return;
         }
@@ -71,7 +94,9 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
                 redflag: 'low_reputation',
                 followers,
                 avatarUrl,
-                nicknameAnalyseRawText: nicknameRawText
+                nicknameAnalyseRawText: nicknameRawText,
+                biography: biography || null,
+                bioEstimatedAge: bioAge,
             }).where(eq(jobs.id, job.id));
             return;
         }
@@ -80,7 +105,9 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
         await db.update(jobs).set({
             followers,
             avatarUrl,
-            nicknameAnalyseRawText: nicknameRawText
+            nicknameAnalyseRawText: nicknameRawText,
+            biography: biography || null,
+            bioEstimatedAge: bioAge,
         }).where(eq(jobs.id, job.id));
     })
 );

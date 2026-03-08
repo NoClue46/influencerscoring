@@ -39,12 +39,12 @@ function normalizeEstimatedAge(age: number | null): number | null {
     return Math.round(age);
 }
 
-export async function analyzeNicknameReputation(username: string): Promise<{
+export async function analyzeNicknameReputation(username: string, biography?: string): Promise<{
     reputationScore: number;
     estimatedAge: number | null;
     rawText: string | null;
 }> {
-    const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(username);
+    const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(username, biography);
 
     try {
         const { output } = await generateText({

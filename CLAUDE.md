@@ -95,6 +95,10 @@ src/
 - `allVideos` flag controls full blogger analysis; hardcoded `true` on creation
 - Foreign keys with cascade delete on all relations
 
+### DB Migrations
+
+Always use `bunx drizzle-kit generate` + `bunx drizzle-kit migrate` for schema changes. Never use `drizzle-kit push` — always generate a migration file first.
+
 ## Environment Variables
 
 ```

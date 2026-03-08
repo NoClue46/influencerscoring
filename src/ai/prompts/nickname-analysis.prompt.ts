@@ -1,6 +1,7 @@
-export const NICKNAME_ANALYSIS_PROMPT = (username: string) => `
+export const NICKNAME_ANALYSIS_PROMPT = (username: string, biography?: string) => `
 Username: ${username}
 Instagram: https://www.instagram.com/${username}/
+${biography ? `\nInstagram Bio:\n"${biography}"\n` : ''}
 
 Conduct a deep online reputation research for this username with source citations. Identify any negative statements, scandal involvement that leaked to media, and controversial statements.
 
