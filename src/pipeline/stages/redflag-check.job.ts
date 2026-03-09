@@ -6,6 +6,7 @@ import { fetchProfile } from '@/instagram/scrape-creators/index.js';
 import { analyzeNicknameReputation } from '@/ai/analyze-nickname-reputation.js';
 import { extractAgeFromBio } from '@/ai/extract-age-from-bio.js';
 import { withJobTransition } from '@/pipeline/with-job-transition.js';
+import { downloadAvatar } from '@/storage/avatar.js';
 import { JOB_STATUS } from '@/shared/job-status.js';
 
 const MIN_FOLLOWERS = 7000;
@@ -36,6 +37,16 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
 
         const followers = profile.edge_followed_by?.count ?? 0;
         const avatarUrl = profile.profile_pic_url_hd || profile.profile_pic_url || null;
+
+        if (avatarUrl) {
+            try {
+                await downloadAvatar(avatarUrl, job.username, job.id);
+                console.log(`[redflag-check] Avatar downloaded for ${job.username}`);
+            } catch (error) {
+                console.warn(`[redflag-check] Failed to download avatar for ${job.username}:`, error);
+            }
+        }
+
         console.log(`[redflag-check] Followers: ${followers}`);
 
         if (followers < MIN_FOLLOWERS) {

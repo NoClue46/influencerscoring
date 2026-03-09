@@ -119,7 +119,6 @@ function parseItemAnalysis(rawText: string): PerItemAnalysis | null {
 }
 
 export async function runFullBloggerAnalysis(job: Job): Promise<void> {
-    console.log(`[analyze] Starting full analysis aggregation for job ${job.id}`);
 
     const [analyzedReels, analyzedPosts, analyzedStories] = await Promise.all([
         db.query.reelsUrls.findMany({
@@ -142,8 +141,6 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
         ...analyzedStories.filter(s => s.analyzeRawText !== null),
     ];
 
-    console.log(`[analyze] Found ${allItems.length} analyzed items`);
-
     // Split by analysis type
     const faceItems: Array<{ index: number; personality: NonNullable<PerItemAnalysis['personality']> }> = [];
     const contentItems: Array<{ index: number; data: PerItemAnalysis }> = [];
@@ -160,7 +157,7 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
         contentItems.push({ index: i, data: parsed });
     }
 
-    console.log(`[analyze] Face items: ${faceItems.length}, Total content items: ${contentItems.length}`);
+    console.log(`[analyze] Found ${allItems.length} analyzed items, ${faceItems.length} with face`);
 
     // Build personality section
     const personalitySection = faceItems.length > 0
@@ -245,11 +242,7 @@ ${DEFAULT_BLOGGER_PROMPT}`;
 
     const finalScore = calculateScore(finalAnalysis);
     const redflagReason = validateBloggerMetrics(finalAnalysis);
-    console.log(
-        `[analyze] Calculated score: ${finalScore}, validation: ${redflagReason || 'PASS'}, isFemale: ${genderCheck.isFemale}`
-    );
-
-    console.log(`[analyze] Starting nickname analysis for job ${job.id}`);
+    console.log(`[analyze] Full analysis @${job.username}: score=${finalScore}, ${redflagReason || 'PASS'}, isFemale=${genderCheck.isFemale}`);
     const { rawText: nicknameRawText } = await analyzeNicknameReputation(job.username);
 
     const allCommentErs = [...analyzedReels, ...analyzedPosts]
@@ -283,6 +276,4 @@ ${DEFAULT_BLOGGER_PROMPT}`;
         redflag: redflagReason,
         isFemale: genderCheck.isFemale,
     }).where(eq(jobs.id, job.id));
-
-    console.log(`[analyze] Completed full analysis for job ${job.id}`);
 }

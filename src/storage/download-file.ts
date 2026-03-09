@@ -11,8 +11,15 @@ export async function downloadFile(
     destPath: string,
     options?: { maxSize?: number }
 ): Promise<DownloadFileResult> {
+    const hostname = new URL(url).hostname;
+
     if (options?.maxSize) {
-        const head = await fetch(url, { method: 'HEAD' });
+        let head: Response;
+        try {
+            head = await fetch(url, { method: 'HEAD' });
+        } catch (error) {
+            throw new Error(`Fetch failed for ${hostname}: ${(error as Error).message}`);
+        }
         const size = parseInt(head.headers.get('content-length') ?? '0');
         if (size > options.maxSize) {
             return { skipped: true, reason: `File size ${Math.round(size / 1024 / 1024)}MB exceeds ${Math.round(options.maxSize / 1024 / 1024)}MB limit` };
@@ -22,8 +29,13 @@ export async function downloadFile(
     const dir = path.dirname(destPath);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    let response: Response;
+    try {
+        response = await fetch(url);
+    } catch (error) {
+        throw new Error(`Fetch failed for ${hostname}: ${(error as Error).message}`);
+    }
+    if (!response.ok) throw new Error(`HTTP ${response.status} from ${hostname}`);
 
     const buffer = Buffer.from(await response.arrayBuffer());
     fs.writeFileSync(destPath, buffer);

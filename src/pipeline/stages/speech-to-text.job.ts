@@ -81,7 +81,7 @@ async function processVideoItem(
 
     if (item.audioClassification === null) {
         try {
-            const classification = await withRetry(() => classifyAudioContent(audioPath));
+            const classification = await withRetry(() => classifyAudioContent(audioPath), 3, `classify ${itemType} ${item.id}`);
             updatePayload.audioClassification = classification.classification;
             updatePayload.audioClassificationConfidence = classification.confidence;
         } catch (error) {
@@ -93,7 +93,7 @@ async function processVideoItem(
 
     if (item.transcription === null) {
         try {
-            updatePayload.transcription = await withRetry(() => transcribeAudio(audioPath));
+            updatePayload.transcription = await withRetry(() => transcribeAudio(audioPath), 3, `transcribe ${itemType} ${item.id}`);
         } catch (error) {
             console.error(`[speechToText] failed to transcribe audio for ${itemType} ${item.id}:`, error);
         }

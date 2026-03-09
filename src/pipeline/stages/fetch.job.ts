@@ -92,30 +92,34 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
             })
         ]);
 
+        let postsWithFetchedComments = 0;
         for (const batch of chunk(postsWithComments, 1)) {
             await Promise.all(batch.filter(post => post.comments.length === 0).map(async (post) => {
                 const fetchedComments = await fetchComments(post.postUrl);
-                console.log(`[fetch] Post ${post.postUrl}: fetched ${fetchedComments.length} comments`);
                 if (fetchedComments.length > 0) {
                     await db.insert(comments).values(fetchedComments.map(c => ({
                         postId: post.id,
                         text: c.text
                     })));
                 }
+                postsWithFetchedComments++;
             }));
         }
 
+        let reelsWithFetchedComments = 0;
         for (const batch of chunk(reelsWithComments, 1)) {
             await Promise.all(batch.filter(reel => reel.comments.length === 0).map(async (reel) => {
                 const fetchedComments = await fetchComments(reel.reelsUrl);
-                console.log(`[fetch] Reel ${reel.reelsUrl}: fetched ${fetchedComments.length} comments`);
                 if (fetchedComments.length > 0) {
                     await db.insert(comments).values(fetchedComments.map(c => ({
                         reelsId: reel.id,
                         text: c.text
                     })));
                 }
+                reelsWithFetchedComments++;
             }));
         }
+
+        console.log(`[fetch] Fetched comments for ${postsWithFetchedComments} posts, ${reelsWithFetchedComments} reels`);
     })
 );

@@ -8,13 +8,14 @@ export function chunk<T>(arr: T[], size: number): T[][] {
     return chunks;
 }
 
-export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, label?: string): Promise<T> {
     let lastError: Error;
+    const tag = label ? `[retry:${label}]` : '[retry]';
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
             return await fn();
         } catch (error) {
-            console.error(`[withRetry] Attempt ${attempt}/${maxRetries} failed: ${error}`)
+            console.warn(`${tag} ${attempt}/${maxRetries} failed: ${(error as Error).message}`)
             lastError = error as Error;
             if (attempt === maxRetries) throw lastError;
             await sleep(1000 * attempt); // 1s, 2s, 3s...

@@ -21,7 +21,7 @@ export async function withJobTransition(
     });
     if (!job) return;
 
-    console.log(`[${transition.jobName}] Started for job ${job.id}`);
+    console.log(`[${transition.jobName}] Started @${job.username} (${job.id.slice(0, 6)}...)`);
 
     try {
         await db.update(jobs).set({ status: transition.startedStatus }).where(eq(jobs.id, job.id));
@@ -34,10 +34,10 @@ export async function withJobTransition(
             await db.update(jobs).set({ status: transition.finishedStatus }).where(eq(jobs.id, job.id));
         }
 
-        console.log(`[${transition.jobName}] Completed successfully for job ${job.id}`);
+        console.log(`[${transition.jobName}] Completed @${job.username} (${job.id.slice(0, 6)}...)`);
     } catch (error) {
         const err = error as Error;
-        console.error(`[${transition.jobName}] Failed for job ${job.id}:`, err.message);
+        console.error(`[${transition.jobName}] Failed @${job.username} (${job.id.slice(0, 6)}...): ${err.message}`);
         if (job.attempts >= MAX_ATTEMPTS) {
             await db.update(jobs).set({ status: JOB_STATUS.FAILED, reason: err.message }).where(eq(jobs.id, job.id));
         } else {

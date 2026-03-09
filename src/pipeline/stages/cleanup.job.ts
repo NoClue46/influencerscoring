@@ -12,7 +12,8 @@ export const cleanupJob = new CronJob('0 */10 * * * *', async () => {
 
     if (completedJobs.length === 0) return;
 
-    console.info(`[cleanup] Found ${completedJobs.length} jobs to clean up`);
+    let deleted = 0;
+    let failed = 0;
 
     for (const job of completedJobs) {
         const jobDir = getJobBasePath(job.username, job.id);
@@ -20,10 +21,15 @@ export const cleanupJob = new CronJob('0 */10 * * * *', async () => {
         try {
             if (fs.existsSync(jobDir)) {
                 fs.rmSync(jobDir, { recursive: true, force: true });
-                console.log(`[cleanup] Deleted ${jobDir}`);
+                deleted++;
             }
         } catch (error) {
             console.error(`[cleanup] Failed to delete ${jobDir}:`, error);
+            failed++;
         }
+    }
+
+    if (deleted > 0 || failed > 0) {
+        console.log(`[cleanup] Cleaned ${deleted} jobs (${failed} errors)`);
     }
 });

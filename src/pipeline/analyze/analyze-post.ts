@@ -22,8 +22,6 @@ async function processPost(
     }
 
     try {
-        console.log(`[analyze] Processing post ${post.id}`);
-
         const updatePayload: {
             hasBloggerFace?: boolean;
             analyzeRawText?: string;
@@ -68,7 +66,6 @@ async function processPost(
             await db.update(posts).set(updatePayload).where(eq(posts.id, post.id));
         }
 
-        console.log(`[analyze] Completed post ${post.id}`);
         return [];
     } catch (error) {
         const err = error as Error;
@@ -89,5 +86,6 @@ export async function analyzePosts(
         errors.push(...batchResults.flat());
     }
 
+    console.log(`[analyze] Posts: ${allPosts.length - errors.length}/${allPosts.length} ok`);
     return errors;
 }

@@ -25,8 +25,6 @@ async function processStory(
     }
 
     try {
-        console.log(`[analyze] Processing story ${story.id}`);
-
         const imageContent: Array<{ type: 'image'; image: string }> = [];
 
         // Avatar first
@@ -78,7 +76,6 @@ async function processStory(
             analyzeRawText: JSON.stringify(finalOutput),
         }).where(eq(stories.id, story.id));
 
-        console.log(`[analyze] Completed story ${story.id}`);
         return [];
     } catch (error) {
         const err = error as Error;
@@ -99,5 +96,6 @@ export async function analyzeStories(
         errors.push(...batchResults.flat());
     }
 
+    console.log(`[analyze] Stories: ${allStories.length - errors.length}/${allStories.length} ok`);
     return errors;
 }

@@ -25,8 +25,6 @@ async function processReel(
     }
 
     try {
-        console.log(`[analyze] Processing reel ${reel.id}`);
-
         const updatePayload: {
             hasBloggerFace?: boolean;
             analyzeRawText?: string;
@@ -94,7 +92,6 @@ async function processReel(
             await db.update(reelsUrls).set(updatePayload).where(eq(reelsUrls.id, reel.id));
         }
 
-        console.log(`[analyze] Completed reel ${reel.id}`);
         return [];
     } catch (error) {
         const err = error as Error;
@@ -115,5 +112,6 @@ export async function analyzeReels(
         errors.push(...batchResults.flat());
     }
 
+    console.log(`[analyze] Reels: ${reels.length - errors.length}/${reels.length} ok`);
     return errors;
 }
