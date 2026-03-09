@@ -22,7 +22,7 @@ export async function fetchStories(handle: string, count: number = 10) {
 
         console.info("fetched ", ids.length, " highlights")
 
-        const batches = chunk(ids, 2);
+        const batches = chunk(ids, 1);
         for (const batch of batches) {
             const results = await Promise.allSettled(
                 batch.map(id => {

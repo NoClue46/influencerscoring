@@ -92,7 +92,7 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
             })
         ]);
 
-        for (const batch of chunk(postsWithComments, 3)) {
+        for (const batch of chunk(postsWithComments, 1)) {
             await Promise.all(batch.filter(post => post.comments.length === 0).map(async (post) => {
                 const fetchedComments = await fetchComments(post.postUrl);
                 console.log(`[fetch] Post ${post.postUrl}: fetched ${fetchedComments.length} comments`);
@@ -105,7 +105,7 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
             }));
         }
 
-        for (const batch of chunk(reelsWithComments, 3)) {
+        for (const batch of chunk(reelsWithComments, 1)) {
             await Promise.all(batch.filter(reel => reel.comments.length === 0).map(async (reel) => {
                 const fetchedComments = await fetchComments(reel.reelsUrl);
                 console.log(`[fetch] Reel ${reel.reelsUrl}: fetched ${fetchedComments.length} comments`);
