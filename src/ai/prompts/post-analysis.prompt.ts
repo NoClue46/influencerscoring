@@ -8,24 +8,24 @@ const metricSchema = z.object({
 
 export const personalityMetricsSchema = z.object({
     talking_head: metricSchema,
-    structured_thinking: metricSchema,
-    intelligence: metricSchema,
-    personal_values: metricSchema,
     enthusiasm: metricSchema,
     charisma: metricSchema,
+    sales_authenticity: metricSchema,
     age_over_30: metricSchema,
     income_level: metricSchema,
     beauty_alignment: metricSchema,
-    sales_authenticity: metricSchema,
 });
 
 export const contentMetricsSchema = z.object({
+    structured_thinking: metricSchema,
+    intelligence: metricSchema,
+    personal_values: metricSchema,
+    knowledge_depth: metricSchema,
     low_end_ads_absence: metricSchema,
     pillow_ads_constraint: metricSchema,
     ads_focus_consistency: metricSchema,
     frequency_of_advertising: metricSchema,
     expert_status: metricSchema,
-    knowledge_depth: metricSchema
 });
 
 export const perItemAnalysisSchema = z.object({
@@ -95,6 +95,68 @@ Strong visual signals:
 - Self-recorded framing typical of Stories/Reels
 
 If the face is partially visible, frames are low-quality, or speaking cannot be confidently inferred, reduce Confidence accordingly.
+
+**enthusiasm** (0-100): Score = 100 if the blogger consistently radiates enthusiasm, optimism, and positive emotional energy, clearly visible in facial expressions, gestures, and readable on-screen text/captions.
+
+The blogger:
+- Speaks with light liveliness and emotional accents
+- Smiles naturally, not forced or strained
+- Uses a warm, friendly tone — without sarcasm, fatigue, irritation, or bitterness
+- Shows energetic, engaging intonation; speech does not feel dragging or monotonous
+- Laughs easily or jokes naturally, when appropriate
+- Does not demonstrate constant complaining, whining, or negativity
+
+Additional positive markers:
+- Talks about topics as if they genuinely interest them
+- Emphasizes positives, opportunities, and new ideas, rather than problems
+- Explicitly notes: what has improved, what they like, what inspires them
+- Avoids toxic criticism, cynical framing, and persistent complaints
+
+If enthusiasm is inferred only weakly from visuals or captions, reduce Confidence accordingly.
+
+**charisma** (0-100): Score = 100 if the blogger can emotionally engage and "infect" others with ideas, values, or passion.
+
+The blogger:
+- Consistently communicates core beliefs (health, beauty, self-care, quality of life)
+- Explains why these beliefs matter personally
+- Is not afraid to take a clear position and speak from first person
+
+Delivery signals:
+- Speaks with energy and emotional involvement
+- Uses expressive facial expressions and intonation
+- Shows genuine enjoyment of the content creation process
+- Uses phrases like "This really works", "I want you to try this too"
+- Avoids indifferent or checklist-style product descriptions
+
+Additional strength signals:
+- Uses rhythm, pauses, and structure in speech
+- Varies content formats (stories, POV, backstage, emotional addresses)
+
+**sales_authenticity** (0-100): Score = 100 if advertising is highly authentic and trust-based, not scripted or generic promotion. When advertising is present, the blogger:
+
+Personal usage & realism: Clearly explains how the product is used, explains when it is used (time, routine, situation), explains why it is used (personal motivation), describes specific situations in which the product is relevant, demonstrates the product in a realistic, non-idealized way (not overly polished or staged).
+
+Lifestyle integration: Shows that the integration is not random, demonstrates that the product supports and fits their lifestyle, habits, or routines, product appears naturally embedded into daily life shown in frames.
+
+Concrete details & specificity: Mentions specific, tangible effects or observations (e.g. "I wake up without creases", "my skin feels less irritated"), avoids abstract praise and focuses on observable outcomes.
+
+Contextual integration: Connects the integration to context or audience interaction ("you often ask what I use", "I was looking for something to fix morning creases"), avoids abrupt transitions like "Now advertising" unless the format explicitly requires it.
+
+Authentic voice & tone: Uses their own natural manner of speech and personal tone, does not sound like reading a script or brand copy.
+
+Credibility & restraint: Avoids exaggerated or absolute claims ("the best product in the world"), focuses on specific advantages, not empty superlatives.
+
+Real need → solution link: Describes a real personal problem or need (acne, sensitive skin, frequent travel, lack of sleep, irritation, etc.), clearly links the product to solving their specific problem, not a generic one.
+
+Trust-enhancing nuance: May mention a small nuance, limitation, or wish. Light imperfection is treated as a positive trust signal.
+
+If readable captions/on-screen text are missing and speech cannot be reliably inferred from frames, reduce Confidence accordingly.
+
+### If the blogger's face is NOT detected (has_blogger_face=false, analysis_type="content"):
+
+Analyze CONTENT metrics only based on the content frames and any transcription provided. Set personality to null.
+
+### Content metrics (always analyzed, regardless of face detection):
 
 **structured_thinking** (0-100): Score = 100 if the blogger demonstrates clear, structured, and reasoned thinking, going far beyond simple statements like "I like / I don't like".
 
@@ -221,46 +283,6 @@ When strong, own-truth transmission often includes:
 
 If readable captions/on-screen text or clear speaking-to-camera cues are absent, reduce Confidence, even if the visual storytelling appears polished.
 
-**enthusiasm** (0-100): Score = 100 if the blogger consistently radiates enthusiasm, optimism, and positive emotional energy, clearly visible in facial expressions, gestures, and readable on-screen text/captions.
-
-The blogger:
-- Speaks with light liveliness and emotional accents
-- Smiles naturally, not forced or strained
-- Uses a warm, friendly tone — without sarcasm, fatigue, irritation, or bitterness
-- Shows energetic, engaging intonation; speech does not feel dragging or monotonous
-- Laughs easily or jokes naturally, when appropriate
-- Does not demonstrate constant complaining, whining, or negativity
-
-Additional positive markers:
-- Talks about topics as if they genuinely interest them
-- Emphasizes positives, opportunities, and new ideas, rather than problems
-- Explicitly notes: what has improved, what they like, what inspires them
-- Avoids toxic criticism, cynical framing, and persistent complaints
-
-If enthusiasm is inferred only weakly from visuals or captions, reduce Confidence accordingly.
-
-**charisma** (0-100): Score = 100 if the blogger can emotionally engage and "infect" others with ideas, values, or passion.
-
-The blogger:
-- Consistently communicates core beliefs (health, beauty, self-care, quality of life)
-- Explains why these beliefs matter personally
-- Is not afraid to take a clear position and speak from first person
-
-Delivery signals:
-- Speaks with energy and emotional involvement
-- Uses expressive facial expressions and intonation
-- Shows genuine enjoyment of the content creation process
-- Uses phrases like "This really works", "I want you to try this too"
-- Avoids indifferent or checklist-style product descriptions
-
-Additional strength signals:
-- Uses rhythm, pauses, and structure in speech
-- Varies content formats (stories, POV, backstage, emotional addresses)
-
-### If the blogger's face is NOT detected (has_blogger_face=false, analysis_type="content"):
-
-Analyze CONTENT metrics based on the content frames and any transcription provided:
-
 **income_level** (0-100): Score = 100 if European premium/luxury or higher lifestyle. Score = 0 if the lifestyle appears clearly low-income. Assessment must rely on cumulative visual markers, not on a single isolated cue.
 
 Positive markers indicating above-average income include (non-exhaustive):
@@ -307,26 +329,6 @@ Advertising is considered inconsistent when: Products do not share a common them
 Score = 100 only if: Advertising focuses on one clear category or on closely related categories. All advertised products logically fit the blogger's lifestyle, values, and content niche.
 
 If only limited frames are available or advertising frequency is low, reduce Confidence accordingly.
-
-**sales_authenticity** (0-100): Score = 100 if advertising is highly authentic and trust-based, not scripted or generic promotion. When advertising is present, the blogger:
-
-Personal usage & realism: Clearly explains how the product is used, explains when it is used (time, routine, situation), explains why it is used (personal motivation), describes specific situations in which the product is relevant, demonstrates the product in a realistic, non-idealized way (not overly polished or staged).
-
-Lifestyle integration: Shows that the integration is not random, demonstrates that the product supports and fits their lifestyle, habits, or routines, product appears naturally embedded into daily life shown in frames.
-
-Concrete details & specificity: Mentions specific, tangible effects or observations (e.g. "I wake up without creases", "my skin feels less irritated"), avoids abstract praise and focuses on observable outcomes.
-
-Contextual integration: Connects the integration to context or audience interaction ("you often ask what I use", "I was looking for something to fix morning creases"), avoids abrupt transitions like "Now advertising" unless the format explicitly requires it.
-
-Authentic voice & tone: Uses their own natural manner of speech and personal tone, does not sound like reading a script or brand copy.
-
-Credibility & restraint: Avoids exaggerated or absolute claims ("the best product in the world"), focuses on specific advantages, not empty superlatives.
-
-Real need → solution link: Describes a real personal problem or need (acne, sensitive skin, frequent travel, lack of sleep, irritation, etc.), clearly links the product to solving their specific problem, not a generic one.
-
-Trust-enhancing nuance: May mention a small nuance, limitation, or wish. Light imperfection is treated as a positive trust signal.
-
-If readable captions/on-screen text are missing and speech cannot be reliably inferred from frames, reduce Confidence accordingly.
 
 **frequency_of_advertising** (0-100): 100 = Advertising appears inside the content. 0 = No advertising present.
 
