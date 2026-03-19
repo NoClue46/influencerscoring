@@ -13,16 +13,6 @@ const genderAnalysisSchema = z.object({
     }),
 });
 
-export function overrideExpertStatusForFemale(analysisJson: string): string {
-    try {
-        const data = JSON.parse(analysisJson);
-        data.expert_status = { ...data.expert_status, Score: 100 };
-        return JSON.stringify(data);
-    } catch {
-        return analysisJson;
-    }
-}
-
 export async function checkGenderFromAvatar(
     username: string,
     jobId: string
