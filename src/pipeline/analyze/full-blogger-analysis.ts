@@ -158,7 +158,21 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
         contentItems.push({ index: i, data: parsed });
     }
 
-    console.log(`[analyze] Found ${allItems.length} analyzed items, ${faceItems.length} with face`);
+    // Calculate face presence percentage for reels + stories only
+    const analyzedReelsParsed = analyzedReels
+        .filter(r => r.analyzeRawText !== null)
+        .map(r => parseItemAnalysis(r.analyzeRawText!));
+    const analyzedStoriesParsed = analyzedStories
+        .filter(s => s.analyzeRawText !== null)
+        .map(s => parseItemAnalysis(s.analyzeRawText!));
+
+    const videoItems = [...analyzedReelsParsed, ...analyzedStoriesParsed].filter(Boolean);
+    const videoFaceCount = videoItems.filter(p => p!.has_blogger_face).length;
+    const videoFacePct = videoItems.length > 0
+        ? (videoFaceCount / videoItems.length) * 100
+        : 0;
+
+    console.log(`[analyze] Found ${allItems.length} analyzed items, ${faceItems.length} with face, videoFacePct=${Math.round(videoFacePct)}%`);
 
     // Build personality section
     const personalitySection = faceItems.length > 0
@@ -242,7 +256,16 @@ ${DEFAULT_BLOGGER_PROMPT}`;
     }
 
     const finalScore = calculateScore(finalAnalysis);
-    const redflagReason = validateBloggerMetrics(finalAnalysis);
+
+    const redflagReasons: string[] = [];
+    const metricsRedflag = validateBloggerMetrics(finalAnalysis);
+    if (metricsRedflag) redflagReasons.push(metricsRedflag);
+
+    if (videoItems.length > 0 && videoFacePct < 30) {
+        redflagReasons.push(`Face in ${Math.round(videoFacePct)}% of reels+stories (min 30%)`);
+    }
+
+    const redflagReason = redflagReasons.length > 0 ? redflagReasons.join('; ') : null;
     console.log(`[analyze] Full analysis @${job.username}: score=${finalScore}, ${redflagReason || 'PASS'}, isFemale=${genderCheck.isFemale}`);
     const { rawText: nicknameRawText } = await analyzeNicknameReputation(job.username);
 
