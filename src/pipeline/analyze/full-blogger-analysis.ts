@@ -17,9 +17,8 @@ const metricSchema = z.object({
     Interpretation: z.string(),
 });
 
-const bloggerAnalysisSchema = z.object({
+const aiOutputSchema = z.object({
     income_level: metricSchema,
-    talking_head: metricSchema,
     beauty_alignment: metricSchema,
     low_end_ads_absence: metricSchema,
     pillow_ads_constraint: metricSchema,
@@ -35,6 +34,10 @@ const bloggerAnalysisSchema = z.object({
     charisma: metricSchema,
     expert_status: metricSchema,
     overall_summary: z.string(),
+});
+
+const bloggerAnalysisSchema = aiOutputSchema.extend({
+    talking_head: metricSchema,
 });
 
 type BloggerAnalysis = z.infer<typeof bloggerAnalysisSchema>;
@@ -172,6 +175,13 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
         ? (videoFaceCount / videoItems.length) * 100
         : 0;
 
+    // Calculate talking_head programmatically from per-item scores
+    const videoFaceItems = videoItems.filter(p => p!.has_blogger_face && p!.personality);
+    const talkingHeadCount = videoFaceItems.filter(p => p!.personality!.talking_head.Score > 60).length;
+    const talkingHeadScore = videoFaceItems.length > 0
+        ? Math.round((talkingHeadCount / videoFaceItems.length) * 100)
+        : 0;
+
     console.log(`[analyze] Found ${allItems.length} analyzed items, ${faceItems.length} with face, videoFacePct=${Math.round(videoFacePct)}%`);
 
     // Build personality section
@@ -216,11 +226,20 @@ ${commentSection}
 === TASK ===
 ${DEFAULT_BLOGGER_PROMPT}`;
 
-    let { output: finalAnalysis } = await generateText({
+    const { output: aiOutput } = await generateText({
         model: openai('gpt-5-mini'),
-        output: Output.object({ schema: bloggerAnalysisSchema }),
+        output: Output.object({ schema: aiOutputSchema }),
         prompt: aggregatedPrompt,
     });
+
+    let finalAnalysis: BloggerAnalysis = {
+        ...aiOutput,
+        talking_head: {
+            Score: talkingHeadScore,
+            Confidence: videoFaceItems.length > 0 ? 90 : 0,
+            Interpretation: `${talkingHeadCount}/${videoFaceItems.length} reels+stories with blogger face are talking-head (score>60)`,
+        },
+    };
 
     // Override frequency_of_advertising with caption link detection
     const adScores: number[] = [];

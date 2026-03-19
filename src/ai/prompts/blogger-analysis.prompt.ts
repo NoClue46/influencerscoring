@@ -11,7 +11,7 @@ You receive THREE sections of data:
 2. **CONTENT ANALYSES** — per-item analyses from ALL content items. Use these to evaluate content metrics.
 3. **COMMENT ANALYSES** — per-post/reel aggregated comment analyses (fakeness_score, overall_score, comment_types, interpretation). Use these as additional context when evaluating metrics.
 
-If the PERSONALITY ANALYSES section is empty (no items with blogger face), assign low scores with low confidence to face-gated personality metrics (talking_head, enthusiasm, charisma, sales_authenticity).
+If the PERSONALITY ANALYSES section is empty (no items with blogger face), assign low scores with low confidence to face-gated personality metrics (enthusiasm, charisma, sales_authenticity).
 If the COMMENT ANALYSES section is empty, evaluate metrics based on content and personality data only.
 
 ## Core Aggregation Principles
@@ -39,7 +39,7 @@ These reflect stable characteristics of the creator. Aggregation rules:
 - One strong post alone is not enough to assign a high final score — require pattern confirmation.
 
 ### B. Format / Presence / Frequency Parameters
-**talking_head, frequency_of_advertising, ads_focus_consistency, sales_authenticity**
+**frequency_of_advertising, ads_focus_consistency, sales_authenticity**
 
 These reflect how often or consistently a behavior appears. Aggregation rules:
 - Estimate prevalence and consistency across all analyzed items.
@@ -57,12 +57,6 @@ These check for the absence of violations. Aggregation rules:
 ## Special Rules per Parameter
 
 **income_level**: Look for consistent lifestyle indicators across multiple items. A single luxury item does not prove high income; repeated premium signals across home, travel, clothing, and personal care do. Mixed signals (some premium, some budget) → middle score.
-
-**talking_head**: Aggregate the proportion of items where talking-head format is present.
-- 0–10: No or almost no talking-head items.
-- 20–40: Occasional talking-head format, minority of content.
-- 50–70: Significant portion of content uses talking-head format.
-- 80–100: Most or all content uses talking-head format consistently.
 
 **beauty_alignment**: Look for a stable, recurring theme of beauty and self-care across the content set. Sporadic mentions → lower score. Consistent, dedicated beauty content → high score.
 
@@ -119,7 +113,6 @@ These check for the absence of violations. Aggregation rules:
 {
   "overall_summary": "short summary of the blogger based on the full content set",
   "income_level": {"Score": 0, "Confidence": 0, "Interpretation": ""},
-  "talking_head": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "beauty_alignment": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "low_end_ads_absence": {"Score": 0, "Confidence": 0, "Interpretation": ""},
   "pillow_ads_constraint": {"Score": 0, "Confidence": 0, "Interpretation": ""},
