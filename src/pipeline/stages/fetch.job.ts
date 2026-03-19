@@ -60,7 +60,7 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
                 downloadUrl: p.downloadUrl,
                 isVideo: p.isVideo,
                 commentCount: p.commentCount,
-                commentEr: job.followers > 0 ? p.commentCount / job.followers : 0,
+                commentEr: job.followers > 0 ? (p.commentCount / (job.followers * 0.07)) * 100 : 0,
                 caption: p.caption,
             }))) : Promise.resolve(),
             newReels.length > 0 ? db.insert(reelsUrls).values(newReels.map((r) => ({
@@ -68,7 +68,7 @@ export const fetchJob = new CronJob('*/5 * * * * *', () =>
                 reelsUrl: r.url,
                 downloadUrl: r.downloadUrl,
                 commentCount: r.commentCount,
-                commentEr: job.followers > 0 ? r.commentCount / job.followers : 0,
+                commentEr: job.followers > 0 ? (r.commentCount / (job.followers * 0.07)) * 100 : 0,
                 caption: r.caption,
             }))) : Promise.resolve(),
             fetchedStories.length > 0 ? db.insert(stories).values(fetchedStories.map((s) => ({

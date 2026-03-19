@@ -34,6 +34,7 @@ const bloggerAnalysisSchema = z.object({
     enthusiasm: metricSchema,
     charisma: metricSchema,
     expert_status: metricSchema,
+    overall_summary: z.string(),
 });
 
 type BloggerAnalysis = z.infer<typeof bloggerAnalysisSchema>;

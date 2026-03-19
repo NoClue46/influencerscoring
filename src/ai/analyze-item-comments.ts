@@ -14,6 +14,9 @@ const itemCommentsAnalysisSchema = z.object({
         purpose: z.string().describe('Purpose of this comment type'),
     })).describe('Identified comment types'),
     interpretation: z.string().describe('Interpretation and overall assessment'),
+    high_quality_percentage: z.number().describe('Percentage of high-quality comments 0-100'),
+    low_quality_percentage: z.number().describe('Percentage of low-quality comments 0-100'),
+    quality_reasoning: z.string().describe('Concise justification for the quality score'),
 });
 
 export async function analyzeItemComments(comments: Array<{ text: string }>): Promise<string | null> {

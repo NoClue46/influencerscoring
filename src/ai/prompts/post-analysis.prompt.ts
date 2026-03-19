@@ -302,6 +302,28 @@ Travel contexts indicating above-average lifestyle: Italy (Tuscany, Como, Amalfi
 
 Travel patterns that do NOT indicate above-average income (negative signals): Mass all-inclusive resorts (Antalya, Marmaris, Bodrum — budget hotels), budget package tours to Egypt (Hurghada, Sharm — low-cost hotels), Tunisia (mass segment), cheap beach packages (budget Cyprus, Bulgaria, Albania), bus tours like "7 countries in 5 days", hostels in Asia, budget areas of Bali (e.g., Kuta), low-cost Caribbean travel packages.
 
+Additional income logic for professional experts:
+
+Clinic and equipment level: Modern equipment and premium devices visible (branded medical devices, clean professional interior). Assistants and staff present. Branded uniforms, clinic branding on walls or equipment. Clean, organized, and well-lit professional space.
+
+Service positioning: Expensive or advanced procedures shown or discussed. Complex treatment plans visible or mentioned. Before/after cases demonstrating professional work. Advance booking, waitlist mentions, or fully booked schedule indicators.
+
+Brand partnerships and professional ecosystem: Professional-grade brands visible (medical-grade skincare, professional equipment manufacturers). Medical congresses, professional trainings, and conferences shown or mentioned. PR mailings from professional brands. Speaker or attendee at industry events.
+
+Visual quality of content: Professional filming setup (studio lighting, high-quality camera, stable shots). High-quality editing and post-production. Consistent visual identity across content (color grading, branding elements, thumbnails).
+
+Scale of practice: Many patients or clients visible or mentioned. Booking queue weeks ahead. Multiple branches or locations. Team of specialists working together.
+
+Personal lifestyle: International congresses and professional travel. Premium aesthetics in personal presentation. Travel patterns consistent with high-income professional.
+
+Additional income logic for beauty reviewers:
+
+Brand level in content: Luxury and premium brands regularly featured (La Mer, Augustinus Bader, Dr. Barbara Sturm, Chanel, Dior, Tom Ford Beauty, La Prairie). Brand trips and press events attended. PR mailings from high-end brands visible.
+
+Production quality: Professional lighting and studio background. Clean, stable sound. High-quality editing with consistent visual style. Dedicated filming space or home studio setup.
+
+Personal lifestyle: Travel to premium destinations. Home studio or dedicated filming space. Premium aesthetics in personal presentation and surroundings.
+
 If visual signals are mixed, sparse, or partially obscured, reduce Confidence accordingly.
 
 **beauty_alignment** (0-100): Score = 100 if the blogger's content identity is clearly associated with self-care, beauty, and becoming a better version of oneself in terms of appearance. Assessment is based on what the blogger consistently talks about and demonstrates in their content, not on a single post. The blogger must have ongoing content related to self-care and making oneself more beautiful (not necessarily in every post, but as a stable, recognizable theme).
@@ -330,19 +352,34 @@ Score = 100 only if: Advertising focuses on one clear category or on closely rel
 
 If only limited frames are available or advertising frequency is low, reduce Confidence accordingly.
 
-**frequency_of_advertising** (0-100): 100 = Advertising appears inside the content. 0 = No advertising present.
+**frequency_of_advertising** (0-100): Evaluate whether advertising is present in the content. Binary scoring: 100 = clear advertising markers present, 0 = no reliable markers.
+
+Primary markers (strongest indicators):
+- Promocode or discount code visible in text/captions/stickers/subtitles/speech
+- Phrases: "my link", "go via my link", "use my link", "follow my link", "my promo code", "use promo code"
+
+Additional markers:
+- Affiliate links in captions or on-screen text
+- Explicit price mention in promotional context
+- Hashtags or labels: #ad, #promoted, "advertisement", "paid partnership", "sponsored"
+- Direct call to buy/order/book through blogger's link or code
+- Brand promotion framed as offer, campaign, or partnership
+
+Score = 100 if any clear advertising markers are present. Score = 0 if no reliable markers are detected.
 
 **age_over_30** (0-100): 100 = Content strongly indicates blogger is over 35. 0 = Under 35.
 
-**expert_status** (0-100): Determine whether the blogger can be reasonably identified as an expert in at least one of the following domains: Cosmetology, Makeup artistry, Plastic surgery, Dermatology, Women's fashion.
+**expert_status** (0-100): Determine whether the blogger can be reasonably identified as an expert in at least one of the following domains: Dermatologist, Cosmetologist, Aesthetician/Esthetician, Facialist, Skincare expert, Anti-age expert, Makeup artist, Hair-care expert, Trichologist, Stylist, Image consultant, Wellness expert, Holistic beauty expert, Health coach, Nutrition/Nutritionist, Women's health expert, Fitness expert, Yoga expert, Face yoga expert, Face massage expert, Lymphatic drainage facial massage expert, Gua sha expert, Beauty biohacking expert, Longevity/healthy aging expert, Sleep expert, Posture expert, Self-care expert, Plastic surgeon, Orthopedist, Manual therapist, Naturopath.
 
 Important: Do not assume expertise without clear evidence. If expertise cannot be reliably inferred from visuals and readable text/captions, assign a low Confidence.
 
 Score meaning: 100 = Strong evidence the blogger is an expert in at least one listed domain. 50 = Moderate evidence (strong enthusiast / semi-professional indicators). 0 = No evidence of expert status.
 
-High-confidence expert signals (strong indicators): Explicit professional title or credentials visible in on-screen text (e.g., "Dermatologist", "MD", "Board Certified", "Cosmetologist", "Makeup Artist", "Plastic Surgeon", "Stylist", "Fashion editor"). Professional environment visible: medical office, treatment room, clinic equipment (for dermatology/plastic surgery/cosmetology), professional makeup setup (chair lighting, full kit, working on a client), fashion studio, fittings, editorial environment (for women's fashion). Demonstrations requiring professional skill: structured procedures, technique explanations, safety warnings, before/after examples with professional framing, ingredient breakdowns + contraindications (dermatology), surgical context explanation (plastic surgery), detailed technique breakdowns (makeup), wardrobe analysis, styling rules, body-type fit logic (women's fashion).
+High-confidence expert signals (strong indicators): Explicit professional title or credentials visible in on-screen text (e.g., "Dermatologist", "MD", "Board Certified", "Cosmetologist", "Makeup Artist", "Plastic Surgeon", "Stylist", "Fashion editor", "Nutritionist", "Health Coach", "Yoga Instructor", "Esthetician"). Professional environment visible: medical office, treatment room, clinic equipment (for dermatology/plastic surgery/cosmetology), skincare treatment setup with professional products and tools, professional makeup setup (chair lighting, full kit, working on a client), hair/scalp treatment environment (trichology tools, scalp analysis devices), fitness/yoga/rehab environment (studio, equipment, structured class setup). Structured expert demonstrations: procedures with professional technique, technique explanations with domain-specific depth, safety warnings and contraindications, ingredient breakdowns with formulation knowledge, protocol explanations (step-by-step professional methodology), before/after assessments with professional framing, method comparisons with evidence-based reasoning, diagnosis or problem-solution framing.
 
-Medium-confidence expert signals: Consistent advanced educational content with professional depth, correct terminology used and explained clearly, mentions of professional work with clients/patients (only if supported by captions), teaching-style content: "common mistakes", "do/don't", "protocol", "contraindications", "for professionals".
+Strong content-format signals: Educational content with expert depth, expert breakdowns of products or procedures, skincare routines with professional reasoning, anti-age advice based on science or clinical practice, ingredient and formulation analysis, beauty product analysis beyond surface-level reviews, beauty hacks with explanation of why they work, myth debunking with evidence, before/after comparisons with professional assessment, tutorials with step-by-step technique, procedure reviews from a professional perspective, home care rituals with professional guidance, morning/evening routines with reasoning for each step, Q&A sessions demonstrating expertise, lifestyle content with expert framing, product recommendations with scientific or professional reasoning, beauty/wellness trend reviews with critical analysis, reactions to trends with professional perspective, comparison of methods with evidence-based conclusions.
+
+Medium-confidence expert signals: Repeated teaching-style delivery with examples such as "common mistakes", "do/don't", "protocol", "contraindications", "how to choose", "who it is for", "when not to do it". Mentions of professional practice, clients, patients, consultations — only if supported by captions/text/speech. Repeated niche, practice-based, or method-based content focused in one domain. Consistent advanced educational content with professional depth, correct terminology used and explained clearly.
 
 Low-confidence / non-expert signals: Only casual product showcasing without depth, generic mass tips repeated by many creators, no professional environment, no credentials, no advanced technique.
 

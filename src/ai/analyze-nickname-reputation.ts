@@ -12,6 +12,8 @@ const nicknameFindingSchema = z.object({
 const nicknameAnalysisSchema = z.object({
     reputation_score: z.number(),
     estimated_age: z.number().nullable(),
+    detected_profession: z.string().nullable(),
+    has_special_profession: z.boolean(),
     confidence: z.number().nullable(),
     summary: z.string().nullable(),
     negative_findings: z.array(nicknameFindingSchema).nullable(),
@@ -42,6 +44,7 @@ function normalizeEstimatedAge(age: number | null): number | null {
 export async function analyzeNicknameReputation(username: string, biography?: string): Promise<{
     reputationScore: number;
     estimatedAge: number | null;
+    hasSpecialProfession: boolean;
     rawText: string | null;
 }> {
     const nicknamePrompt = NICKNAME_ANALYSIS_PROMPT(username, biography);
@@ -65,6 +68,7 @@ export async function analyzeNicknameReputation(username: string, biography?: st
         return {
             reputationScore: normalizeReputationScore(output.reputation_score),
             estimatedAge: normalizeEstimatedAge(output.estimated_age),
+            hasSpecialProfession: output.has_special_profession,
             rawText: JSON.stringify(output, null, 2),
         };
     } catch (error) {
@@ -73,6 +77,7 @@ export async function analyzeNicknameReputation(username: string, biography?: st
             return {
                 reputationScore: 100,
                 estimatedAge: null,
+                hasSpecialProfession: false,
                 rawText: error.text ?? null,
             };
         }

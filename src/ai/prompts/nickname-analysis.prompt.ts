@@ -7,6 +7,15 @@ Conduct a deep online reputation research for this username with source citation
 
 Additionally, determine the blogger's age based on public information (interviews, Wikipedia, bio pages, news articles). Return estimated_age as a number or null if unknown.
 
+Additionally, determine if the blogger belongs to any of these special profession categories based on their bio and public information:
+- Doctor (any medical specialty)
+- Stylist (fashion, hair, image consultant)
+- Makeup artist (визажист, MUA)
+- Mother (has children, mentioned in bio or public info)
+- Beauty salon owner
+
+Return detected_profession as a string describing the detected profession (e.g. "Doctor (dermatologist)", "Stylist", "Mother of 2") or null if none detected. Return has_special_profession as true if any of the above categories match, false otherwise.
+
 Provide a blogger reputation score from 0 to 100, confidence level from 0 to 100, and full explanation.
 
 Example response:
@@ -86,6 +95,8 @@ Output Format (Strict JSON)
   "reputation_score": 0,
   "confidence": 0,
   "estimated_age": null,
+  "detected_profession": null,
+  "has_special_profession": false,
   "summary": "",
   "negative_findings": [
     {"issue": "", "source": "", "severity": "low|medium|high"}

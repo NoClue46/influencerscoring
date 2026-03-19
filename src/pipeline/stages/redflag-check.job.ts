@@ -11,6 +11,8 @@ import { JOB_STATUS } from '@/shared/job-status.js';
 
 const MIN_FOLLOWERS = 7000;
 const MIN_REPUTATION_SCORE = 60;
+const DEFAULT_MIN_AGE = 35;
+const SPECIAL_PROFESSION_MIN_AGE = 30;
 
 export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
     withJobTransition({
@@ -66,8 +68,8 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
         const bioAge = await extractAgeFromBio(biography);
         console.log(`[redflag-check] Bio age: ${bioAge}`);
 
-        if (bioAge !== null && bioAge < 35) {
-            console.log(`[redflag-check] REDFLAG: under_35_bio (${bioAge})`);
+        if (bioAge !== null && bioAge < SPECIAL_PROFESSION_MIN_AGE) {
+            console.log(`[redflag-check] REDFLAG: under_30_bio (${bioAge})`);
             await db.update(jobs).set({
                 status: JOB_STATUS.COMPLETED,
                 redflag: 'under_35',
@@ -80,12 +82,26 @@ export const redflagCheckJob = new CronJob('*/5 * * * * *', () =>
         }
 
         console.log(`[redflag-check] Checking reputation for ${job.username}`);
-        const { reputationScore, estimatedAge, rawText: nicknameRawText } = await analyzeNicknameReputation(job.username, biography || undefined);
+        const { reputationScore, estimatedAge, hasSpecialProfession, rawText: nicknameRawText } = await analyzeNicknameReputation(job.username, biography || undefined);
         const finalAge = bioAge ?? estimatedAge;
-        console.log(`[redflag-check] Reputation score: ${reputationScore}, Estimated age: ${estimatedAge}, Final age: ${finalAge}`);
+        console.log(`[redflag-check] Reputation score: ${reputationScore}, Estimated age: ${estimatedAge}, Final age: ${finalAge}, Special profession: ${hasSpecialProfession}`);
 
-        if (finalAge !== null && finalAge < 35) {
-            console.log(`[redflag-check] REDFLAG: under_35 (${finalAge})`);
+        if (finalAge !== null && finalAge < SPECIAL_PROFESSION_MIN_AGE) {
+            console.log(`[redflag-check] REDFLAG: under_30 (${finalAge})`);
+            await db.update(jobs).set({
+                status: JOB_STATUS.COMPLETED,
+                redflag: 'under_35',
+                followers,
+                avatarUrl,
+                nicknameAnalyseRawText: nicknameRawText,
+                biography: biography || null,
+                bioEstimatedAge: bioAge,
+            }).where(eq(jobs.id, job.id));
+            return;
+        }
+
+        if (finalAge !== null && finalAge < DEFAULT_MIN_AGE && !hasSpecialProfession) {
+            console.log(`[redflag-check] REDFLAG: under_35 (${finalAge}, no special profession)`);
             await db.update(jobs).set({
                 status: JOB_STATUS.COMPLETED,
                 redflag: 'under_35',
