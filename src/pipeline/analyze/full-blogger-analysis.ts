@@ -57,6 +57,8 @@ const SCORING_WEIGHTS: Record<
     charisma: 30,
 };
 
+const TALKING_HEAD_PASS_THRESHOLD = 30;
+
 const REQUIRED_METRICS: Array<
     keyof Pick<
         BloggerAnalysis,
@@ -99,6 +101,11 @@ function validateBloggerMetrics(analysis: BloggerAnalysis): string | null {
         if (metric === 'frequency_of_advertising') {
             // >= 95 = red flag (too much ads)
             if (score >= 95) {
+                failedMetrics.push(metric);
+            }
+        } else if (metric === 'talking_head') {
+            // < 30 = red flag
+            if (score < TALKING_HEAD_PASS_THRESHOLD) {
                 failedMetrics.push(metric);
             }
         } else {
@@ -177,7 +184,9 @@ export async function runFullBloggerAnalysis(job: Job): Promise<void> {
 
     // Calculate talking_head programmatically from per-item scores
     const videoFaceItems = videoItems.filter(p => p!.has_blogger_face && p!.personality);
-    const talkingHeadCount = videoFaceItems.filter(p => p!.personality!.talking_head.Score > 60).length;
+    const talkingHeadCount = videoFaceItems
+        .filter(p => p!.personality!.talking_head.Score > TALKING_HEAD_PASS_THRESHOLD)
+        .length;
     const talkingHeadScore = videoFaceItems.length > 0
         ? Math.round((talkingHeadCount / videoFaceItems.length) * 100)
         : 0;
@@ -237,7 +246,7 @@ ${DEFAULT_BLOGGER_PROMPT}`;
         talking_head: {
             Score: talkingHeadScore,
             Confidence: videoFaceItems.length > 0 ? 90 : 0,
-            Interpretation: `${talkingHeadCount}/${videoFaceItems.length} reels+stories with blogger face are talking-head (score>60)`,
+            Interpretation: `${talkingHeadCount}/${videoFaceItems.length} reels+stories with blogger face are talking-head (score>${TALKING_HEAD_PASS_THRESHOLD})`,
         },
     };
 
