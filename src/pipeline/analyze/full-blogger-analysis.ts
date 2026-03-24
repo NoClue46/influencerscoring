@@ -262,9 +262,23 @@ ${DEFAULT_BLOGGER_PROMPT}`;
         };
     }
 
-    const genderCheck = await checkGenderFromAvatar(job.username, job.id);
+    // Web search gender detection first, avatar as fallback (same pattern as age)
+    const { rawText: nicknameRawText, estimatedGender } = await analyzeNicknameReputation(
+        job.username,
+        job.biography || undefined
+    );
 
-    if (genderCheck.isFemale) {
+    let isFemale: boolean;
+    if (estimatedGender !== null) {
+        isFemale = estimatedGender === 'female';
+        console.log(`[analyze] Gender from web search: ${estimatedGender}, isFemale: ${isFemale}`);
+    } else {
+        const genderCheck = await checkGenderFromAvatar(job.username, job.id);
+        isFemale = genderCheck.isFemale;
+        console.log(`[analyze] Gender from avatar fallback: score=${genderCheck.score}, isFemale: ${isFemale}`);
+    }
+
+    if (isFemale) {
         finalAnalysis = {
             ...finalAnalysis,
             expert_status: {
@@ -285,8 +299,7 @@ ${DEFAULT_BLOGGER_PROMPT}`;
     }
 
     const redflagReason = redflagReasons.length > 0 ? redflagReasons.join('; ') : null;
-    console.log(`[analyze] Full analysis @${job.username}: score=${finalScore}, ${redflagReason || 'PASS'}, isFemale=${genderCheck.isFemale}`);
-    const { rawText: nicknameRawText } = await analyzeNicknameReputation(job.username);
+    console.log(`[analyze] Full analysis @${job.username}: score=${finalScore}, ${redflagReason || 'PASS'}, isFemale=${isFemale}`);
 
     const allCommentErs = [...analyzedReels, ...analyzedPosts]
         .map(item => item.commentEr ?? 0)
@@ -317,6 +330,6 @@ ${DEFAULT_BLOGGER_PROMPT}`;
         avgFakenessScore,
         status: JOB_STATUS.COMPLETED,
         redflag: redflagReason,
-        isFemale: genderCheck.isFemale,
+        isFemale,
     }).where(eq(jobs.id, job.id));
 }

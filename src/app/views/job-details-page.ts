@@ -6,6 +6,13 @@ function snakeToTitle(s: string): string {
     return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function getFakenessWarning(rawText: string): string {
+    try {
+        const data = JSON.parse(rawText);
+        return data.fakeness_score > 40 ? ' ⚠️' : '';
+    } catch { return ''; }
+}
+
 function scoreColor(param: string, score: number): string {
     if (param === 'frequency_of_advertising') {
         return score < 95 ? '#198754' : '#dc3545';
@@ -24,7 +31,7 @@ function renderAnalyzeTable(rawText: string, avgCommentEr: number | null = null,
                 <table style="margin-bottom: 1rem;">
                     <thead><tr><th></th>${keys.map(k => html`<th>${snakeToTitle(k)}</th>`)}${avgCommentEr !== null ? html`<th>Avg Comment ER</th>` : ''}${avgFakenessScore !== null ? html`<th>Avg Fakeness</th>` : ''}</tr></thead>
                     <tbody>
-                        <tr><td><strong>Score</strong></td>${keys.map(k => html`<td style="color: ${scoreColor(k, data[k].Score)}; font-weight: 600;">${data[k].Score}</td>`)}${avgCommentEr !== null ? html`<td style="font-weight: 600;">${avgCommentEr.toFixed(2)}%</td>` : ''}${avgFakenessScore !== null ? html`<td style="font-weight: 600;">${avgFakenessScore.toFixed(1)}</td>` : ''}</tr>
+                        <tr><td><strong>Score</strong></td>${keys.map(k => html`<td style="color: ${scoreColor(k, data[k].Score)}; font-weight: 600;">${data[k].Score}</td>`)}${avgCommentEr !== null ? html`<td style="font-weight: 600;">${avgCommentEr.toFixed(2)}%</td>` : ''}${avgFakenessScore !== null ? html`<td style="font-weight: 600;${avgFakenessScore > 40 ? ' color: #e67e22;' : ''}">${avgFakenessScore.toFixed(1)}${avgFakenessScore > 40 ? ' ⚠️' : ''}</td>` : ''}</tr>
                         <tr><td><strong>Confidence</strong></td>${keys.map(k => html`<td>${data[k].Confidence ?? '-'}</td>`)}${avgCommentEr !== null ? html`<td>-</td>` : ''}${avgFakenessScore !== null ? html`<td>-</td>` : ''}</tr>
                     </tbody>
                 </table>
@@ -49,12 +56,13 @@ function renderNicknameTable(rawText: string) {
         return html`
             <div style="overflow-x: auto;">
                 <table style="margin-bottom: 1rem;">
-                    <thead><tr><th>Reputation Score</th><th>Confidence</th><th>Estimated Age</th><th>Profession</th><th>Risk Level</th></tr></thead>
+                    <thead><tr><th>Reputation Score</th><th>Confidence</th><th>Estimated Age</th><th>Gender</th><th>Profession</th><th>Risk Level</th></tr></thead>
                     <tbody>
                         <tr>
                             <td style="font-weight: 600;">${data.reputation_score ?? '-'}</td>
                             <td>${data.confidence ?? '-'}</td>
                             <td>${data.estimated_age ?? '-'}</td>
+                            <td>${data.estimated_gender ?? '-'}</td>
                             <td>${data.detected_profession ?? '-'}</td>
                             <td style="color: ${riskColor}; font-weight: 600;">${data.risk_level ?? '-'}</td>
                         </tr>
@@ -128,7 +136,7 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                             <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${reel.analyzeRawText}</pre>
                         ` : ''}
                         ${reel.commentsAnalysisRawText ? html`
-                            <h4>Comments Analysis</h4>
+                            <h4>Comments Analysis${getFakenessWarning(reel.commentsAnalysisRawText)}</h4>
                             <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${reel.commentsAnalysisRawText}</pre>
                         ` : ''}
                         <h4>Comments (${reel.comments.length})</h4>
@@ -160,7 +168,7 @@ export function renderJobDetailsPage(job: JobWithRelations) {
                             <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${post.analyzeRawText}</pre>
                         ` : ''}
                         ${post.commentsAnalysisRawText ? html`
-                            <h4>Comments Analysis</h4>
+                            <h4>Comments Analysis${getFakenessWarning(post.commentsAnalysisRawText)}</h4>
                             <pre style="white-space: pre-wrap; margin-bottom: 1rem;">${post.commentsAnalysisRawText}</pre>
                         ` : ''}
                         <h4>Comments (${post.comments.length})</h4>

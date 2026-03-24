@@ -7,6 +7,8 @@ Conduct a deep online reputation research for this username with source citation
 
 Additionally, determine the blogger's age based on public information (interviews, Wikipedia, bio pages, news articles). Return estimated_age as a number or null if unknown.
 
+Additionally, determine the blogger's gender based on public information (name, pronouns used in articles, interviews, Wikipedia, bio). Return estimated_gender as "male", "female", or null if it cannot be determined with reasonable confidence.
+
 Additionally, determine if the blogger belongs to any of these special profession categories based on their bio and public information:
 - Doctor (any medical specialty)
 - Stylist (fashion, hair, image consultant)
@@ -95,6 +97,7 @@ Output Format (Strict JSON)
   "reputation_score": 0,
   "confidence": 0,
   "estimated_age": null,
+  "estimated_gender": null,
   "detected_profession": null,
   "has_special_profession": false,
   "summary": "",
