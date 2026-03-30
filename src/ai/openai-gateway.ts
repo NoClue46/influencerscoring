@@ -34,6 +34,11 @@ const AUDIO_CLASSIFICATION_PROMPT = `Classify this audio track into exactly one 
 Respond ONLY with a JSON object, no other text:
 {"classification": "speech|music|silence_or_noise|unclear", "confidence": 0-100}`;
 
+/**
+ * Transcribes audio file using OpenAI Whisper
+ * @param audioPath - Path to audio file (mp3, mp4, etc)
+ * @returns Transcribed text
+ */
 export async function transcribeAudio(audioPath: string): Promise<string> {
     console.log(`[transcribeAudio] Starting: ${audioPath}`);
     try {
